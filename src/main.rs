@@ -2,27 +2,42 @@ use std::net::SocketAddr;
 
 use axum::{
     extract::{ Json, Query },
-    http::Uri,
+    response::Redirect,
     Router,
     routing::{ get, post, },
 };
 use axum_macros::debug_handler;
 use serde::{ Deserialize, Serialize };
+use url::Url;
 
-
+/// The authorization grant code supplied in the authorization grant step of the auth flow
 #[derive(Serialize)]
 struct Code {
     code: String,
 }
 
 impl Code {
-    pub fn new<S: Into<String>>(code: S)-> Self {
+    pub fn new(client_id: &String, requested_scopes: Vec<String>)-> Self {
         Self {
-            code: code.into(),
+            code: Self::generate(&client_id, requested_scopes),
         }
+    }
+
+    /// TODO
+    /// Connect to database, and generate some code based off of params provided
+    pub fn generate(client_id: &String, requested_scopes: Vec<String>) -> String {
+        let code = format!("{}:{:?}", &client_id, &requested_scopes);
+        code
+    }
+
+    /// TODO
+    /// Decrypt/Verify (and remove from db if necessary) provided code
+    pub fn verify(code: String) -> bool {
+        return true;
     }
 }
 
+/// The auth token provided when a client has successfully authorized through the grant flow
 #[derive(Serialize)]
 struct Token {
     token_type: String,
@@ -31,38 +46,87 @@ struct Token {
     refresh_token: String,
 }
 
-pub mod result {
+mod result {
     use axum::{
-        http::StatusCode,
-        response::{IntoResponse, Response},
+        extract::Json,
+        response::{IntoResponse, Response, Redirect},
     };
+    use serde::Serialize;
+    use url::Url;
+
+    #[derive(Serialize)]
+    pub struct ErrorMessage {
+        pub error: String,
+        pub error_desciption: String,
+    }
+
+    impl ErrorMessage {
+        pub fn new(error: &str, error_description: &str) -> Self {
+            Self {
+                error: error.to_string(),
+                error_desciption: error_description.to_string(),
+            }
+        }
+
+        pub fn json(error: &str, error_description: &str) -> Json<Self> {
+            Json(Self::new(error, error_description))
+        }
+    }
 
     pub enum Error {
-        BadRoute,
-        BadClientId,
-        BadRedirectUri,
+        InvalidRequest,
+        AccessDenied(Url),
+        ServerError(Url),
+        TemporarilyUnavailable(Url),
+
+        InvalidClientId,
+        InvalidRedirectUri,
+        UnsupportedResponseType(Url),
+        InvalidScope(Url),
     }
 
     impl IntoResponse for Error {
         fn into_response(self) -> Response {
-            let (status_code, body) = match self {
-                Error::BadRoute         => (StatusCode::NOT_FOUND, "Not found"),
-                Error::BadClientId      => (StatusCode::UNAUTHORIZED, "Invalid client id supplied"),
-                Error::BadRedirectUri   => (StatusCode::BAD_REQUEST, "Invalid redirect uri supplied"),
+            let (uri, error, error_description) = match self {
+                Error::InvalidRequest                           => ("http://127.0.0.1:8080/auth/error".to_string(), "invalid_request", "Invalid Request"),
+                Error::AccessDenied(callback)               => (callback.as_str().to_string().clone(), "access_denied", "The user has denied the authorization request"),
+                Error::ServerError(callback)                => (callback.as_str().to_string().clone(), "server_error", "An internal server error has occured while processing your request"),
+                Error::TemporarilyUnavailable(callback)     => (callback.as_str().to_string().clone(), "temporarily_unavailable", "We're sorry, but we appear to be temporarily unavailable. Please try making your request again later."),
+
+                Error::InvalidClientId                          => ("http://127.0.0.1:8080/auth/error".to_string(), "invalid_client", "Invalid client id supplied"),
+                Error::InvalidRedirectUri                       => ("http://127.0.0.1:8080/auth/error".to_string(), "invalid_redirect", "Invalid redirect uri supplied"),
+                Error::UnsupportedResponseType(callback)    => (callback.as_str().to_string().clone(), "unsupported_response_type", "Invalid response type requested"),
+                Error::InvalidScope(callback)               => (callback.as_str().to_string().clone(), "invalid_scope", "Invalid scope(s) requested"),
             };
 
-            (status_code, body).into_response()
+            let redirect_uri = format!("{}?error={}", &uri, &error);
+
+            Redirect::to(redirect_uri.as_str()).into_response()
         }
     }
 
     pub type Result<T> = std::result::Result<T, Error>;
 }
 
+/// TODO
+/// Coordinate with database and assert that provided client_id exists and is valid
+/// For now, assume this is set up and just return true
 fn verify_client_id(client_id: &String) -> bool {
     return true;
 }
 
-fn is_redirect_registered(client_id: &String, redirect_uri: &Uri) -> bool {
+/// TODO
+/// Coordinate with database and assert that uri has been registered to the provided client_id
+/// For now just assume this is set up and return true
+fn is_redirect_registered(client_id: &String, redirect_uri: &Url) -> bool {
+    return true;
+}
+
+/// TODO
+/// Coordinate with database and assert that scopes exist and that the provided client_id has
+/// access to use all of them 
+/// For now just assume this is set up and return true
+fn verify_scopes(client_id: &String, scopes: &Vec<String>) -> bool {
     return true;
 }
 
@@ -74,6 +138,7 @@ async fn main() {
         .route("/auth", post(authorization_grant));
 
     let app = Router::new()
+        .route("/auth/error", get(auth_error))
         .merge(authorize_routes)
         .fallback(fallback)
         .with_state(());
@@ -87,34 +152,57 @@ async fn main() {
         .unwrap();
 }
 
+/// Fallback function - when a route is requested that doesn't exist this handler will be called.
 async fn fallback() -> result::Error {
-    return result::Error::BadRoute;
+    return result::Error::InvalidRequest;
+}
+
+async fn auth_error(
+    params: Query<AuthErrorParams>
+) -> Json<result::ErrorMessage> {
+    result::ErrorMessage::json(params.error.as_str(), "Description")
+}
+
+#[derive(Deserialize)]
+struct AuthErrorParams {
+    error: String,
 }
 
 async fn authorization_grant(
     params: Query<AuthorizationGrantParams>
-) -> result::Result<Json<Code>> {
+) -> result::Result<Redirect> {
     // verify client_id, reject immediately and display error to user instead of redirect
     if !verify_client_id(&params.client_id) {
-        return Err(result::Error::BadClientId);
+        return Err(result::Error::InvalidClientId);
     }
 
     // validate redirect uri, inform the user of the problem instead of redirecting
     if !is_redirect_registered(&params.client_id, &params.redirect_uri) {
-        return Err(result::Error::BadRedirectUri);
+        return Err(result::Error::InvalidRedirectUri);
     }
 
-    let code: Code = Code::new("Hello, OAuth!");
+    if &params.response_type != "code" {
+        return Err(result::Error::UnsupportedResponseType(params.redirect_uri.clone()))
+    }
 
-    Ok(Json(code))
+    let parsed_scopes = params.scope.split(' ');
+    let scopes = parsed_scopes.map(|s| s.to_string()).collect();
+    
+    if !verify_scopes(&params.client_id, &scopes) {
+        return Err(result::Error::InvalidScope(params.redirect_uri.clone()));
+    }
+
+    let code: Code = Code::new(&params.client_id, scopes);
+    let callback = format!("{}?code={}", &params.redirect_uri, &code.code);
+
+    Ok(Redirect::temporary(callback.as_str()))
 }
 
 #[derive(Deserialize)]
 struct AuthorizationGrantParams {
     pub response_type: String,
     pub client_id: String,
-    #[serde(with = "http_serde::uri")]
-    pub redirect_uri: Uri,
+    pub redirect_uri: Url,
     pub scope: String,
     pub state: String,
 }
@@ -137,8 +225,7 @@ async fn authorization_code(
 struct AuthorizationCodeParams {
     pub grant_type: String,
     pub code: String,
-    #[serde(with = "http_serde::uri")]
-    pub redirect_uri: Uri,
+    pub redirect_uri: Url,
     pub client_id: String,
 }
 
@@ -163,8 +250,7 @@ async fn pkce(
 struct PkceParams {
     pub grant_type: String,
     pub code: String,
-    #[serde(with = "http_serde::uri")]
-    pub redirect_uri: Uri,
+    pub redirect_uri: Url,
     pub code_verifier: String,
 }
 
