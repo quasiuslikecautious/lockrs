@@ -10,6 +10,41 @@ use axum_macros::debug_handler;
 use serde::{ Deserialize, Serialize };
 use url::Url;
 
+/// The client type designation is based on the authorization server's definition of secure
+/// authentication and its acceptable exposure levels of client credentials. The authorization
+/// server SHOULD NOT make assumptions about the client type.
+enum ClientType {
+    /// Clients capable of maintaining the confidentiality of their credentials (e.g., client
+    /// implements on a secure server with restricted access to the client credentials), or capable
+    /// of secure client authentication using other means
+    Confidential,
+
+    /// Clients incapable of maintaining the confidentiality of their credentials (e.g. clients
+    /// executing on the device used by a resource owner, such as an installed native application
+    /// or a web browser-based application), and incapable of secure client authentication via any
+    /// other means
+    Public,
+}
+
+impl ClientType {
+    pub fn get_value(self) -> String {
+        match self {
+            ClientType::Confidential    => "confidential".to_string(),
+            ClientType::Public          => "public".to_string(),
+        }
+    }
+}
+
+/// Use the HTTP Basic authentication scheme to authenticate with the authentication server. The
+/// client identifier is encoded using the "application/x-www-form-urlencoded" encoding algorthm,
+/// and the encoded value is used as the username; the client password is encoded using the same
+/// algorithm and used as the password.
+#[derive(Serialize)]
+struct Client {
+    client_id: String,
+    client_secret: String,
+}
+
 /// The authorization grant code supplied in the authorization grant step of the auth flow
 #[derive(Serialize)]
 struct Code {
@@ -85,21 +120,55 @@ mod result {
         InvalidScope(Url),
     }
 
+    impl Error {
+        pub fn into_callback_url(&self) -> String {
+            let default_callback_url = String::from("http://127.0.0.1:8080");
+
+            match self {
+                Self::InvalidRequest => default_callback_url.to_string(),
+                Self::AccessDenied(callback) => callback.to_string(),
+                Self::ServerError(callback) => callback.to_string(),
+                Self::TemporarilyUnavailable(callback) => callback.to_string(),
+                Self::InvalidClientId => default_callback_url,
+                Self::InvalidRedirectUri => default_callback_url,
+                Self::UnsupportedResponseType(callback) => callback.to_string(),
+                Self::InvalidScope(callback) => callback.to_string(),
+            }
+        }
+
+        pub fn into_error_code(&self) -> &'static str {
+            match self {
+                Self::InvalidRequest => "invalid_request",
+                Self::AccessDenied(_) => "access_denied",
+                Self::ServerError(_) => "server_error",
+                Self::TemporarilyUnavailable(_) => "temporary_error",
+                Self::InvalidClientId => "invalid_client",
+                Self::InvalidRedirectUri => "invalid_redirect",
+                Self::UnsupportedResponseType(_) => "unsupported_response_type",
+                Self::InvalidScope(_) => "invalid_scope",
+            }
+        }
+
+        pub fn into_error_description(&self) -> &'static str {
+            match self {
+                Self::InvalidRequest => "Invalid Request",
+                Self::AccessDenied(_) => "The resource owner has denied the authorization request",
+                Self::ServerError(_) => "An internal error occured while processing your request",
+                Self::TemporarilyUnavailable(_) => "Please try again later",
+                Self::InvalidClientId => "Invalid client_id supplied",
+                Self::InvalidRedirectUri => "Invalid redirect_uri supplied",
+                Self::UnsupportedResponseType(_) => "Unsupported response_type requested",
+                Self::InvalidScope(_) => "Invalid scope(s) requested",
+            }
+        }
+    }
+
     impl IntoResponse for Error {
         fn into_response(self) -> Response {
-            let (uri, error, error_description) = match self {
-                Error::InvalidRequest                           => ("http://127.0.0.1:8080/auth/error".to_string(), "invalid_request", "Invalid Request"),
-                Error::AccessDenied(callback)               => (callback.as_str().to_string().clone(), "access_denied", "The user has denied the authorization request"),
-                Error::ServerError(callback)                => (callback.as_str().to_string().clone(), "server_error", "An internal server error has occured while processing your request"),
-                Error::TemporarilyUnavailable(callback)     => (callback.as_str().to_string().clone(), "temporarily_unavailable", "We're sorry, but we appear to be temporarily unavailable. Please try making your request again later."),
+            let callback = self.into_callback_url();
+            let error_code = self.into_error_code();
 
-                Error::InvalidClientId                          => ("http://127.0.0.1:8080/auth/error".to_string(), "invalid_client", "Invalid client id supplied"),
-                Error::InvalidRedirectUri                       => ("http://127.0.0.1:8080/auth/error".to_string(), "invalid_redirect", "Invalid redirect uri supplied"),
-                Error::UnsupportedResponseType(callback)    => (callback.as_str().to_string().clone(), "unsupported_response_type", "Invalid response type requested"),
-                Error::InvalidScope(callback)               => (callback.as_str().to_string().clone(), "invalid_scope", "Invalid scope(s) requested"),
-            };
-
-            let redirect_uri = format!("{}?error={}", &uri, &error);
+            let redirect_uri = format!("{}?error={}", &callback, &error_code);
 
             Redirect::to(redirect_uri.as_str()).into_response()
         }
@@ -134,12 +203,14 @@ fn verify_scopes(client_id: &String, scopes: &Vec<String>) -> bool {
 #[tokio::main]
 async fn main() {
     // initiates the authorization flow and returns the authorization code to the clien
-    let authorize_routes = Router::new()
-        .route("/auth", post(authorization_grant));
+    let routes = Router::new()
+        .route("/authorize", post(authorization_grant))
+        .route("/token", post(access_token))
+        .route("/refresh", post(refresh_token));
 
     let app = Router::new()
-        .route("/auth/error", get(auth_error))
-        .merge(authorize_routes)
+        .route("/error", get(auth_error))
+        .merge(routes)
         .fallback(fallback)
         .with_state(());
 
@@ -226,6 +297,7 @@ struct AuthorizationCodeParams {
     pub grant_type: String,
     pub code: String,
     pub redirect_uri: Url,
+    pub code_verifier: String,
     pub client_id: String,
 }
 
