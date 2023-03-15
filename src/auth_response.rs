@@ -24,10 +24,11 @@ impl ErrorMessage {
     }
 }
 
+#[derive(Debug)]
 pub enum Rejection {
     InvalidRequest,
     AccessDenied(Url),
-    ServerError(Url),
+    ServerError(Option<Url>),
     TemporarilyUnavailable(Url),
 
     InvalidClientId,
@@ -44,7 +45,12 @@ impl Rejection {
         match self {
             Self::InvalidRequest => default_callback_url.to_string(),
             Self::AccessDenied(callback) => callback.to_string(),
-            Self::ServerError(callback) => callback.to_string(),
+            Self::ServerError(callback) => {
+                match callback {
+                    Some(redirect_uri) => redirect_uri.to_string(),
+                    None => default_callback_url.to_string(),
+                }
+            },
             Self::TemporarilyUnavailable(callback) => callback.to_string(),
             Self::InvalidClientId => default_callback_url,
             Self::InvalidRedirectUri => default_callback_url,
