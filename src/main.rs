@@ -1,3 +1,15 @@
+// TODO
+// [ ] scope handling
+// [ ] better redirect
+// [ ] auth code generation
+// [ ] device code
+//     [ ] generation
+//     [ ] user code generation
+//     [ ] verification uri
+// [ ] auth code page
+// [ ] middlewares
+// [ ] description handling
+
 mod schema;
 mod db;
 mod auth_response;
@@ -106,7 +118,7 @@ struct AuthorizeParams {
 }
 
 #[derive(Serialize)]
-struct AuthorizePayload {
+struct AuthorizeResponse {
     pub code: String,
     pub state: String,
 }
@@ -139,7 +151,7 @@ struct TokenRequest {
 async fn handle_token_request(
     extract::ExtractClientCredentials(client): extract::ExtractClientCredentials,
     Query(params): Query<TokenRequest>
-) -> auth_response::Result<Json<models::TokenPayload>> {
+) -> auth_response::Result<Json<models::TokenResponse>> {
     match params.grant_type.as_str() {
         "authorization_code" => {
             return handle_authorization_code(client, params);
@@ -160,7 +172,7 @@ async fn handle_token_request(
 fn handle_authorization_code(
     client: models::ValidatedClient,
     params: TokenRequest
-) -> auth_response::Result<Json<models::TokenPayload>> {
+) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(redirect_uri) = &params.redirect_uri
     else {
         return Err(auth_response::Rejection::InvalidRequest);
@@ -195,13 +207,13 @@ fn handle_authorization_code(
         Some(redirect_uri.clone())
     ).try_build()?;
 
-    Ok(Json(models::TokenPayload::from(token)))
+    Ok(Json(models::TokenResponse::from(token)))
 }
 
 fn handle_client_credentials(
     client: models::ValidatedClient,
     params: TokenRequest,
-) -> auth_response::Result<Json<models::TokenPayload>> {
+) -> auth_response::Result<Json<models::TokenResponse>> {
     match client.get_type() {
         models::ClientType::Confidential => {();},
         models::ClientType::Public => return Err(auth_response::Rejection::InvalidClientId),
@@ -214,13 +226,13 @@ fn handle_client_credentials(
         None
     ).try_build()?;
 
-    Ok(Json(models::TokenPayload::from(token)))
+    Ok(Json(models::TokenResponse::from(token)))
 }
 
 fn handle_device_code(
     client: models::ValidatedClient,
     params: TokenRequest
-) -> auth_response::Result<Json<models::TokenPayload>> {
+) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(device_code) = params.device_code
     else {
         return Err(auth_response::Rejection::InvalidRequest);
@@ -236,13 +248,13 @@ fn handle_device_code(
         None
     ).try_build()?;
 
-    Ok(Json(models::TokenPayload::from(token)))
+    Ok(Json(models::TokenResponse::from(token)))
 }
 
 fn handle_refresh_token(
     client: models::ValidatedClient,
     params: TokenRequest
-) -> auth_response::Result<Json<models::TokenPayload>> {
+) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(refresh_token) = params.refresh_token
     else {
         return Err(auth_response::Rejection::InvalidRequest);
@@ -257,6 +269,6 @@ fn handle_refresh_token(
         None,
     ).try_build()?;
 
-    Ok(Json(models::TokenPayload::from(token)))
+    Ok(Json(models::TokenResponse::from(token)))
 }
 

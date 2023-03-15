@@ -8,7 +8,7 @@ use crate::models::{
 
 /// The auth token provided when a client has successfully authorized through the grant flow
 #[derive(Debug, Serialize)]
-pub struct TokenPayload {
+pub struct TokenResponse {
     pub token_type: String, // usually just 'Bearer'
     pub expires_in: i64,
     pub access_token: String, // 10 minutes
@@ -16,9 +16,9 @@ pub struct TokenPayload {
     pub scopes: String,
 }
 
-impl From<AuthToken> for TokenPayload {
+impl From<AuthToken> for TokenResponse {
     fn from(token: AuthToken) -> Self {
-        TokenPayload {
+        TokenResponse {
             token_type: String::from("Bearer"),
             expires_in: 600,
             access_token: token.access,
@@ -29,14 +29,14 @@ impl From<AuthToken> for TokenPayload {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ClientPayload {
+pub struct ClientResponse {
     pub client_id: Uuid,
     pub client_secret: Option<String>,
 }
 
-impl From<ValidatedClient> for ClientPayload {
+impl From<ValidatedClient> for ClientResponse {
     fn from(client: ValidatedClient) -> Self {
-        ClientPayload {
+        ClientResponse {
             client_id: client.get_id(),
             client_secret: client.get_secret(),
         }
