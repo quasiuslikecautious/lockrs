@@ -1,4 +1,5 @@
 use serde::Serialize;
+use url::Url;
 use uuid::Uuid;
 
 use crate::models::{
@@ -43,4 +44,28 @@ impl From<ValidatedClient> for ClientResponse {
     }
 }
 
+#[derive(Debug, Serialize)]
+pub struct DeviceCodeResponse {
+    pub user_code: String,
+    pub device_code: String,
+    pub verification_uri: Url,
+    pub interval: i32,
+    pub expires_in: i32,
+}
+
+impl DeviceCodeResponse {
+    pub fn new(
+        user_code: String,
+        device_code: String,
+        verification_uri: Url,
+    ) -> Self {
+        Self {
+            user_code,
+            device_code,
+            verification_uri,
+            interval: 5,
+            expires_in: 300,
+        }
+    }
+}
 

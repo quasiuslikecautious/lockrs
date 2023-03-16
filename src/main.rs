@@ -2,10 +2,11 @@
 // [ ] scope handling
 // [ ] better redirect
 // [ ] auth code generation
-// [ ] device code
-//     [ ] generation
-//     [ ] user code generation
-//     [ ] verification uri
+// [x] device code
+//     [x] generation
+//     [x] user code generation
+//     [x] verification uri
+// [ ] device user auth page
 // [ ] auth code page
 // [ ] middlewares
 // [ ] description handling
@@ -30,27 +31,13 @@ use serde::{ Deserialize, Serialize };
 use url::Url;
 use uuid::Uuid;
 
-/// TODO
-/// Coordinate with database and assert that uri has been registered to the provided client_id
-/// For now just assume this is set up and return true
-fn is_redirect_registered(client_id: &String, redirect_uri: &Url) -> bool {
-    return true;
-}
-
-/// TODO
-/// Coordinate with database and assert that scopes exist and that the provided client_id has
-/// access to use all of them 
-/// For now just assume this is set up and return true
-fn verify_scopes(client_id: &String, scopes: &String) -> bool {
-    return true;
-}
-
 /// rfc: https://www.rfc-editor.org/rfc/rfc6749#section-4
 #[tokio::main]
 async fn main() {
     let app = Router::new()
         .route("/authorize", post(handle_authorize))
-        .route("/device/code", get(handle_device_auth_code))
+        .route("/device", get(handle_verification_uri))
+        .route("/device/code", post(handle_device_code_authorize))
         .route("/token", post(handle_token_request))
         .route("/error", get(handle_auth_error))
         .fallback(fallback)
@@ -73,9 +60,13 @@ async fn fallback() -> auth_response::Rejection {
 async fn handle_auth_error(
     params: Query<AuthErrorParams>
 ) -> (StatusCode, Json<auth_response::ErrorMessage>) {
+    let error_code = &params.error;
+    let error_type: auth_response::Rejection = error_code.as_str().into();
+    let error_desc = error_type.into_error_description();
+
     (
         StatusCode::OK,
-        auth_response::ErrorMessage::json(params.error.as_str(), "Description")
+        auth_response::ErrorMessage::json(params.error.as_str(), error_desc)
     )
 }
 
@@ -88,17 +79,17 @@ async fn handle_authorize(
     params: Query<AuthorizeParams>
 ) -> auth_response::Result<Redirect> {
     // validate redirect uri, inform the user of the problem instead of redirecting
-    if !is_redirect_registered(&params.client_id, &params.redirect_uri) {
-        return Err(auth_response::Rejection::InvalidRedirectUri);
-    }
+    // if !is_redirect_registered(&params.client_id, &params.redirect_uri) {
+    //     return Err(auth_response::Rejection::InvalidRedirectUri);
+    // }
 
-    if &params.response_type != "code" {
-        return Err(auth_response::Rejection::UnsupportedResponseType(params.redirect_uri.clone()))
-    }
+    // if &params.response_type != "code" {
+    //     return Err(auth_response::Rejection::UnsupportedResponseType(params.redirect_uri.clone()))
+    // }
 
-    if !verify_scopes(&params.client_id, &params.scope) {
-        return Err(auth_response::Rejection::InvalidScope(params.redirect_uri.clone()));
-    }
+    // if !verify_scopes(&params.client_id, &params.scope) {
+    //     return Err(auth_response::Rejection::InvalidScope(params.redirect_uri.clone()));
+    // }
 
     let code = models::Code::new(&params.client_id, params.scope.clone());
     let callback = format!("{}?code={}&state={}", &params.redirect_uri, &code.code, &params.state);
@@ -123,8 +114,24 @@ struct AuthorizeResponse {
     pub state: String,
 }
 
-async fn handle_device_auth_code() {
-    todo!("issue device code");
+async fn handle_device_code_authorize(
+    extract::ExtractClientCredentials(client): extract::ExtractClientCredentials,
+    Query(params): Query<DeviceAuthCodeParams>
+) -> auth_response::Result<Json<models::DeviceCodeResponse>> {
+    let scopes = params.scope.split(' ').map(|s| s.to_string()).collect::<Vec<String>>();
+    let device_code = models::DeviceCode::new(client, scopes);
+    Ok(
+        Json(device_code.try_generate_code()?)
+    )
+}
+
+#[derive(Deserialize)]
+struct DeviceAuthCodeParams {
+    pub scope: String, 
+}
+
+async fn handle_verification_uri() {
+    todo!("handle web page");
 }
 
 #[derive(Debug, Deserialize)]
@@ -133,7 +140,6 @@ struct TokenRequest {
 
     // client id for public clients
     user_id: Option<Uuid>,
-    client_id: Option<Uuid>,
     
     // authorization code
     redirect_uri: Option<Url>,
@@ -146,7 +152,6 @@ struct TokenRequest {
     // refresh token 
     refresh_token: Option<String>,
 }
-
 #[debug_handler]
 async fn handle_token_request(
     extract::ExtractClientCredentials(client): extract::ExtractClientCredentials,
@@ -159,7 +164,7 @@ async fn handle_token_request(
         "client_credentials" => {
             return handle_client_credentials(client, params);
         },
-        "device_code" => {
+        "urn:ietf:params:oauth:grant-type:device_code" => {
             return handle_device_code(client, params);
         },
         "refresh_token" => {
@@ -178,21 +183,26 @@ fn handle_authorization_code(
         return Err(auth_response::Rejection::InvalidRequest);
     };
 
-    let Some(code) = &params.code
-    else {
-        return Err(auth_response::Rejection::InvalidRequest);
-    };
-
-    let Some(code_verifier) = &params.code_verifier
-    else {
-        return Err(auth_response::Rejection::InvalidRequest);
-    };
-
     let Some(user_id) = &params.user_id
     else {
         return Err(auth_response::Rejection::InvalidRequest);
     };
 
+
+    if matches!(client.get_type(), models::ClientType::Public) {
+        let Some(code) = &params.code
+        else {
+            return Err(auth_response::Rejection::InvalidRequest);
+        };
+
+        let Some(code_verifier) = &params.code_verifier
+        else {
+            return Err(auth_response::Rejection::InvalidRequest);
+        };
+
+        // validate pkce
+    }
+    
     let unvalidated_user = models::UnvalidatedUser::new(*user_id);
     let validated_user = unvalidated_user.validate(&redirect_uri)?;
 
@@ -239,7 +249,7 @@ fn handle_device_code(
     };
 
     // validate device code
-    
+       
 
     let token = models::TokenBuilder::new(
         client,
