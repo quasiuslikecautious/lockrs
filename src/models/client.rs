@@ -61,7 +61,7 @@ impl UnvalidatedClient {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ValidatedClient {
     id: Uuid,
     secret: Option<String>,

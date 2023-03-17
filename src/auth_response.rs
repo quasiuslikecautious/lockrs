@@ -39,6 +39,7 @@ pub enum Rejection {
     UnsupportedGrantType,
     BadVerificationCode,
     ExpiredToken,
+    InvalidGrant,
 }
 
 impl From<&str> for Rejection {
@@ -50,6 +51,7 @@ impl From<&str> for Rejection {
             "unsupported_grant_type"    => Self::UnsupportedGrantType,
             "bad_verification_code"     => Self::BadVerificationCode,
             "expired_token"             => Self::ExpiredToken,
+            "invalid_grant"             => Self::InvalidGrant,
             _                           => Self::Unknown,
         }
     }
@@ -60,23 +62,24 @@ impl Rejection {
         let default_callback_url = String::from("http://127.0.0.1:8080/error");
 
         match self {
-            Self::Unknown => default_callback_url,
-            Self::InvalidRequest => default_callback_url,
-            Self::AccessDenied(callback) => callback.to_string(),
-            Self::ServerError(callback) => {
+            Self::InvalidRequest                    => default_callback_url,
+            Self::AccessDenied(callback)            => callback.to_string(),
+            Self::ServerError(callback)             => {
                 match callback {
                     Some(redirect_uri) => redirect_uri.to_string(),
                     None => default_callback_url,
                 }
             },
-            Self::TemporarilyUnavailable(callback) => callback.to_string(),
-            Self::InvalidClientId => default_callback_url,
-            Self::InvalidRedirectUri => default_callback_url,
+            Self::TemporarilyUnavailable(callback)  => callback.to_string(),
+            Self::InvalidClientId                   => default_callback_url,
+            Self::InvalidRedirectUri                => default_callback_url,
             Self::UnsupportedResponseType(callback) => callback.to_string(),
-            Self::InvalidScope(callback) => callback.to_string(),
-            Self::UnsupportedGrantType => default_callback_url,
-            Self::BadVerificationCode => default_callback_url,
-            Self::ExpiredToken => default_callback_url,
+            Self::InvalidScope(callback)            => callback.to_string(),
+            Self::UnsupportedGrantType              => default_callback_url,
+            Self::BadVerificationCode               => default_callback_url,
+            Self::ExpiredToken                      => default_callback_url,
+            Self::InvalidGrant                      => default_callback_url,
+            _                                       => default_callback_url,
         }
     }
 
@@ -93,6 +96,7 @@ impl Rejection {
             Self::UnsupportedGrantType          => "unsupported_grant_type",
             Self::BadVerificationCode           => "bad_verification_code",
             Self::ExpiredToken                  => "expired_token",
+            Self::InvalidGrant                  => "invalid_grant",
             _                                   => "unknown",
         }
     }
@@ -110,6 +114,7 @@ impl Rejection {
             Self::UnsupportedGrantType          => "Unsupported grant type requested",
             Self::BadVerificationCode           => "The device code supplied is invalid",
             Self::ExpiredToken                  => "The device code supplied has expired",
+            Self::InvalidGrant                  => "The provided grant for token exchange is invalid",
             _                                   => "Unknown error code supplied"
         }
     }

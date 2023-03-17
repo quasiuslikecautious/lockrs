@@ -5,8 +5,6 @@ use url::Url;
 
 use crate::{auth_response, db, models::{self, response}, schema};
 
-
-
 pub struct DeviceCode {
     pub client: models::ValidatedClient,
     pub scopes: Vec<String>,
@@ -27,7 +25,6 @@ impl DeviceCode {
         let user_code = Self::generate_user_code();
         let device_code = Self::generate_device_code();
 
-
         let connection = &mut db::establish_connection();
         connection.build_transaction()
             .read_write()
@@ -43,25 +40,25 @@ impl DeviceCode {
                     .execute(conn)
             })
             .map_err(|_| auth_response::Rejection::ServerError(None))?;
-
+       
         let verification_uri = Url::parse("http://127.0.0.1:8080/device").unwrap();
 
         Ok(response::DeviceCodeResponse::new(
             user_code,
             device_code,
-            verification_uri,
+            verification_uri
         ))
     }
 
     pub fn poll_authorization(
         device_code: &String,
     ) -> auth_response::Result<bool> {
-        return Ok(true);
+        todo!("implement polling handling");
     }
 
     fn generate_user_code() -> String {
-        const CHARSET: &[u8] = b"0123456789BCDFGHJKLMMNPQRSTVWXZ";
-        const CODE_LEN: usize = 8;
+        const ALPHABET: &[u8] = b"0123456789ABCDEFGHIJKLMMNOPQRSTUVWXYZ";
+        const CODE_LEN: usize = 6;
 
         let mut code = String::with_capacity(CODE_LEN);
         let mut buffer = [0u8; CODE_LEN];
@@ -70,8 +67,8 @@ impl DeviceCode {
         rng.fill(&mut buffer).unwrap();
         
         for byte in buffer.iter() {
-            let idx = byte % CHARSET.len() as u8;
-            let c = char::from(CHARSET[idx as usize]);
+            let idx = byte % ALPHABET.len() as u8;
+            let c = char::from(ALPHABET[idx as usize]);
             code.push(c);
         }
         

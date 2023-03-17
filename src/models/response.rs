@@ -7,26 +7,10 @@ use crate::models::{
     AuthToken,
 };
 
-/// The auth token provided when a client has successfully authorized through the grant flow
 #[derive(Debug, Serialize)]
-pub struct TokenResponse {
-    pub token_type: String, // usually just 'Bearer'
-    pub expires_in: i64,
-    pub access_token: String, // 10 minutes
-    pub refresh_token: String, // 24 hours
-    pub scopes: String,
-}
-
-impl From<AuthToken> for TokenResponse {
-    fn from(token: AuthToken) -> Self {
-        TokenResponse {
-            token_type: String::from("Bearer"),
-            expires_in: 600,
-            access_token: token.access,
-            refresh_token: token.refresh,
-            scopes: token.scopes,
-        }
-    }
+pub struct AuthCodeResponse {
+    pub code: String,
+    pub state: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -65,6 +49,28 @@ impl DeviceCodeResponse {
             verification_uri,
             interval: 5,
             expires_in: 300,
+        }
+    }
+}
+
+/// The auth token provided when a client has successfully authorized through the grant flow
+#[derive(Debug, Serialize)]
+pub struct TokenResponse {
+    pub token_type: String, // usually just 'Bearer'
+    pub expires_in: i64,
+    pub access_token: String, // 10 minutes
+    pub refresh_token: String, // 24 hours
+    pub scopes: String,
+}
+
+impl From<AuthToken> for TokenResponse {
+    fn from(token: AuthToken) -> Self {
+        TokenResponse {
+            token_type: String::from("Bearer"),
+            expires_in: 600,
+            access_token: token.access,
+            refresh_token: token.refresh,
+            scopes: token.scopes,
         }
     }
 }

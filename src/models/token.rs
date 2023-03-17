@@ -96,7 +96,6 @@ impl TokenBuilder {
             Some(u) => Some(u.get_id()),
             None => None,
         };
-
         let connection = &mut db::establish_connection();
         connection.build_transaction()
             .read_write()

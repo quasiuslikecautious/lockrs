@@ -38,7 +38,7 @@ impl UnvalidatedUser {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ValidatedUser {
     id: Uuid,
 }

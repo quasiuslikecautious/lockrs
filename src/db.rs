@@ -30,6 +30,19 @@ pub struct DbAccessToken {
 }
 
 #[derive(Debug, Queryable, Insertable)]
+#[diesel(primary_key(id), table_name = schema::authorization_codes)]
+pub struct DbAuthorizationCode {
+    pub id: i32,
+    pub code: String,
+    pub client_id: Uuid,
+    pub user_id: Uuid,
+    pub redirect_uri: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub expires_at: chrono::NaiveDateTime,
+    pub used: bool,
+}
+
+#[derive(Debug, Queryable, Insertable)]
 #[diesel(primary_key(id), table_name = schema::clients)]
 pub struct DbClient {
     pub id: Uuid,
