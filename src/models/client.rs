@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-use uuid::Uuid;
 
 use crate::{
     auth_response,
@@ -12,14 +11,14 @@ use crate::{
 /// algorithm and used as the password.
 #[derive(Debug)]
 pub struct UnvalidatedClient {
-    id: Uuid,
+    id: String,
     secret: Option<String>,
     client_type: ClientType,
 }
 
 impl UnvalidatedClient {
     pub fn new(
-        id: &Uuid, 
+        id: &String, 
         secret: Option<String>
     ) -> Self {
         let client_type = match &secret {
@@ -54,7 +53,7 @@ impl UnvalidatedClient {
             .map_err(|_| auth_response::Rejection::InvalidClientId)?;
 
         Ok(ValidatedClient {
-            id: self.id,
+            id: self.id.clone(),
             secret: self.secret.clone(),
             client_type: self.client_type,
         })
@@ -63,13 +62,13 @@ impl UnvalidatedClient {
 
 #[derive(Clone, Debug)]
 pub struct ValidatedClient {
-    id: Uuid,
+    id: String,
     secret: Option<String>,
     client_type: ClientType,
 }
 
 impl ValidatedClient {
-    pub fn get_id(&self) -> Uuid {
+    pub fn get_id(&self) -> String {
         self.id.clone()
     }
 

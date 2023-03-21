@@ -4,7 +4,7 @@ diesel::table! {
     access_tokens (id) {
         id -> Int4,
         token -> Varchar,
-        client_id -> Uuid,
+        client_id -> Varchar,
         user_id -> Nullable<Uuid>,
         created_at -> Timestamp,
         expires_at -> Timestamp,
@@ -16,7 +16,7 @@ diesel::table! {
     authorization_codes (id) {
         id -> Int4,
         code -> Varchar,
-        client_id -> Uuid,
+        client_id -> Varchar,
         user_id -> Uuid,
         redirect_uri -> Text,
         created_at -> Timestamp,
@@ -27,7 +27,7 @@ diesel::table! {
 
 diesel::table! {
     clients (id) {
-        id -> Uuid,
+        id -> Varchar,
         secret -> Nullable<Text>,
         redirect_uri -> Text,
         is_public -> Bool,
@@ -38,7 +38,7 @@ diesel::table! {
 diesel::table! {
     device_codes (id) {
         id -> Int4,
-        client_id -> Uuid,
+        client_id -> Varchar,
         user_code -> Varchar,
         device_code -> Varchar,
         created_at -> Timestamp,
@@ -50,7 +50,7 @@ diesel::table! {
 diesel::table! {
     redirect_uris (id) {
         id -> Int4,
-        client_id -> Uuid,
+        client_id -> Varchar,
         uri -> Text,
         created_at -> Timestamp,
         updated_at -> Timestamp,
@@ -61,7 +61,7 @@ diesel::table! {
     refresh_tokens (id) {
         id -> Int4,
         token -> Varchar,
-        client_id -> Uuid,
+        client_id -> Varchar,
         user_id -> Nullable<Uuid>,
         created_at -> Timestamp,
         expires_at -> Timestamp,

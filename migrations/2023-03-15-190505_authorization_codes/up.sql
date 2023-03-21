@@ -2,7 +2,7 @@
 CREATE TABLE authorization_codes (
   id SERIAL PRIMARY KEY,
   code VARCHAR(100) NOT NULL,
-  client_id UUID NOT NULL,
+  client_id VARCHAR(32) NOT NULL,
   user_id UUID NOT NULL,
   redirect_uri TEXT NOT NULL,
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),

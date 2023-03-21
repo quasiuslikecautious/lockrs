@@ -23,7 +23,7 @@ pub fn establish_connection() -> PgConnection {
 pub struct DbAccessToken {
     pub id: i32,
     pub token: String,
-    pub client_id: Uuid,
+    pub client_id: String,
     pub user_id: Uuid,
     pub expires_at: chrono::NaiveDateTime,
     pub scopes: Vec<String>,
@@ -34,7 +34,7 @@ pub struct DbAccessToken {
 pub struct DbAuthorizationCode {
     pub id: i32,
     pub code: String,
-    pub client_id: Uuid,
+    pub client_id: String,
     pub user_id: Uuid,
     pub redirect_uri: String,
     pub created_at: chrono::NaiveDateTime,
@@ -45,7 +45,7 @@ pub struct DbAuthorizationCode {
 #[derive(Debug, Queryable, Insertable)]
 #[diesel(primary_key(id), table_name = schema::clients)]
 pub struct DbClient {
-    pub id: Uuid,
+    pub id: String,
     pub secret: Option<String>,
     pub redirect_uri: String,
     pub is_public: bool,
@@ -56,7 +56,7 @@ pub struct DbClient {
 #[diesel(primary_key(id), table_name = schema::device_codes)]
 pub struct DbDeviceCode {
    pub id: i32,
-   pub client_id: Uuid,
+   pub client_id: String,
    pub user_code: String,
    pub device_code: String,
    pub created_at: chrono::NaiveDateTime,
@@ -68,7 +68,7 @@ pub struct DbDeviceCode {
 #[diesel(primary_key(id), table_name = schema::redirect_uris)]
 pub struct DbRedirectUri {
     pub id: i32,
-    pub client_id: Uuid,
+    pub client_id: String,
     pub uri: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -79,7 +79,7 @@ pub struct DbRedirectUri {
 pub struct DbRefreshToken {
     pub id: i32,
     pub token: String,
-    pub client_id: Uuid,
+    pub client_id: String,
     pub user_id: Uuid,
     pub created_at: chrono::NaiveDateTime,
     pub expires_at: chrono::NaiveDateTime,

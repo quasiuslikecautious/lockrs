@@ -9,6 +9,7 @@
 // [ ] auth code page
 // [ ] middlewares
 // [ ] description handling
+// [ ] add PKCE support to auth code flow
 
 mod schema;
 mod db;
@@ -26,7 +27,7 @@ use axum::{
     routing::{get, post},
 };
 use axum_macros::debug_handler;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use url::Url;
 use uuid::Uuid;
 
@@ -34,7 +35,7 @@ use uuid::Uuid;
 /// Coordinate with database and assert that scopes exist and that the provided client_id has
 /// access to use all of them 
 /// For now just assume this is set up and return true
-fn verify_scopes(client_id: &Uuid, scopes: &String) -> bool {
+fn verify_scopes(client_id: &String, scopes: &String) -> bool {
     return true;
 }
 
@@ -81,12 +82,14 @@ struct AuthErrorParams {
 }
 
 async fn handle_authorize(
-    extract::ExtractClientCredentials(client): extract::ExtractClientCredentials,
+    extract::ExtractClientCredentials(unvalidated_client): extract::ExtractClientCredentials,
     params: Query<AuthorizeParams>
 ) -> auth_response::Result<Redirect> {
     if &params.response_type != "code" {
         return Err(auth_response::Rejection::UnsupportedResponseType(params.redirect_uri.clone()))
     }
+
+    let client = unvalidated_client.validate()?;
 
     if !verify_scopes(&client.get_id(), &params.scope) {
         return Err(auth_response::Rejection::InvalidScope(params.redirect_uri.clone()));
@@ -115,9 +118,10 @@ struct AuthorizeParams {
 }
 
 async fn handle_device_auth_code(
-    extract::ExtractClientCredentials(client): extract::ExtractClientCredentials,
+    extract::ExtractClientCredentials(unvalidated_client): extract::ExtractClientCredentials,
     Query(params): Query<DeviceAuthCodeParams>
 ) -> auth_response::Result<Json<models::DeviceCodeResponse>> {
+    let client = unvalidated_client.validate()?;
     let scopes = params.scope.split(' ').map(|s| s.to_string()).collect::<Vec<String>>();
     let device_code = models::DeviceCode::new(client, scopes);
     Ok(
@@ -148,30 +152,31 @@ struct TokenRequest {
     // refresh token 
     refresh_token: Option<String>,
 }
+
 #[debug_handler]
 async fn handle_token_request(
-    extract::ExtractClientCredentials(client): extract::ExtractClientCredentials,
+    extract::ExtractClientCredentials(unvalidated_client): extract::ExtractClientCredentials,
     Query(params): Query<TokenRequest>
 ) -> auth_response::Result<Json<models::TokenResponse>> {
     match params.grant_type.as_str() {
         "authorization_code" => {
-            return handle_authorization_code(client, params);
+            return handle_authorization_code(unvalidated_client, params);
         },
         "client_credentials" => {
-            return handle_client_credentials(client, params);
+            return handle_client_credentials(unvalidated_client, params);
         },
         "device_code" => {
-            return handle_device_code(client, params);
+            return handle_device_code(unvalidated_client, params);
         },
         "refresh_token" => {
-            return handle_refresh_token(client, params);
+            return handle_refresh_token(unvalidated_client, params);
         }
         _ => Err(auth_response::Rejection::UnsupportedGrantType),
     }
 }
 
 fn handle_authorization_code(
-    client: models::ValidatedClient,
+    unvalidated_client: models::UnvalidatedClient,
     params: TokenRequest
 ) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(redirect_uri) = &params.redirect_uri
@@ -194,6 +199,7 @@ fn handle_authorization_code(
         return Err(auth_response::Rejection::InvalidRequest);
     };
 
+    let client = unvalidated_client.validate()?;
     let user = models::UnvalidatedUser::new(*user_id).validate(&redirect_uri)?;
 
     // validate authorization code
@@ -212,9 +218,10 @@ fn handle_authorization_code(
 }
 
 fn handle_client_credentials(
-    client: models::ValidatedClient,
+    unvalidated_client: models::UnvalidatedClient,
     params: TokenRequest,
 ) -> auth_response::Result<Json<models::TokenResponse>> {
+    let client = unvalidated_client.validate()?;
     match client.get_type() {
         models::ClientType::Confidential => {();},
         models::ClientType::Public => return Err(auth_response::Rejection::InvalidClientId),
@@ -231,7 +238,7 @@ fn handle_client_credentials(
 }
 
 fn handle_device_code(
-    client: models::ValidatedClient,
+    unvalidated_client: models::UnvalidatedClient,
     params: TokenRequest
 ) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(device_code) = params.device_code
@@ -239,6 +246,7 @@ fn handle_device_code(
         return Err(auth_response::Rejection::InvalidRequest);
     };
 
+    let client = unvalidated_client.validate()?;
     // validate device code
        
 
@@ -253,7 +261,7 @@ fn handle_device_code(
 }
 
 fn handle_refresh_token(
-    client: models::ValidatedClient,
+    unvalidated_client: models::UnvalidatedClient,
     params: TokenRequest
 ) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(refresh_token) = params.refresh_token
@@ -261,6 +269,7 @@ fn handle_refresh_token(
         return Err(auth_response::Rejection::InvalidRequest);
     };
 
+    let client = unvalidated_client.validate()?;
     // validate refresh token and mark as used 
     
     let token = models::TokenBuilder::new(

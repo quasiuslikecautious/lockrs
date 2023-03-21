@@ -1,7 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE device_codes (
   id SERIAL PRIMARY KEY,
-  client_id UUID NOT NULL,
+  client_id VARCHAR(32) NOT NULL,
   user_code VARCHAR(8) NOT NULL,
   device_code VARCHAR(44) UNIQUE NOT NULL,
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),

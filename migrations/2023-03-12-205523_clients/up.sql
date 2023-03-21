@@ -1,6 +1,6 @@
 -- Your SQL goes here
 CREATE TABLE IF NOT EXISTS clients (
-	id UUID PRIMARY KEY,
+	id VARCHAR(32) PRIMARY KEY,
 	secret TEXT,
 	redirect_uri TEXT NOT NULL,
 	is_public BOOLEAN NOT NULL,

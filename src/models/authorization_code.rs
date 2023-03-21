@@ -1,3 +1,4 @@
+use base64::{Engine as _, engine::general_purpose};
 use diesel::prelude::*;
 use ring::rand::{SecureRandom, SystemRandom};
 use url::Url;
@@ -45,22 +46,16 @@ impl AuthorizationCode {
 
         Ok(code)
     }
-// juQdDmb_bgHttGEQ-TBoJzyvcZ62AYo1
+
     fn generate_code() -> String {
-        const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.";
         const CODE_LEN: usize = 32;
 
-        let mut code = String::with_capacity(CODE_LEN);
         let mut buffer = [0u8; CODE_LEN];
         let rng = SystemRandom::new();
 
         rng.fill(&mut buffer).unwrap();
 
-        for byte in buffer.iter() {
-            let idx = byte % ALPHABET.len() as u8;
-            let c = char::from(ALPHABET[idx as usize]);
-            code.push(c);
-        }
+        let code = general_purpose::URL_SAFE_NO_PAD.encode(buffer);
 
         code
     }

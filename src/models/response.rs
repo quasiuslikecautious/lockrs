@@ -15,7 +15,7 @@ pub struct AuthCodeResponse {
 
 #[derive(Debug, Serialize)]
 pub struct ClientResponse {
-    pub client_id: Uuid,
+    pub client_id: String,
     pub client_secret: Option<String>,
 }
 

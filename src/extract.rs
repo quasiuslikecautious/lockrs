@@ -8,7 +8,6 @@ use axum::{
 };
 use base64::{Engine as _, engine::general_purpose};
 use serde::Deserialize;
-use uuid::Uuid;
 
 use crate::{
     auth_response,
@@ -21,7 +20,7 @@ struct ClientIdQueryParam {
 }
 
 #[derive(Debug)]
-pub struct ExtractClientCredentials(pub models::ValidatedClient);
+pub struct ExtractClientCredentials(pub models::UnvalidatedClient);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for ExtractClientCredentials
@@ -33,21 +32,18 @@ where
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         let auth_header = &parts.headers.get(AUTHORIZATION).map(|val| val.to_str().unwrap());
 
-        let mut unvalidated_client: Option<models::UnvalidatedClient> = None;
-
         if auth_header.is_some() {
-            unvalidated_client = Some(extract_credentials_from_header(auth_header.unwrap())?);
-        } else {
-            let Some(query) = &parts.uri.query()
-            else {
-                return Err(Self::Rejection::InvalidClientId) 
-            };
-
-            unvalidated_client = Some(extract_credentials_from_query(query)?);
+            let unvalidated_client = extract_credentials_from_header(auth_header.unwrap())?;
+            return Ok(Self(unvalidated_client));
         }
+            
+        let Some(query) = &parts.uri.query()
+        else {
+            return Err(Self::Rejection::InvalidClientId) 
+        };
 
-        let validated_client = unvalidated_client.unwrap().validate()?;
-        Ok(ExtractClientCredentials(validated_client))
+        let unvalidated_client = extract_credentials_from_query(query)?;
+        return Ok(Self(unvalidated_client));
     }
 }
 
@@ -73,11 +69,8 @@ fn extract_credentials_from_header(client_auth: &str) -> auth_response::Result<m
         return Err(auth_response::Rejection::InvalidClientId);
     };
 
-    let client_uuid = Uuid::parse_str(client_id)
-        .map_err(|_| auth_response::Rejection::InvalidClientId)?;
-
     let unvalidated_client = models::UnvalidatedClient::new(
-        &client_uuid,
+        &client_id.to_string(),
         Some(client_secret.to_string())
     );
 
@@ -90,13 +83,8 @@ fn extract_credentials_from_query(query: &str) -> auth_response::Result<models::
         return Err(auth_response::Rejection::InvalidClientId) 
     };
 
-    let Some(client_uuid) = Uuid::parse_str(&client_id_param.client_id).ok()
-    else {
-        return Err(auth_response::Rejection::InvalidClientId);
-    };
-
     let unvalidated_client = models::UnvalidatedClient::new(
-        &client_uuid,
+        &client_id_param.client_id,
         None,
     );
 
