@@ -21,14 +21,17 @@ mod extract;
 use std::net::SocketAddr;
 
 use axum::{
-    extract::{Json, Query},
-    http::StatusCode,
-    response::Redirect,
     Router,
+    body::{boxed, Body},
+    extract::{Json, Query},
+    http::{Response, StatusCode},
+    response::Redirect,
     routing::{get, post},
 };
 use axum_macros::debug_handler;
-use serde::{Deserialize};
+use serde::Deserialize;
+use tower::{ServiceBuilder, ServiceExt};
+use tower_http::services::ServeDir;
 use url::Url;
 use uuid::Uuid;
 
@@ -43,16 +46,27 @@ fn verify_scopes(client_id: &String, scopes: &String) -> bool {
 /// rfc: https://www.rfc-editor.org/rfc/rfc6749#section-4
 #[tokio::main]
 async fn main() {
-    let app = Router::new()
+    let api_routes = Router::new()
         .route("/authorize", post(handle_authorize))
         .route("/device/code", post(handle_device_auth_code))
         .route("/token", post(handle_token_request))
-        .route("/error", get(handle_auth_error))
-        .fallback(fallback)
+        .route("/error", get(handle_auth_error));
+
+    let app = Router::new()
+        .nest("/api", api_routes)
+        .fallback_service(get(|req| async move {
+            match ServeDir::new(String::from("./dist")).oneshot(req).await {
+                Ok(res) => res.map(boxed),
+                Err(err) => Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(boxed(Body::from(format!("error: {}", err))))
+                    .expect("error response"),
+            }
+        }))
         .with_state(());
 
     // run it with hyper on localhost:8080
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8081));
     println!("listening at {}", addr.to_string());
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
