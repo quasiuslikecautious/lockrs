@@ -7,8 +7,8 @@ use crate::{
     auth_response,
     db, 
     models::{
-        ValidatedClient, 
-        ValidatedUser
+        Client, 
+        User
     },
     schema,
 };
@@ -21,16 +21,16 @@ pub struct AuthToken {
 
 #[derive(Debug)]
 pub struct TokenBuilder {
-    client: ValidatedClient ,
-    user: Option<ValidatedUser>,
+    client: Client ,
+    user: Option<User>,
     scopes: String,
     redirect_uri: Option<Url>,
 }
 
 impl TokenBuilder {
     pub fn new(
-        client: ValidatedClient,
-        user: Option<ValidatedUser>,
+        client: Client,
+        user: Option<User>,
         scopes: String,
         redirect_uri: Option<Url>,
     ) -> Self {

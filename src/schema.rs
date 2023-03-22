@@ -16,6 +16,8 @@ diesel::table! {
     authorization_codes (id) {
         id -> Int4,
         code -> Varchar,
+        challenge -> Varchar,
+        is_challenge_plain -> Bool,
         client_id -> Varchar,
         user_id -> Uuid,
         redirect_uri -> Text,

@@ -4,11 +4,11 @@ use url::Url;
 use crate::{auth_response, db, models, schema};
 
 pub struct RedirectUri {
-    client: models::ValidatedClient,
+    client: models::Client,
 }
 
 impl RedirectUri {
-    pub fn new(client: &models::ValidatedClient) -> Self {
+    pub fn new(client: &models::Client) -> Self {
         Self {
             client: client.clone(),
         }

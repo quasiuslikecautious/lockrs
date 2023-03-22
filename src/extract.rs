@@ -20,7 +20,7 @@ struct ClientIdQueryParam {
 }
 
 #[derive(Debug)]
-pub struct ExtractClientCredentials(pub models::UnvalidatedClient);
+pub struct ExtractClientCredentials(pub models::ClientCredentials);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for ExtractClientCredentials
@@ -47,7 +47,7 @@ where
     }
 }
 
-fn extract_credentials_from_header(client_auth: &str) -> auth_response::Result<models::UnvalidatedClient> {
+fn extract_credentials_from_header(client_auth: &str) -> auth_response::Result<models::ClientCredentials> {
     let Some((token_type, token)) = client_auth.split_once(' ')
     else {
         return Err(auth_response::Rejection::InvalidClientId);
@@ -69,7 +69,7 @@ fn extract_credentials_from_header(client_auth: &str) -> auth_response::Result<m
         return Err(auth_response::Rejection::InvalidClientId);
     };
 
-    let unvalidated_client = models::UnvalidatedClient::new(
+    let unvalidated_client = models::ClientCredentials::new(
         &client_id.to_string(),
         Some(client_secret.to_string())
     );
@@ -77,13 +77,13 @@ fn extract_credentials_from_header(client_auth: &str) -> auth_response::Result<m
     Ok(unvalidated_client)
 }
 
-fn extract_credentials_from_query(query: &str) -> auth_response::Result<models::UnvalidatedClient> {
+fn extract_credentials_from_query(query: &str) -> auth_response::Result<models::ClientCredentials> {
     let Some(client_id_param) = serde_urlencoded::from_str::<ClientIdQueryParam>(query).ok()
     else {
         return Err(auth_response::Rejection::InvalidClientId) 
     };
 
-    let unvalidated_client = models::UnvalidatedClient::new(
+    let unvalidated_client = models::ClientCredentials::new(
         &client_id_param.client_id,
         None,
     );

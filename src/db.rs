@@ -34,6 +34,8 @@ pub struct DbAccessToken {
 pub struct DbAuthorizationCode {
     pub id: i32,
     pub code: String,
+    pub challenge: String,
+    pub is_challenge_plain: bool,
     pub client_id: String,
     pub user_id: Uuid,
     pub redirect_uri: String,

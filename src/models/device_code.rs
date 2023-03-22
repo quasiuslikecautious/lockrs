@@ -6,12 +6,12 @@ use url::Url;
 use crate::{auth_response, db, models::{self, response}, schema};
 
 pub struct DeviceCode {
-    pub client: models::ValidatedClient,
+    pub client: models::Client,
     pub scopes: Vec<String>,
 }
 
 impl DeviceCode {
-    pub fn new(client: models::ValidatedClient, scopes: Vec<String>) -> Self {
+    pub fn new(client: models::Client, scopes: Vec<String>) -> Self {
         Self {
             client,
             scopes,

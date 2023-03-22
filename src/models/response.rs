@@ -1,9 +1,8 @@
 use serde::Serialize;
 use url::Url;
-use uuid::Uuid;
 
 use crate::models::{
-    ValidatedClient,
+    Client,
     AuthToken,
 };
 
@@ -19,8 +18,8 @@ pub struct ClientResponse {
     pub client_secret: Option<String>,
 }
 
-impl From<ValidatedClient> for ClientResponse {
-    fn from(client: ValidatedClient) -> Self {
+impl From<Client> for ClientResponse {
+    fn from(client: Client) -> Self {
         ClientResponse {
             client_id: client.get_id(),
             client_secret: client.get_secret(),

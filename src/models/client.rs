@@ -10,13 +10,13 @@ use crate::{
 /// and the encoded value is used as the username; the client password is encoded using the same
 /// algorithm and used as the password.
 #[derive(Debug)]
-pub struct UnvalidatedClient {
+pub struct ClientCredentials {
     id: String,
     secret: Option<String>,
     client_type: ClientType,
 }
 
-impl UnvalidatedClient {
+impl ClientCredentials {
     pub fn new(
         id: &String, 
         secret: Option<String>
@@ -33,7 +33,7 @@ impl UnvalidatedClient {
         }
     }
 
-    pub fn validate(&self) -> auth_response::Result<ValidatedClient> {
+    pub fn validate(&self) -> auth_response::Result<Client> {
         use crate::schema::clients::dsl::*;
 
         let mut query = clients
@@ -52,7 +52,7 @@ impl UnvalidatedClient {
             })
             .map_err(|_| auth_response::Rejection::InvalidClientId)?;
 
-        Ok(ValidatedClient {
+        Ok(Client {
             id: self.id.clone(),
             secret: self.secret.clone(),
             client_type: self.client_type,
@@ -61,13 +61,13 @@ impl UnvalidatedClient {
 }
 
 #[derive(Clone, Debug)]
-pub struct ValidatedClient {
+pub struct Client {
     id: String,
     secret: Option<String>,
     client_type: ClientType,
 }
 
-impl ValidatedClient {
+impl Client {
     pub fn get_id(&self) -> String {
         self.id.clone()
     }

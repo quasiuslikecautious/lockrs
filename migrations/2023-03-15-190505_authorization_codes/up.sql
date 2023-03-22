@@ -1,13 +1,18 @@
 -- Your SQL goes here
-CREATE TABLE authorization_codes (
+CREATE TABLE IF NOT EXISTS authorization_codes (
   id SERIAL PRIMARY KEY,
   code VARCHAR(100) NOT NULL,
+  challenge VARCHAR(128) NOT NULL,
+  is_challenge_plain BOOLEAN NOT NULL,
   client_id VARCHAR(32) NOT NULL,
   user_id UUID NOT NULL,
   redirect_uri TEXT NOT NULL,
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   used BOOLEAN NOT NULL DEFAULT FALSE,
+  CONSTRAINT min_challenge_length CHECK (
+    (LENGTH(challenge) >= 43)
+  ),
   CONSTRAINT authorization_codes_client_id_fkey
     FOREIGN KEY (client_id)
     REFERENCES clients (id)
@@ -16,7 +21,7 @@ CREATE TABLE authorization_codes (
     FOREIGN KEY (client_id, redirect_uri)
     REFERENCES redirect_uris (client_id, uri)
     ON DELETE CASCADE,
-  CONSTRAINT authorization_codes_user_id
+  CONSTRAINT authorization_codes_user_id_fkey
     FOREIGN KEY (user_id)
     REFERENCES users (id)
     ON DELETE CASCADE

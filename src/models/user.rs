@@ -9,18 +9,18 @@ use crate::{
 
 
 #[derive(Debug)]
-pub struct UnvalidatedUser {
+pub struct UserCredentials {
     id: Uuid,
 }
 
-impl UnvalidatedUser {
+impl UserCredentials {
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
         }
     }
 
-    pub fn validate(&self, redirect_uri: &Url) -> Result<ValidatedUser> {
+    pub fn validate(&self, redirect_uri: &Url) -> Result<User> {
         use crate::schema::users::dsl::*;
         let connection = &mut db::establish_connection();
         let transaction = connection.build_transaction()
@@ -32,18 +32,18 @@ impl UnvalidatedUser {
             })
             .map_err(|_| Rejection::AccessDenied(redirect_uri.clone()))?;
 
-        Ok(ValidatedUser{
+        Ok(User{
             id: self.id,
         })
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct ValidatedUser {
+pub struct User {
     id: Uuid,
 }
 
-impl ValidatedUser {
+impl User {
     pub fn get_id(&self) -> Uuid {
         self.id
     }
