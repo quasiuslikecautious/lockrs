@@ -10,22 +10,17 @@ use crate::{auth_response, db, models, schema};
 
 /// The authorization grant code supplied in the authorization grant step of the auth flow
 pub struct AuthorizationCode {
-    client: models::Client,
-    user: models::User,
+    
 }
 
 impl AuthorizationCode {
-    pub fn new(
+    pub fn try_generate(
         client: &models::Client, 
-        user: &models::User
-    )-> Self {
-        Self {
-            client: client.clone(),
-            user: user.clone(),
-      }
-    }
-
-    pub fn try_generate(&self, challenge: &str, is_plain: bool, redirect: &Url, scopes: Vec<String>) -> auth_response::Result<String> {
+        challenge: &str, 
+        is_plain: bool, 
+        redirect: &Url, 
+        scopes: Vec<String>
+    ) -> auth_response::Result<String> {
         use schema::authorization_codes;
 
         let code = Self::generate_code();
@@ -40,8 +35,7 @@ impl AuthorizationCode {
                         authorization_codes::code.eq(&code),
                         authorization_codes::challenge.eq(challenge),
                         authorization_codes::is_challenge_plain.eq(is_plain),
-                        authorization_codes::client_id.eq(&self.client.get_id()),
-                        authorization_codes::user_id.eq(&self.user.get_id()),
+                        authorization_codes::client_id.eq(client.get_id()),
                         authorization_codes::redirect_uri.eq(redirect.as_str()),
                         authorization_codes::expires_at.eq(&expiry),
                     ))
@@ -66,7 +60,12 @@ impl AuthorizationCode {
     }
 
     /// Decrypt/Verify (and remove from db if necessary) provided code
-    pub fn validate(&self, code: &str, verifier: &str, redirect: &Url) -> auth_response::Result<()> {
+    pub fn validate(
+        client: &models::Client,
+        code: &str,
+        verifier: &str,
+        redirect: &Url
+    ) -> auth_response::Result<()> {
         use schema::authorization_codes;
 
         let now = chrono::Utc::now().naive_utc();
@@ -77,8 +76,7 @@ impl AuthorizationCode {
             .run(|conn| {
                 authorization_codes::table
                     .filter(authorization_codes::code.eq(code))
-                    .filter(authorization_codes::client_id.eq(&self.client.get_id()))
-                    .filter(authorization_codes::user_id.eq(&self.user.get_id()))
+                    .filter(authorization_codes::client_id.eq(client.get_id()))
                     .filter(authorization_codes::redirect_uri.eq(&redirect.as_str()))
                     .filter(authorization_codes::expires_at.gt(&now))
                     .filter(authorization_codes::used.eq(false))

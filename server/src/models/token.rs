@@ -8,7 +8,6 @@ use crate::{
     db, 
     models::{
         Client, 
-        User
     },
     schema,
 };
@@ -22,7 +21,6 @@ pub struct AuthToken {
 #[derive(Debug)]
 pub struct TokenBuilder {
     client: Client ,
-    user: Option<User>,
     scopes: String,
     redirect_uri: Option<Url>,
 }
@@ -30,13 +28,11 @@ pub struct TokenBuilder {
 impl TokenBuilder {
     pub fn new(
         client: Client,
-        user: Option<User>,
         scopes: String,
         redirect_uri: Option<Url>,
     ) -> Self {
         Self {
             client,
-            user,
             scopes,
             redirect_uri,
         }
@@ -63,10 +59,6 @@ impl TokenBuilder {
         let new_token = Self::generate_token();
         let expiry = (chrono::Utc::now() + chrono::Duration::minutes(10)).naive_utc();
         let parsed_scopes = &self.scopes.split(' ').map(|s| s.to_string()).collect::<Vec<String>>();
-        let mapped_user_id = match &self.user {
-            Some(u) => Some(u.get_id()),
-            None => None,
-        };
 
         let connection = &mut db::establish_connection();
         connection.build_transaction()
@@ -76,7 +68,6 @@ impl TokenBuilder {
                     .values((
                         token.eq(&new_token),
                         client_id.eq(&self.client.get_id()),
-                        user_id.eq(mapped_user_id),
                         expires_at.eq(expiry),
                         scopes.eq(&parsed_scopes),
                     ))
@@ -92,10 +83,6 @@ impl TokenBuilder {
         let new_token = Self::generate_token();
         let expiry = (chrono::Utc::now() + chrono::Duration::hours(24)).naive_utc();
         let parsed_scopes = &self.scopes.split(' ').map(|s| s.to_string()).collect::<Vec<String>>();
-        let mapped_user_id = match &self.user {
-            Some(u) => Some(u.get_id()),
-            None => None,
-        };
         let connection = &mut db::establish_connection();
         connection.build_transaction()
             .read_write()
@@ -104,7 +91,6 @@ impl TokenBuilder {
                     .values((
                         token.eq(&new_token),
                         client_id.eq(&self.client.get_id()),
-                        user_id.eq(&mapped_user_id),
                         expires_at.eq(&expiry),
                         scopes.eq(&parsed_scopes),
                     ))

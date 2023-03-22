@@ -21,6 +21,8 @@ pub fn DevicePage() -> Html {
                         type="text" 
                         id="device-code-input" 
                         name="device-code" 
+                        minlength="8" 
+                        maxlength="8"
                         placeholder="Enter code"
                     />
                 </form>

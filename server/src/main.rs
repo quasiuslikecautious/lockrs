@@ -33,7 +33,6 @@ use serde::Deserialize;
 use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::ServeDir;
 use url::Url;
-use uuid::Uuid;
 
 /// TODO
 /// Coordinate with database and assert that scopes exist and that the provided client_id has
@@ -113,16 +112,16 @@ async fn handle_authorize(
     // validate redirect uri, inform the user of the problem instead of redirecting
     models::RedirectUri::new(&client).validate(&params.redirect_uri)?;
 
-    let user = models::UserCredentials::new(params.user_id).validate(&params.redirect_uri)?;
     let scopes: Vec<String> = params.scope.split(' ').map(|s| s.to_string()).collect();
-
     let is_plain = !params.code_challenge_method.eq("S256");
 
-    let code = models::AuthorizationCode::new(&client, &user).try_generate(
+    let code = models::AuthorizationCode::try_generate(
+        &client,
         &params.code_challenge.as_str(), 
         is_plain, 
         &params.redirect_uri, 
-        scopes)?;
+        scopes
+    )?;
 
     let callback = format!("{}?code={}&state={}", &params.redirect_uri, &code, &params.state);
     Ok(Redirect::temporary(callback.as_str()))
@@ -131,7 +130,6 @@ async fn handle_authorize(
 #[derive(Deserialize)]
 struct AuthorizeParams {
     pub response_type: String,
-    pub user_id: Uuid,
     pub redirect_uri: Url,
     pub scope: String,
     pub state: String,
@@ -160,9 +158,6 @@ struct DeviceAuthCodeParams {
 struct TokenRequest {
     grant_type: String,
 
-    // client id for public clients
-    user_id: Option<Uuid>,
-    
     // authorization code
     redirect_uri: Option<Url>,
     code: Option<String>,
@@ -216,22 +211,15 @@ fn handle_authorization_code(
         return Err(auth_response::Rejection::InvalidRequest);
     };
 
-    let Some(user_id) = &params.user_id
-    else {
-        return Err(auth_response::Rejection::InvalidRequest);
-    };
-
     let client = client_credentials.validate()?;
-    let user = models::UserCredentials::new(*user_id).validate(&redirect_uri)?;
 
     // validate authorization code
     // and get scopes
-    models::AuthorizationCode::new(&client, &user).validate(code, code_verifier.as_str(), &redirect_uri)?;
+    models::AuthorizationCode::validate(&client, code, code_verifier.as_str(), &redirect_uri)?;
 
     // create token
     let token = models::TokenBuilder::new(
         client,
-        Some(user),
         String::from("todo"),
         Some(redirect_uri.clone())
     ).try_build()?;
@@ -251,7 +239,6 @@ fn handle_client_credentials(
 
     let token = models::TokenBuilder::new(
         client,
-        None,
         String::from("todo"),
         None
     ).try_build()?;
@@ -274,7 +261,6 @@ fn handle_device_code(
 
     let token = models::TokenBuilder::new(
         client,
-        None,
         String::from("todo"),
         None
     ).try_build()?;
@@ -296,9 +282,8 @@ fn handle_refresh_token(
     
     let token = models::TokenBuilder::new(
         client,
-        None, // TODO get user_id if exists when validating refresh_token
         String::from("todo"),
-        None,
+        None
     ).try_build()?;
 
     Ok(Json(models::TokenResponse::from(token)))

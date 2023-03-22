@@ -24,7 +24,6 @@ pub struct DbAccessToken {
     pub id: i32,
     pub token: String,
     pub client_id: String,
-    pub user_id: Uuid,
     pub expires_at: chrono::NaiveDateTime,
     pub scopes: Vec<String>,
 }
@@ -37,7 +36,6 @@ pub struct DbAuthorizationCode {
     pub challenge: String,
     pub is_challenge_plain: bool,
     pub client_id: String,
-    pub user_id: Uuid,
     pub redirect_uri: String,
     pub created_at: chrono::NaiveDateTime,
     pub expires_at: chrono::NaiveDateTime,
@@ -82,7 +80,6 @@ pub struct DbRefreshToken {
     pub id: i32,
     pub token: String,
     pub client_id: String,
-    pub user_id: Uuid,
     pub created_at: chrono::NaiveDateTime,
     pub expires_at: chrono::NaiveDateTime,
     pub used: bool,
