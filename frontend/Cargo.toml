@@ -9,6 +9,7 @@ edition = "2021"
 console_error_panic_hook = "0.1.7"
 gloo-net = "0.2.6"
 log = "0.4.17"
+regex = "1.7.2"
 stylist = { version = "0.12.0", features = ["yew"] }
 wasm-bindgen-futures = "0.4.34"
 wasm-logger = "0.2.0"

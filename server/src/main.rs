@@ -52,7 +52,7 @@ async fn main() {
         .route("/error", get(handle_auth_error));
 
     let app = Router::new()
-        .nest("/api", api_routes)
+        .nest("/oauth", api_routes)
         .fallback_service(get(|req| async move {
             match ServeDir::new(String::from("./dist")).oneshot(req).await {
                 Ok(res) => res.map(boxed),

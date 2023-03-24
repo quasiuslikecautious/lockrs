@@ -1,9 +1,9 @@
-use yew::prelude::*;
+use yew::{function_component, html, Html};
 
 use crate::styles;
 
-#[function_component]
-pub fn ClientRegistrationPage() -> Html {
+#[function_component(ClientRegistrationPage)]
+pub fn client_registration_page() -> Html {
     html! {
         <div class={ styles::form_styles() } id="client-registration-page">
             <div class="container" id="form-container">
@@ -16,38 +16,55 @@ pub fn ClientRegistrationPage() -> Html {
                 <h2>{ "Register a client" }</h2>
                 <h4>{ "Fill out the required fields to register a client" }</h4>
 
-                <form id="form-container">
-                    <input 
-                        type="text" 
-                        id="app-name" 
-                        name="app-name" 
-                        placeholder="Application name"
-                    />
-                    <input 
-                        type="text" 
-                        id="app-homepage" 
-                        name="app-homepage" 
-                        placeholder="Homepage URL"
-                    />
-                    <input 
-                        type="text" 
-                        id="app-description" 
-                        name="app-description" 
-                        placeholder="Application Description"
-                    />
-                    <input 
-                        type="text" 
-                        id="callback-url" 
-                        name="callback-url" 
-                        placeholder="Authorization callback URL"
-                    />
+                <form id="client-registration-form">
+                    <div class="input-container">
+                        <input 
+                            type="text" 
+                            id="app-name" 
+                            name="app-name" 
+                            placeholder=" "
+                        />
+                        <div class="input-hint">
+                            { "Application name" }
+                        </div>
+                    </div>
+                    <div class="input-container">
+                        <input 
+                            type="text" 
+                            id="app-homepage" 
+                            name="app-homepage" 
+                            placeholder=" "
+                        />
+                        <div class="input-hint">
+                            { "Homepage URL" }
+                        </div>
+                    </div>
+                    <div class="input-container">
+                        <input 
+                            type="text" 
+                            id="app-description" 
+                            name="app-description" 
+                            placeholder=" "
+                        />
+                        <div class="input-hint">
+                            { "Application Description" }
+                        </div>
+                    </div>
+                    <div class="input-container">
+                        <input 
+                            type="text" 
+                            id="callback-url" 
+                            name="callback-url" 
+                            placeholder=" "
+                        />
+                        <div class="input-hint">
+                            { "Authorization callback URL" }
+                        </div>
+                    </div>
                 </form>
-                <br/>
                 <button>
                    <p>{ "Register" }</p>
                 </button>
-
-
             </div>
         </div>
     }

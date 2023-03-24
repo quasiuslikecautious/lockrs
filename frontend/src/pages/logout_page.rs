@@ -1,9 +1,9 @@
-use yew::prelude::*;
+use yew::prelude::{function_component, html, Html};
 
 use crate::styles;
 
-#[function_component]
-pub fn LogoutPage() -> Html {
+#[function_component(LogoutPage)]
+pub fn logout_page() -> Html {
     html! {
         <div class={ styles::form_styles() }>
             <div class="container" id="form-container">
