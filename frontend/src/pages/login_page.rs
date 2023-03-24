@@ -5,8 +5,8 @@ use crate::styles;
 #[function_component]
 pub fn LoginPage() -> Html {
     html! {
-        <div class={ styles::get_login_styles() }>
-            <div class="container" id="login-container">
+        <div class={ styles::form_styles() }>
+            <div class="container" id="form-container">
                 <img 
                     src="../img/rusty-lock.png" 
                     alt="Rusty Lock"
@@ -16,7 +16,7 @@ pub fn LoginPage() -> Html {
                 <h2>{ "Login to your account" }</h2>
                 <h4>{ "Enter your email and password" }</h4>
 
-                 <form id="device-code-form">
+                 <form id="login-form">
                     <input 
                         type="text" 
                         id="email" 

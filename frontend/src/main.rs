@@ -9,8 +9,17 @@ enum Route {
     #[at("/")]
     Home,
     
+    #[at("/signup")]
+    Signup,
+
     #[at("/login")]
     Login,
+
+    #[at("/logout")]
+    Logout,
+
+    #[at("/logout/success")]
+    LogoutSuccess,
 
     #[at("/device")]
     Device,
@@ -22,7 +31,10 @@ enum Route {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home             => html! { <h1>{ "Hello Frontend" }</h1> },
+        Route::Signup           => html! { <pages::SignupPage /> },
         Route::Login            => html! { <pages::LoginPage /> },
+        Route::Logout           => html! { <pages::LogoutPage /> },
+        Route::LogoutSuccess    => html! { <pages::LogoutSuccessPage /> },
         Route::Device           => html! { <pages::DevicePage /> },
         Route::ClientRegister   => html! { <pages::ClientRegistrationPage /> },
     }

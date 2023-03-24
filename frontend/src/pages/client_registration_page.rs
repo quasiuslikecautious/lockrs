@@ -5,8 +5,8 @@ use crate::styles;
 #[function_component]
 pub fn ClientRegistrationPage() -> Html {
     html! {
-        <div class={ styles::get_client_registration_styles() } id="client-registration-page">
-            <div class="container" id="client-registration-container">
+        <div class={ styles::form_styles() } id="client-registration-page">
+            <div class="container" id="form-container">
                 <img 
                     src="../img/rusty-lock.png" 
                     alt="Rusty Lock"
@@ -16,7 +16,7 @@ pub fn ClientRegistrationPage() -> Html {
                 <h2>{ "Register a client" }</h2>
                 <h4>{ "Fill out the required fields to register a client" }</h4>
 
-                <form id="client-registration-form">
+                <form id="form-container">
                     <input 
                         type="text" 
                         id="app-name" 

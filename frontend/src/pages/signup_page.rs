@@ -3,9 +3,9 @@ use yew::prelude::*;
 use crate::styles;
 
 #[function_component]
-pub fn DevicePage() -> Html {
+pub fn SignupPage() -> Html {
     html! {
-        <div class={ styles::form_styles() } id="device-code-page">
+        <div class={ styles::form_styles() }>
             <div class="container" id="form-container">
                 <img 
                     src="../img/rusty-lock.png" 
@@ -13,17 +13,21 @@ pub fn DevicePage() -> Html {
                     height=60px
                     width=60px
                 />
-                <h2>{ "Connect a device" }</h2>
-                <h4>{ "Enter the code displayed on your device" }</h4>
+                <h2>{ "Create your account" }</h2>
+                <h4>{ "Enter an email and password" }</h4>
 
-                <form id="device-code-form">
+                 <form id="device-code-form">
                     <input 
                         type="text" 
-                        id="device-code-input" 
-                        name="device-code" 
-                        minlength="8" 
-                        maxlength="8"
-                        placeholder="Enter code"
+                        id="email" 
+                        name="email" 
+                        placeholder="Enter an email"
+                    />
+                    <input 
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter a password"
                     />
                 </form>
                 <br/>
