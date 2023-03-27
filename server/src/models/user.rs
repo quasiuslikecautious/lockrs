@@ -14,9 +14,9 @@ pub struct UserCredentials {
 }
 
 impl UserCredentials {
-    pub fn new(id: Uuid) -> Self {
+    pub fn new(id: &Uuid) -> Self {
         Self {
-            id,
+            id: id.clone(),
         }
     }
 

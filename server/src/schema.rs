@@ -5,6 +5,7 @@ diesel::table! {
         id -> Int4,
         token -> Varchar,
         client_id -> Varchar,
+        user_id -> Nullable<Uuid>,
         created_at -> Timestamp,
         expires_at -> Timestamp,
         scopes -> Array<Nullable<Text>>,
@@ -18,10 +19,12 @@ diesel::table! {
         challenge -> Varchar,
         is_challenge_plain -> Bool,
         client_id -> Varchar,
+        user_id -> Uuid,
         redirect_uri -> Text,
         created_at -> Timestamp,
         expires_at -> Timestamp,
         used -> Bool,
+        scopes -> Array<Nullable<Text>>,
     }
 }
 
@@ -29,6 +32,7 @@ diesel::table! {
     clients (id) {
         id -> Varchar,
         secret -> Nullable<Text>,
+        user_id -> Uuid,
         redirect_uri -> Text,
         is_public -> Bool,
         name -> Text,
@@ -43,7 +47,7 @@ diesel::table! {
         device_code -> Varchar,
         created_at -> Timestamp,
         expires_at -> Timestamp,
-        scopes -> Nullable<Array<Nullable<Text>>>,
+        scopes -> Array<Nullable<Text>>,
     }
 }
 
@@ -62,10 +66,20 @@ diesel::table! {
         id -> Int4,
         token -> Varchar,
         client_id -> Varchar,
+        user_id -> Nullable<Uuid>,
         created_at -> Timestamp,
         expires_at -> Timestamp,
         used -> Bool,
         scopes -> Array<Nullable<Text>>,
+    }
+}
+
+diesel::table! {
+    scopes (id) {
+        id -> Int4,
+        name -> Varchar,
+        description -> Text,
+        client_id -> Nullable<Varchar>,
     }
 }
 
@@ -78,10 +92,15 @@ diesel::table! {
 }
 
 diesel::joinable!(access_tokens -> clients (client_id));
+diesel::joinable!(access_tokens -> users (user_id));
 diesel::joinable!(authorization_codes -> clients (client_id));
+diesel::joinable!(authorization_codes -> users (user_id));
+diesel::joinable!(clients -> users (user_id));
 diesel::joinable!(device_codes -> clients (client_id));
 diesel::joinable!(redirect_uris -> clients (client_id));
 diesel::joinable!(refresh_tokens -> clients (client_id));
+diesel::joinable!(refresh_tokens -> users (user_id));
+diesel::joinable!(scopes -> clients (client_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     access_tokens,
@@ -90,5 +109,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     device_codes,
     redirect_uris,
     refresh_tokens,
+    scopes,
     users,
 );

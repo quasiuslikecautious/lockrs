@@ -35,7 +35,7 @@ pub enum Rejection {
     InvalidClientId,
     InvalidRedirectUri,
     UnsupportedResponseType(Url),
-    InvalidScope(Url),
+    InvalidScope(Option<Url>),
     UnsupportedGrantType,
     BadVerificationCode,
     ExpiredToken,
@@ -74,7 +74,12 @@ impl Rejection {
             Self::InvalidClientId                   => default_callback_url,
             Self::InvalidRedirectUri                => default_callback_url,
             Self::UnsupportedResponseType(callback) => callback.to_string(),
-            Self::InvalidScope(callback)            => callback.to_string(),
+            Self::InvalidScope(callback)            => {
+                match callback {
+                    Some(redirect_uri) => redirect_uri.to_string(),
+                    None => default_callback_url,
+                }
+            },
             Self::UnsupportedGrantType              => default_callback_url,
             Self::BadVerificationCode               => default_callback_url,
             Self::ExpiredToken                      => default_callback_url,

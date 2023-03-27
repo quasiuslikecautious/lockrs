@@ -24,6 +24,10 @@ pub fn form_styles() -> Style {
                 border-radius: 5px;
 
                 background-color: #F15025;
+
+                transition-duration: 0.2s;
+                transition-timing-function: ease-in-out;
+                transition-property: background-color border;
             }
 
             button:hover {
@@ -32,7 +36,6 @@ pub fn form_styles() -> Style {
 
             button:active {
                 background-color: #C0330C;
-                transition: 0.2s;
             }
 
             button p {
@@ -76,7 +79,7 @@ pub fn form_styles() -> Style {
 
                 border: 1px solid #CED0CE;
 
-                transition-duration: 0.2s;
+                transition-duration: 0.1s;
                 transition-timing-function: ease-in-out;
                 transition-property: border;
             }
@@ -119,7 +122,7 @@ pub fn form_styles() -> Style {
                 background-color: #FFFFFF;
 
                 transition-duration: 0.2s;
-                transition-timing-function: ease-in-out;
+                transition-timing-function: cubic;
                 transition-property: padding position color font-size;
             }
 

@@ -24,8 +24,10 @@ pub struct DbAccessToken {
     pub id: i32,
     pub token: String,
     pub client_id: String,
+    pub user_id: Option<Uuid>,
+    pub created_at: chrono::NaiveDateTime,
     pub expires_at: chrono::NaiveDateTime,
-    pub scopes: Vec<String>,
+    pub scopes: Vec<Option<String>>,
 }
 
 #[derive(Debug, Queryable, Insertable)]
@@ -36,10 +38,12 @@ pub struct DbAuthorizationCode {
     pub challenge: String,
     pub is_challenge_plain: bool,
     pub client_id: String,
+    pub user_id: Uuid,
     pub redirect_uri: String,
     pub created_at: chrono::NaiveDateTime,
     pub expires_at: chrono::NaiveDateTime,
     pub used: bool,
+    pub scopes: Vec<Option<String>>,
 }
 
 #[derive(Debug, Queryable, Insertable)]
@@ -47,6 +51,7 @@ pub struct DbAuthorizationCode {
 pub struct DbClient {
     pub id: String,
     pub secret: Option<String>,
+    pub user_id: Uuid,
     pub redirect_uri: String,
     pub is_public: bool,
     pub name: String,
@@ -80,10 +85,20 @@ pub struct DbRefreshToken {
     pub id: i32,
     pub token: String,
     pub client_id: String,
+    pub user_id: Option<Uuid>,
     pub created_at: chrono::NaiveDateTime,
     pub expires_at: chrono::NaiveDateTime,
     pub used: bool,
-    pub scopes: Vec<String>,
+    pub scopes: Vec<Option<String>>,
+}
+
+#[derive(Debug, Queryable, Insertable)]
+#[diesel(primary_key(id), table_name = schema::scopes)]
+pub struct DbScope {
+    pub id: i32,
+    pub name: String,
+    pub description: String,
+    pub client_id: Option<String>,
 }
 
 #[derive(Debug, Queryable, Insertable)]

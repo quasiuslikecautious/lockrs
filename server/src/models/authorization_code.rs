@@ -5,6 +5,7 @@ use ring::{
     rand::{SecureRandom, SystemRandom},
 };
 use url::Url;
+use uuid::uuid;
 
 use crate::{auth_response, db, models, schema};
 
@@ -26,6 +27,8 @@ impl AuthorizationCode {
         let code = Self::generate_code();
         let expiry = (chrono::Utc::now() + chrono::Duration::minutes(5)).naive_utc();
 
+        let user_id = uuid!("00000000-0000-0000-0000-000000000000");
+
         let connection = &mut db::establish_connection();
         connection.build_transaction()
             .read_write()
@@ -36,8 +39,10 @@ impl AuthorizationCode {
                         authorization_codes::challenge.eq(challenge),
                         authorization_codes::is_challenge_plain.eq(is_plain),
                         authorization_codes::client_id.eq(client.get_id()),
+                        authorization_codes::user_id.eq(&user_id),
                         authorization_codes::redirect_uri.eq(redirect.as_str()),
                         authorization_codes::expires_at.eq(&expiry),
+                        authorization_codes::scopes.eq(scopes),
                     ))
                     .execute(conn)
             })
@@ -65,7 +70,7 @@ impl AuthorizationCode {
         code: &str,
         verifier: &str,
         redirect: &Url
-    ) -> auth_response::Result<()> {
+    ) -> auth_response::Result<models::Scopes> {
         use schema::authorization_codes;
 
         let now = chrono::Utc::now().naive_utc();
@@ -82,7 +87,9 @@ impl AuthorizationCode {
                     .filter(authorization_codes::used.eq(false))
                     .first::<db::DbAuthorizationCode>(conn)
             })
-            .map_err(|_| auth_response::Rejection::InvalidGrant)?;
+            .map_err(|e| {
+                auth_response::Rejection::InvalidGrant
+            })?;
 
         let expected = match &db_code.is_challenge_plain {
             true => verifier.to_string(),
@@ -117,6 +124,11 @@ impl AuthorizationCode {
             })
             .map_err(|_| auth_response::Rejection::ServerError(None))?;
         
-        Ok(())
+        let scopes = db_code.scopes
+            .into_iter()
+            .filter_map(|s| s)
+            .collect::<Vec<String>>();
+        
+        Ok(models::Scopes::new(scopes))
     }
 }
