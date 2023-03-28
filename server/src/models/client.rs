@@ -1,8 +1,6 @@
-use diesel::prelude::*;
-
 use crate::{
     auth_response,
-    db,
+    db::{DbError, models::DbClient},
 };
 
 /// Use the HTTP Basic authentication scheme to authenticate with the authentication server. The
@@ -34,23 +32,13 @@ impl ClientCredentials {
     }
 
     pub fn validate(&self) -> auth_response::Result<Client> {
-        use crate::schema::clients::dsl::*;
-
-        let mut query = clients
-            .into_boxed()
-            .filter(id.eq(&self.id));
-
-        if let Some(client_secret) = &self.secret {
-            query = query.filter(secret.eq(client_secret));
-        }
-
-        let connection = &mut db::establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                query.first::<db::DbClient>(conn)
-            })
-            .map_err(|_| auth_response::Rejection::InvalidClientId)?;
+        DbClient::get(&self.id, &self.secret)
+            .map_err(|err| {
+                match err {
+                    DbError::NotFound       => auth_response::Rejection::InvalidClientId,
+                    DbError::InternalError  => auth_response::Rejection::ServerError(None),
+                }
+            })?;
 
         Ok(Client {
             id: self.id.clone(),

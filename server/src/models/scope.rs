@@ -1,12 +1,12 @@
 use diesel::prelude::*;
 
-use crate::{db, schema};
+use crate::db;
 
 pub struct ScopeRequest;
 
 impl ScopeRequest {
     pub fn get_validated_scopes(requested_scopes: &str) -> Option<Scopes> {
-        use schema::scopes;
+        use db::schema::scopes;
         let scopes_list = requested_scopes.split(' ').map(|s| s.to_string()).collect::<Vec<String>>();
     
         let connection = &mut db::establish_connection();

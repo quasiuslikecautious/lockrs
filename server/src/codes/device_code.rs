@@ -1,49 +1,33 @@
 use base64::{Engine as _, engine::general_purpose};
-use diesel::prelude::*;
 use ring::rand::{SecureRandom, SystemRandom};
 use url::Url;
 
-use crate::{auth_response, db, models::{self, response}, schema};
+use crate::{auth_response, db::models::DbDeviceCode, models};
 
 pub struct DeviceCode {
-    pub client: models::Client,
-    pub scopes: Vec<String>,
+
 }
 
 impl DeviceCode {
-    pub fn new(client: models::Client, scopes: Vec<String>) -> Self {
-        Self {
-            client,
-            scopes,
-        }
-    }
-    
-    pub fn try_generate_code(&self) -> auth_response::Result<response::DeviceCodeResponse> {
-        use schema::device_codes;
-
-        let expiry = (chrono::Utc::now() + chrono::Duration::minutes(10)).naive_utc();
+    pub fn try_generate_code(
+        client: models::Client,
+        scopes: Vec<String>
+    ) -> auth_response::Result<models::DeviceCodeResponse> {
         let user_code = Self::generate_user_code();
         let device_code = Self::generate_device_code();
+        let expiry = chrono::Duration::minutes(10);
 
-        let connection = &mut db::establish_connection();
-        connection.build_transaction()
-            .read_write()
-            .run(|conn| {
-                diesel::insert_into(device_codes::table)
-                    .values((
-                        device_codes::client_id.eq(&self.client.get_id()),
-                        device_codes::user_code.eq(&user_code),
-                        device_codes::device_code.eq(&device_code),
-                        device_codes::expires_at.eq(&expiry),
-                        device_codes::scopes.eq(&self.scopes),
-                    ))
-                    .execute(conn)
-            })
-            .map_err(|_| auth_response::Rejection::ServerError(None))?;
+        DbDeviceCode::insert(
+            &client.get_id(),
+            &user_code,
+            &device_code,
+            &expiry,
+            scopes
+        ).map_err(|_| auth_response::Rejection::ServerError(None))?;
        
         let verification_uri = Url::parse("http://127.0.0.1:8080/device").unwrap();
 
-        Ok(response::DeviceCodeResponse::new(
+        Ok(models::DeviceCodeResponse::new(
             user_code,
             device_code,
             verification_uri

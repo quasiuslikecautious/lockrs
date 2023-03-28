@@ -1,10 +1,9 @@
-use diesel::prelude::*;
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
     auth_response::{Result, Rejection},
-    db,
+    db::{DbError, models::DbUser},
 };
 
 
@@ -21,16 +20,13 @@ impl UserCredentials {
     }
 
     pub fn validate(&self, redirect_uri: &Url) -> Result<User> {
-        use crate::schema::users::dsl::*;
-        let connection = &mut db::establish_connection();
-        let transaction = connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                users
-                    .filter(id.eq(&self.id))
-                    .first::<db::DbUser>(conn)
-            })
-            .map_err(|_| Rejection::AccessDenied(redirect_uri.clone()))?;
+        DbUser::get_from_id(&self.id) 
+            .map_err(|err| {
+                match err {
+                    DbError::NotFound       => Rejection::AccessDenied(redirect_uri.clone()),
+                    DbError::InternalError  => Rejection::ServerError(None),
+                }
+            })?;
 
         Ok(User{
             id: self.id,

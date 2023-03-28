@@ -1,9 +1,9 @@
 use serde::Serialize;
 use url::Url;
 
-use crate::models::{
-    Client,
-    AuthToken,
+use crate::{
+    models::Client,
+    tokens::AuthToken,
 };
 
 #[derive(Debug, Serialize)]

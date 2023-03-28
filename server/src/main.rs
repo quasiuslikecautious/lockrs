@@ -12,9 +12,11 @@
 // [ ] add PKCE support to auth code flow
 // [ ] client registration
 
-mod schema;
 mod db;
+mod api_response;
 mod auth_response;
+mod codes;
+mod tokens;
 mod models;
 mod extract;
 
@@ -28,12 +30,13 @@ use axum::{
     response::Redirect,
     routing::{get, post},
 };
+use auth_response::Rejection;
 use axum_macros::debug_handler;
 use serde::Deserialize;
 use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::ServeDir;
 use url::Url;
-use uuid::Uuid;
+use uuid::{uuid, Uuid};
 
 /// rfc: https://www.rfc-editor.org/rfc/rfc6749#section-4
 #[tokio::main]
@@ -67,14 +70,14 @@ async fn main() {
 }
 
 /// Fallback function - when a route is requested that doesn't exist this handler will be called.
-async fn fallback() -> auth_response::Rejection {
-    return auth_response::Rejection::InvalidRequest;
+async fn fallback() -> Rejection {
+    return Rejection::InvalidRequest;
 }
 
 async fn handle_auth_error(
     params: Query<AuthErrorParams>
 ) -> (StatusCode, Json<auth_response::ErrorMessage>) {
-    let error = auth_response::Rejection::from(params.error.as_str());
+    let error = Rejection::from(params.error.as_str());
     let desc = error.into_error_description();
 
     (
@@ -93,24 +96,24 @@ async fn handle_authorize(
     params: Query<AuthorizeParams>
 ) -> auth_response::Result<Redirect> {
     if &params.response_type != "code" {
-        return Err(auth_response::Rejection::UnsupportedResponseType(params.redirect_uri.clone()))
+        return Err(Rejection::UnsupportedResponseType(params.redirect_uri.clone()))
     }
     
     let client = client_credentials.validate()?;
 
     // validate redirect uri, inform the user of the problem instead of redirecting
-    models::RedirectUri::new(&client).validate(&params.redirect_uri)?;
+    models::RedirectUri::validate(&client, &params.redirect_uri)?;
 
     let Some(scopes) = models::ScopeRequest::get_validated_scopes(params.scope.as_str())
     else {
-        return Err(auth_response::Rejection::InvalidScope(Some(params.redirect_uri.clone())));  
+        return Err(Rejection::InvalidScope(Some(params.redirect_uri.clone())));  
     };
 
     let is_plain = !params.code_challenge_method.eq("S256");
 
-    let code = models::AuthorizationCode::try_generate(
+    let code = codes::AuthorizationCode::try_generate(
         &client,
-        &params.code_challenge.as_str(), 
+        &params.code_challenge, 
         is_plain,
         &params.redirect_uri, 
         scopes.get().to_owned()
@@ -139,13 +142,13 @@ async fn handle_device_auth_code(
 
     let Some(scopes) = models::ScopeRequest::get_validated_scopes(params.scopes.as_str())
     else {
-        return Err(auth_response::Rejection::InvalidScope(None));  
+        return Err(Rejection::InvalidScope(None));  
     };
 
-    let device_code = models::DeviceCode::new(client, scopes.get().to_owned());
+    let device_code = codes::DeviceCode::try_generate_code(client, scopes.get().to_owned())?;
 
     Ok(
-        Json(device_code.try_generate_code()?)
+        Json(device_code)
     )
 }
 
@@ -191,7 +194,7 @@ async fn handle_token_request(
         "refresh_token" => {
             return handle_refresh_token(client_credentials, params);
         }
-        _ => Err(auth_response::Rejection::UnsupportedGrantType),
+        _ => Err(Rejection::UnsupportedGrantType),
     }
 }
 
@@ -201,22 +204,22 @@ fn handle_authorization_code(
 ) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(redirect_uri) = &params.redirect_uri
     else {
-        return Err(auth_response::Rejection::InvalidRequest);
+        return Err(Rejection::InvalidRequest);
     };
 
     let Some(user_id) = &params.user_id
     else {
-        return Err(auth_response::Rejection::InvalidRequest);
+        return Err(Rejection::InvalidRequest);
     };
 
     let Some(code) = &params.code
     else {
-        return Err(auth_response::Rejection::InvalidRequest);
+        return Err(Rejection::InvalidRequest);
     };
 
     let Some(code_verifier) = &params.code_verifier
     else {
-        return Err(auth_response::Rejection::InvalidRequest);
+        return Err(Rejection::InvalidRequest);
     };
 
     let client = client_credentials.validate()?;
@@ -225,10 +228,10 @@ fn handle_authorization_code(
 
     // validate authorization code
     // and get scopes
-    let scopes = models::AuthorizationCode::validate(&client, code, code_verifier.as_str(), &redirect_uri)?;
+    let scopes = codes::AuthorizationCode::validate(&client, code, &code_verifier, &redirect_uri)?;
 
     // create token
-    let token = models::TokenBuilder::new(
+    let token = tokens::TokenBuilder::new(
         client,
         Some(user),
         scopes,
@@ -245,20 +248,20 @@ fn handle_client_credentials(
     let client = client_credentials.validate()?;
     match client.get_type() {
         models::ClientType::Confidential => {();},
-        models::ClientType::Public => return Err(auth_response::Rejection::InvalidClientId),
+        models::ClientType::Public => return Err(Rejection::InvalidClientId),
     }
 
     let Some(scopes) = &params.scopes
     else {
-        return Err(auth_response::Rejection::InvalidRequest);
+        return Err(Rejection::InvalidRequest);
     };
 
     let Some(scopes) = models::ScopeRequest::get_validated_scopes(scopes)
     else {
-        return Err(auth_response::Rejection::InvalidScope(None));
+        return Err(Rejection::InvalidScope(None));
     };
 
-    let token = models::TokenBuilder::new(
+    let token = tokens::TokenBuilder::new(
         client,
         None,
         scopes,
@@ -274,13 +277,13 @@ fn handle_device_code(
 ) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(device_code) = params.device_code
     else {
-        return Err(auth_response::Rejection::InvalidRequest);
+        return Err(Rejection::InvalidRequest);
     };
 
     let client = client_credentials.validate()?;
     // validate device code
 
-    let token = models::TokenBuilder::new(
+    let token = tokens::TokenBuilder::new(
         client,
         None, // TODO => Get user_id from device_code after authentication
         models::Scopes::new(vec![]), // TODO
@@ -296,17 +299,18 @@ fn handle_refresh_token(
 ) -> auth_response::Result<Json<models::TokenResponse>> {
     let Some(refresh_token) = &params.refresh_token
     else {
-        return Err(auth_response::Rejection::InvalidRequest);
+        return Err(Rejection::InvalidRequest);
     };
 
     let client = client_credentials.validate()?;
     // validate refresh token and mark as used 
     
-    let scopes = models::TokenBuilder::validate_refresh_token(&client, &refresh_token.as_str())?;
-
-    println!("REFRESH_TOKEN :: validation success, starting token gen");
+    let user_id = uuid!("00000000-0000-0000-0000-000000000000");
+    let user = models::UserCredentials::new(&user_id).validate(&Url::parse("http://::1").unwrap());
     
-    let token = models::TokenBuilder::new(
+    let scopes = tokens::TokenBuilder::validate_refresh_token(&client, &None, &refresh_token)?;
+
+    let token = tokens::TokenBuilder::new(
         client,
         None, // TODO Get user from refresh_token
         scopes,

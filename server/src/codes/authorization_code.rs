@@ -1,5 +1,4 @@
 use base64::{Engine as _, engine::general_purpose};
-use diesel::prelude::*;
 use ring::{
     digest::{digest, SHA256},
     rand::{SecureRandom, SystemRandom},
@@ -7,7 +6,11 @@ use ring::{
 use url::Url;
 use uuid::uuid;
 
-use crate::{auth_response, db, models, schema};
+use crate::{
+    auth_response, 
+    db::{models::DbAuthorizationCode, DbError}, 
+    models,
+};
 
 /// The authorization grant code supplied in the authorization grant step of the auth flow
 pub struct AuthorizationCode {
@@ -17,36 +20,26 @@ pub struct AuthorizationCode {
 impl AuthorizationCode {
     pub fn try_generate(
         client: &models::Client, 
-        challenge: &str, 
+        challenge: &String, 
         is_plain: bool, 
         redirect: &Url, 
         scopes: Vec<String>
     ) -> auth_response::Result<String> {
-        use schema::authorization_codes;
-
         let code = Self::generate_code();
-        let expiry = (chrono::Utc::now() + chrono::Duration::minutes(5)).naive_utc();
+        let expiry = chrono::Duration::minutes(5);
 
         let user_id = uuid!("00000000-0000-0000-0000-000000000000");
 
-        let connection = &mut db::establish_connection();
-        connection.build_transaction()
-            .read_write()
-            .run(|conn| {
-                diesel::insert_into(authorization_codes::table)
-                    .values((
-                        authorization_codes::code.eq(&code),
-                        authorization_codes::challenge.eq(challenge),
-                        authorization_codes::is_challenge_plain.eq(is_plain),
-                        authorization_codes::client_id.eq(client.get_id()),
-                        authorization_codes::user_id.eq(&user_id),
-                        authorization_codes::redirect_uri.eq(redirect.as_str()),
-                        authorization_codes::expires_at.eq(&expiry),
-                        authorization_codes::scopes.eq(scopes),
-                    ))
-                    .execute(conn)
-            })
-            .map_err(|_| auth_response::Rejection::ServerError(None))?;
+        DbAuthorizationCode::insert(
+            &code,
+            &challenge,
+            &is_plain,
+            &client.get_id(),
+            &user_id,
+            &redirect,
+            &expiry,
+            scopes
+        ).map_err(|_| auth_response::Rejection::ServerError(None))?;
 
         Ok(code)
     }
@@ -67,29 +60,23 @@ impl AuthorizationCode {
     /// Decrypt/Verify (and remove from db if necessary) provided code
     pub fn validate(
         client: &models::Client,
-        code: &str,
-        verifier: &str,
+        code: &String,
+        verifier: &String,
         redirect: &Url
     ) -> auth_response::Result<models::Scopes> {
-        use schema::authorization_codes;
+        let user_id = uuid!("00000000-0000-0000-0000-000000000000");
 
-        let now = chrono::Utc::now().naive_utc();
-        
-        let connection = &mut db::establish_connection();
-        let db_code = connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                authorization_codes::table
-                    .filter(authorization_codes::code.eq(code))
-                    .filter(authorization_codes::client_id.eq(client.get_id()))
-                    .filter(authorization_codes::redirect_uri.eq(&redirect.as_str()))
-                    .filter(authorization_codes::expires_at.gt(&now))
-                    .filter(authorization_codes::used.eq(false))
-                    .first::<db::DbAuthorizationCode>(conn)
-            })
-            .map_err(|e| {
-                auth_response::Rejection::InvalidGrant
-            })?;
+        let db_code = DbAuthorizationCode::get_no_challenge(
+            code,
+            &client.get_id(),
+            &user_id
+        )
+        .map_err(|err| {
+            match err {
+                DbError::NotFound => auth_response::Rejection::InvalidGrant,
+                DbError::InternalError => auth_response::Rejection::ServerError(None),
+            }
+        })?;
 
         let expected = match &db_code.is_challenge_plain {
             true => verifier.to_string(),
@@ -114,14 +101,8 @@ impl AuthorizationCode {
             return Err(auth_response::Rejection::InvalidRequest);
         }
 
-        connection.build_transaction()
-            .read_write()
-            .run(|conn| {
-                diesel::update(authorization_codes::table)
-                    .filter(authorization_codes::id.eq(&db_code.id))
-                    .set(authorization_codes::used.eq(true))
-                    .execute(conn)
-            })
+        let db_code = db_code
+            .use_token()
             .map_err(|_| auth_response::Rejection::ServerError(None))?;
         
         let scopes = db_code.scopes
