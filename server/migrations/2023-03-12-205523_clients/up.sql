@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS clients (
 	id VARCHAR(32) PRIMARY KEY,
 	secret TEXT,
   user_id UUID NOT NULL,
-	redirect_uri TEXT NOT NULL,
 	is_public BOOLEAN NOT NULL,
 	name TEXT NOT NULL,
   CONSTRAINT clients_user_id_fkey

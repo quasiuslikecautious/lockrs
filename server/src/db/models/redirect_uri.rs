@@ -6,10 +6,12 @@ use url::Url;
 use crate::db::{
     DbError,
     establish_connection,
-    schema::redirect_uris,
+    models::DbClient,
+    schema::{redirect_uris},
 };
 
-#[derive(Debug, Queryable, Insertable)]
+#[derive(Debug, Queryable, Insertable, Associations, Identifiable)]
+#[diesel(belongs_to(DbClient, foreign_key = client_id))]
 #[diesel(primary_key(id), table_name = redirect_uris)]
 pub struct DbRedirectUri {
     pub id: i32,

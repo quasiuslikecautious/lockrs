@@ -61,7 +61,7 @@ async fn main() {
         .with_state(());
 
     // run it with hyper on localhost:8080
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8081));
     println!("listening at {}", addr.to_string());
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

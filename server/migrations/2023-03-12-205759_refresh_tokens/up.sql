@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     FOREIGN KEY (user_id)
     REFERENCES users (id)
     ON DELETE CASCADE,
+  CONSTRAINT refresh_tokens_min_token_length CHECK (
+    LENGTH(token) >= 43
+  ),
   CONSTRAINT refresh_tokens_scope_present CHECK (
     CARDINALITY(scopes) > 0
   )

@@ -33,7 +33,6 @@ diesel::table! {
         id -> Varchar,
         secret -> Nullable<Text>,
         user_id -> Uuid,
-        redirect_uri -> Text,
         is_public -> Bool,
         name -> Text,
     }

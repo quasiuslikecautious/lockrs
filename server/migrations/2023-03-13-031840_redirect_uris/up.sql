@@ -15,4 +15,3 @@ CREATE TABLE IF NOT EXISTS redirect_uris (
 
 CREATE INDEX redirect_uri_client_id_idx
 	ON redirect_uris(client_id, uri);
-

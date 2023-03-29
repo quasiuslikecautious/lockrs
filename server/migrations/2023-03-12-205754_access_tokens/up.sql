@@ -1,7 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE IF NOT EXISTS access_tokens (
 	id SERIAL PRIMARY KEY,
-	token VARCHAR(44) NOT NULL,
+	token VARCHAR(128) NOT NULL,
 	client_id VARCHAR(32) NOT NULL,
   user_id UUID,
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS access_tokens (
     FOREIGN KEY (user_id)
     REFERENCES users (id)
     ON DELETE CASCADE,
+  CONSTRAINT access_tokens_min_token_length CHECK (
+    LENGTH(token) >= 43
+  ),
   CONSTRAINT access_tokens_scope_present CHECK (
     CARDINALITY(scopes) > 0
   )

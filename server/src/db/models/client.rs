@@ -1,21 +1,19 @@
 use diesel::prelude::*;
 use diesel::result::Error;
 use uuid::Uuid;
-use url::Url;
 
 use crate::db::{
     DbError,
     establish_connection,
-    schema::{clients, redirect_uris},
+    schema::clients,
 };
 
-#[derive(Debug, Queryable, Insertable)]
+#[derive(Debug, Queryable, Insertable, Identifiable)]
 #[diesel(primary_key(id), table_name = clients)]
 pub struct DbClient {
     pub id: String,
     pub secret: Option<String>,
     pub user_id: Uuid,
-    pub redirect_uri: String,
     pub is_public: bool,
     pub name: String,
 }
@@ -46,28 +44,17 @@ impl DbClient {
         id: &String,
         secret: &Option<String>,
         user_id: &Uuid,
-        redirect_uri: &Url,
         name: &String
     ) -> Result<Self, DbError> {
-        let redirect_uri = redirect_uri.to_string();
-
         let connection = &mut establish_connection();
         connection.build_transaction()
             .read_write()
             .run(|conn| {
-                diesel::insert_into(redirect_uris::table)
-                    .values((
-                        redirect_uris::client_id.eq(id),
-                        redirect_uris::uri.eq(&redirect_uri),
-                    ))
-                    .execute(conn)?;
-
                 diesel::insert_into(clients::table)
                     .values((
                         clients::id.eq(id),
                         clients::secret.eq(secret),
                         clients::user_id.eq(user_id),
-                        clients::redirect_uri.eq(&redirect_uri),
                         clients::is_public.eq(secret.is_some()),
                         clients::name.eq(name),
                     ))
