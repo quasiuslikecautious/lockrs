@@ -21,19 +21,15 @@ impl DbUser {
         id: &Uuid
     ) -> Result<Self, DbError> {
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                users::table
-                    .filter(users::id.eq(id))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        users::table
+            .filter(users::id.eq(id))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn get_from_credentials(
@@ -41,20 +37,16 @@ impl DbUser {
         password_hash: &String
     ) -> Result<Self, DbError> {
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                users::table
-                    .filter(users::email.eq(email))
-                    .filter(users::password_hash.eq(password_hash))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        users::table
+            .filter(users::email.eq(email))
+            .filter(users::password_hash.eq(password_hash))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn insert(

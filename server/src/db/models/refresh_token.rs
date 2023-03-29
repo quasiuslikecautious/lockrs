@@ -31,23 +31,19 @@ impl DbRefreshToken {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                refresh_tokens::table
-                    .filter(refresh_tokens::token.eq(token))
-                    .filter(refresh_tokens::client_id.eq(client_id))
-                    .filter(refresh_tokens::created_at.lt(&now))
-                    .filter(refresh_tokens::expires_at.gt(&now))
-                    .filter(refresh_tokens::used.eq(false))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        refresh_tokens::table
+            .filter(refresh_tokens::token.eq(token))
+            .filter(refresh_tokens::client_id.eq(client_id))
+            .filter(refresh_tokens::created_at.lt(&now))
+            .filter(refresh_tokens::expires_at.gt(&now))
+            .filter(refresh_tokens::used.eq(false))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn insert(

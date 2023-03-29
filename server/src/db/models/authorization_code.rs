@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::db::{
     DbError,
     establish_connection,
-    schema::authorization_codes,
+    schema::authorization_codes, self,
 };
 
 #[derive(Debug, Queryable, Insertable)]
@@ -36,27 +36,23 @@ impl DbAuthorizationCode {
     ) -> Result<Self, DbError> {
         let now = Utc::now().naive_utc();
 
-        let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                authorization_codes::table
-                    .filter(authorization_codes::code.eq(code))
-                    .filter(authorization_codes::challenge.eq(challenge))
-                    .filter(authorization_codes::client_id.eq(client_id))
-                    .filter(authorization_codes::user_id.eq(user_id))
-                    .filter(authorization_codes::redirect_uri.eq(redirect_uri.to_string()))
-                    .filter(authorization_codes::created_at.lt(&now))
-                    .filter(authorization_codes::expires_at.gt(&now))
-                    .filter(authorization_codes::used.eq(false))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        let connection = &mut db::establish_connection();
+        authorization_codes::table
+            .filter(authorization_codes::code.eq(code))
+            .filter(authorization_codes::challenge.eq(challenge))
+            .filter(authorization_codes::client_id.eq(client_id))
+            .filter(authorization_codes::user_id.eq(user_id))
+            .filter(authorization_codes::redirect_uri.eq(redirect_uri.to_string()))
+            .filter(authorization_codes::created_at.lt(&now))
+            .filter(authorization_codes::expires_at.gt(&now))
+            .filter(authorization_codes::used.eq(false))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn get_no_challenge(
@@ -67,24 +63,20 @@ impl DbAuthorizationCode {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                authorization_codes::table
-                    .filter(authorization_codes::code.eq(code))
-                    .filter(authorization_codes::client_id.eq(client_id))
-                    .filter(authorization_codes::user_id.eq(user_id))
-                    .filter(authorization_codes::created_at.lt(&now))
-                    .filter(authorization_codes::expires_at.gt(&now))
-                    .filter(authorization_codes::used.eq(false))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        authorization_codes::table
+            .filter(authorization_codes::code.eq(code))
+            .filter(authorization_codes::client_id.eq(client_id))
+            .filter(authorization_codes::user_id.eq(user_id))
+            .filter(authorization_codes::created_at.lt(&now))
+            .filter(authorization_codes::expires_at.gt(&now))
+            .filter(authorization_codes::used.eq(false))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn insert(

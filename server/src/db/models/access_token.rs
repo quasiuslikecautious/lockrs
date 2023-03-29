@@ -30,24 +30,19 @@ impl DbAccessToken {
         let now = Utc::now().naive_utc();
         let connection = &mut establish_connection();
 
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                access_tokens::table
-                    .filter(access_tokens::token.eq(token))
-                    .filter(access_tokens::client_id.eq(client_id))
-                    .filter(access_tokens::user_id.eq(user_id))
-                    .filter(access_tokens::created_at.lt(&now))
-                    .filter(access_tokens::expires_at.gt(&now))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
-
+        access_tokens::table
+            .filter(access_tokens::token.eq(token))
+            .filter(access_tokens::client_id.eq(client_id))
+            .filter(access_tokens::user_id.eq(user_id))
+            .filter(access_tokens::created_at.lt(&now))
+            .filter(access_tokens::expires_at.gt(&now))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn insert(

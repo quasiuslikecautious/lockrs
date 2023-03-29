@@ -28,22 +28,18 @@ impl DbDeviceCode {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                device_codes::table
-                    .filter(device_codes::client_id.eq(client_id))
-                    .filter(device_codes::device_code.eq(device_code))
-                    .filter(device_codes::created_at.lt(now))
-                    .filter(device_codes::expires_at.gt(now))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        device_codes::table
+            .filter(device_codes::client_id.eq(client_id))
+            .filter(device_codes::device_code.eq(device_code))
+            .filter(device_codes::created_at.lt(now))
+            .filter(device_codes::expires_at.gt(now))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
     
     pub fn get_from_user_code(
@@ -53,22 +49,18 @@ impl DbDeviceCode {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                device_codes::table
-                    .filter(device_codes::client_id.eq(client_id))
-                    .filter(device_codes::user_code.eq(user_code))
-                    .filter(device_codes::created_at.lt(now))
-                    .filter(device_codes::expires_at.gt(now))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        device_codes::table
+            .filter(device_codes::client_id.eq(client_id))
+            .filter(device_codes::user_code.eq(user_code))
+            .filter(device_codes::created_at.lt(now))
+            .filter(device_codes::expires_at.gt(now))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn insert(

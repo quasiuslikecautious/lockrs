@@ -34,17 +34,12 @@ impl DbClient {
         }
         
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                query.first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        query.first::<Self>(connection).map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
     
     pub fn insert(

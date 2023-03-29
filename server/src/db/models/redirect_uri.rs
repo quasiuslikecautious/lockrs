@@ -25,20 +25,16 @@ impl DbRedirectUri {
         uri: &Url
     ) -> Result<Self, DbError> {
         let connection = &mut establish_connection();
-        connection.build_transaction()
-            .read_only()
-            .run(|conn| {
-                redirect_uris::table
-                    .filter(redirect_uris::client_id.eq(client_id))
-                    .filter(redirect_uris::uri.eq(uri.to_string()))
-                    .first::<Self>(conn)
-            })
-            .map_err(|err| {
-                match err {
-                    Error::NotFound => DbError::NotFound,
-                    _               => DbError::InternalError,
-                }
-            })
+        redirect_uris::table
+            .filter(redirect_uris::client_id.eq(client_id))
+            .filter(redirect_uris::uri.eq(uri.to_string()))
+            .first::<Self>(connection)
+        .map_err(|err| {
+            match err {
+                Error::NotFound => DbError::NotFound,
+                _               => DbError::InternalError,
+            }
+        })
     }
 
     pub fn insert(
