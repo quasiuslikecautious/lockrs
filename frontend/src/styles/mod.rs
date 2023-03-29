@@ -16,7 +16,8 @@ pub fn form_styles() -> Style {
 
             button {
                 height: 35px;
-                width: 100px;
+                width: 100%;
+                margin-top: auto;
 
                 align-self: flex-end;
 
@@ -27,7 +28,7 @@ pub fn form_styles() -> Style {
 
                 transition-duration: 0.2s;
                 transition-timing-function: ease-in-out;
-                transition-property: background-color border;
+                transition-property: background-color;
             }
 
             button:hover {
@@ -55,7 +56,7 @@ pub fn form_styles() -> Style {
 
             .container {
                 min-height: 500px;
-                width: 360px;
+                width: 300px;
                 position: relative;
                 margin-left: auto;
                 margin-right: auto;
@@ -65,18 +66,52 @@ pub fn form_styles() -> Style {
                 align-items: center;
                 gap: 10px;
                 
-                border: 1px solid #CED0CE;
+                border: 10px solid #F5F5F5;
                 border-radius: 8px;
             }
             
             /* Container specific attr that should apply to children */
             #form-container {
+                margin-top: 100px;
                 padding: 20px 40px;
+                box-shadow: 10px 10px 10px #CED0CE;
             }
 
-            input {
-                margin-bottom: 10px;
+            #cutout {
+                border-radius: 15px;
+                background-color: black;
+                width: 100px;
+                height: 15px;
+            }
 
+            #lanyard-front {
+                width: 150px;
+
+                transform: rotate(-99.5deg);
+                position: absolute;
+                top: -68px;
+                left: 95px;
+
+                border-bottom: 60px solid #F15025;
+                border-left: 10px solid transparent;
+
+                box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
+            }
+
+            #lanyard-back {
+                width: 110px;
+
+                transform: rotate(99.5deg);
+                position: absolute;
+                top: -95px;
+                left: 150px;
+
+                border-bottom: 60px solid #C0330C;
+                border-right: 10px solid transparent;
+                
+            }
+
+            input, textarea {
                 border: 1px solid #CED0CE;
 
                 transition-duration: 0.1s;
@@ -84,23 +119,35 @@ pub fn form_styles() -> Style {
                 transition-property: border;
             }
 
-            input:focus {
+            textarea {
+                min-height: 120px;
+                width: 100%;
+                padding: 10px;
+
+                resize: none;
+                maxlength: 200;
+            }
+
+            input:focus, textarea:focus {
                 outline: none;
                 border: 2px solid #25C6F1;
             }
 
-            input.invalid {
+            input.invalid, textarea.invalid {
                 border: 1px solid #F12560 !important;
             }
 
-            input.invalid:focus {
+            input.invalid:focus, textarea.invalid:focus {
                 border: 2px solid #D30D45 !important;
             }
 
-            input[type=text],input[type=password] {
+            input[type=text], input[type=password] {
                 height: 30px;
-                width: 100%;
                 padding: 24px 10px;
+            }
+
+            input[type=text], input[type=password], textarea {
+                width: 100%;
                 box-sizing: border-box;
                 font-size: 16px;
 
@@ -109,6 +156,7 @@ pub fn form_styles() -> Style {
 
             .input-container {
                 position: relative;
+                margin-bottom: 10px;
             }
 
             .input-hint {
@@ -126,7 +174,7 @@ pub fn form_styles() -> Style {
                 transition-property: padding position color font-size;
             }
 
-            input:focus + .input-hint {
+            input:focus + .input-hint, textarea:focus + .input-hint {
                 padding: 0 4px;
 
                 font-size: 12px;
@@ -135,7 +183,7 @@ pub fn form_styles() -> Style {
                 transform: translateX(-4px) translateY(-23px);
             }
 
-            input:not(:placeholder-shown) + .input-hint {
+            input:not(:placeholder-shown) + .input-hint, textarea:not(:placeholder-shown) + .input-hint {
                 padding: 0 4px;
 
                 font-size: 12px;
@@ -143,8 +191,17 @@ pub fn form_styles() -> Style {
                 transform: translateX(-4px) translateY(-22px);
             }
 
-            input.invalid + .input-hint {
+            input.invalid + .input-hint, textarea.invalid + .input-hint {
                 color: #F12560 !important;
+            }
+
+            #char-counter {
+                display: flex;
+                flex-flow: row wrap;
+                justify-content: flex-end;
+
+                font-style: italic;
+                font-size: 0.875rem;
             }
         "#
     ).expect("Failed to mount style");
@@ -155,17 +212,16 @@ pub fn confirm_button_pair() -> Style {
         r#"
             display: flex;
             width: 100%;
+            margin-top: auto;
 
             align-self: flex-end;
 
             flex-flow: row wrap;
             align-items: center;
             justify-content: space-around;
+            gap: 10px;
 
             button.secondary {
-                height: 35px;
-                width: 100px;
-
                 border: 1px solid #F15025;
                 border-radius: 5px;
 

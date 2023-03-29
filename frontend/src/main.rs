@@ -1,5 +1,5 @@
 mod styles;
-mod pages;
+mod components;
 
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -31,12 +31,12 @@ enum Route {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home             => html! { <h1>{ "Hello Frontend" }</h1> },
-        Route::Signup           => html! { <pages::SignupPage /> },
-        Route::Login            => html! { <pages::LoginPage /> },
-        Route::Logout           => html! { <pages::LogoutPage /> },
-        Route::LogoutSuccess    => html! { <pages::LogoutSuccessPage /> },
-        Route::Device           => html! { <pages::DevicePage /> },
-        Route::ClientRegister   => html! { <pages::ClientRegistrationPage /> },
+        Route::Signup           => html! { <components::SignupPage /> },
+        Route::Login            => html! { <components::LoginPage /> },
+        Route::Logout           => html! { <components::LogoutPage /> },
+        Route::LogoutSuccess    => html! { <components::LogoutSuccessPage /> },
+        Route::Device           => html! { <components::DevicePage /> },
+        Route::ClientRegister   => html! { <components::ClientRegistrationPage /> },
     }
 }
 
@@ -44,7 +44,9 @@ fn switch(routes: Route) -> Html {
 fn app() -> Html {
     html! {
         <BrowserRouter>
-            <Switch<Route> render={switch} />
+            <components::IdCardContainer>
+                <Switch<Route> render={switch} />
+            </components::IdCardContainer>
         </BrowserRouter>
     }
 }
