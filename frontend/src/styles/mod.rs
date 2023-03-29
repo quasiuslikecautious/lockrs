@@ -66,31 +66,41 @@ pub fn form_styles() -> Style {
                 align-items: center;
                 gap: 10px;
                 
-                border: 10px solid #F5F5F5;
+                border: 10px solid #EBEBEB;
                 border-radius: 8px;
+
+                transition-duration: 1s;
+                transition-timing-function: ease-in-out;
+                transition-property: transform;
+            }
+
+            .container:hover, .container:focus-within {
+                transform: translateY(50px); 
             }
             
             /* Container specific attr that should apply to children */
             #form-container {
-                margin-top: 100px;
+                margin-top: 50px;
                 padding: 20px 40px;
-                box-shadow: 10px 10px 10px #CED0CE;
+                background-color: #FFFFFF;
+                box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
             }
 
             #cutout {
-                border-radius: 15px;
-                background-color: black;
                 width: 100px;
                 height: 15px;
+
+                box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2) inset;
+                border-radius: 15px;
             }
 
             #lanyard-front {
-                width: 150px;
+                width: 200px;
 
-                transform: rotate(-99.5deg);
+                transform: rotate(-99.2deg);
                 position: absolute;
-                top: -68px;
-                left: 95px;
+                top: -100px;
+                left: 69px;
 
                 border-bottom: 60px solid #F15025;
                 border-left: 10px solid transparent;
@@ -99,12 +109,12 @@ pub fn form_styles() -> Style {
             }
 
             #lanyard-back {
-                width: 110px;
+                width: 160px;
 
-                transform: rotate(99.5deg);
+                transform: rotate(99.2deg);
                 position: absolute;
-                top: -95px;
-                left: 150px;
+                top: -119px;
+                left: 125px;
 
                 border-bottom: 60px solid #C0330C;
                 border-right: 10px solid transparent;
