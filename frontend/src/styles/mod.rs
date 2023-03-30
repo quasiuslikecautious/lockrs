@@ -36,7 +36,7 @@ pub fn form_styles() -> Style {
             }
 
             button:active {
-                background-color: #C0330C;
+                background-color: #862409;
             }
 
             button p {
@@ -90,8 +90,9 @@ pub fn form_styles() -> Style {
                 width: 100px;
                 height: 15px;
 
-                box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2) inset;
+                border: 3px solid #EBEBEB;
                 border-radius: 15px;
+                box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2) inset;
             }
 
             #lanyard-front {
@@ -217,7 +218,7 @@ pub fn form_styles() -> Style {
     ).expect("Failed to mount style");
 }
 
-pub fn confirm_button_pair() -> Style {
+pub fn button_pair() -> Style {
     return style!(
         r#"
             display: flex;

@@ -59,7 +59,7 @@ impl From<&str> for Rejection {
 
 impl Rejection {
     pub fn into_callback_url(&self) -> String {
-        let default_callback_url = String::from("http://127.0.0.1:8080/error");
+        let default_callback_url = String::from("http://127.0.0.1:8081/api/v1/oauth/error");
 
         match self {
             Self::InvalidRequest                    => default_callback_url,

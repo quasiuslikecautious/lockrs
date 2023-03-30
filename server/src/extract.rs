@@ -3,7 +3,7 @@ use axum::{
     extract::FromRequestParts,
     http::{
         header::AUTHORIZATION,
-        request::Parts,
+        request::Parts, StatusCode,
     },
 };
 use base64::{Engine as _, engine::general_purpose};
@@ -89,5 +89,57 @@ fn extract_credentials_from_query(query: &str) -> auth_response::Result<models::
     );
 
     Ok(unvalidated_client)
+}
+
+#[derive(Debug)]
+pub struct BasicAuth(pub (String, String));
+
+#[async_trait]
+impl<S> FromRequestParts<S> for BasicAuth 
+where
+    S: Send + Sync
+{
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        let headers = &parts.headers;
+
+        let Some(authorization) = headers.get(AUTHORIZATION)
+        else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        let Some(header_str) = authorization.to_str().ok()
+        else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        let Some((auth_header, encoded_credentials)) = header_str.split_once(' ')
+        else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        if !auth_header.eq("Basic") {
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+
+        let Some(decoded_credentials_bytes) = general_purpose::URL_SAFE_NO_PAD
+            .decode(encoded_credentials).ok()
+        else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        let Some(decoded_credentials) = String::from_utf8(decoded_credentials_bytes).ok()
+        else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        let Some((email, password)) = decoded_credentials.split_once(':')
+        else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        Ok(BasicAuth((email.to_string(), password.to_string())))
+    }
 }
 

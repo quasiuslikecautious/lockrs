@@ -6,11 +6,14 @@ use yew_router::prelude::*;
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
+    #[at("/client/register")]
+    ClientRegister,
+
+    #[at("/device")]
+    Device,
+
     #[at("/")]
-    Home,
-    
-    #[at("/signup")]
-    Signup,
+    Home, 
 
     #[at("/login")]
     Login,
@@ -21,22 +24,23 @@ enum Route {
     #[at("/logout/success")]
     LogoutSuccess,
 
-    #[at("/device")]
-    Device,
+    #[at("/scopes/confirm")]
+    ScopeConfirmation,
 
-    #[at("/client/register")]
-    ClientRegister,
+    #[at("/signup")]
+    Signup,
 }
 
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home             => html! { <h1>{ "Hello Frontend" }</h1> },
-        Route::Signup           => html! { <components::SignupPage /> },
-        Route::Login            => html! { <components::LoginPage /> },
-        Route::Logout           => html! { <components::LogoutPage /> },
-        Route::LogoutSuccess    => html! { <components::LogoutSuccessPage /> },
-        Route::Device           => html! { <components::DevicePage /> },
-        Route::ClientRegister   => html! { <components::ClientRegistrationPage /> },
+        Route::Home                 => html! { <h1>{ "Hello Frontend" }</h1> },
+        Route::ClientRegister       => html! { <components::ClientRegistrationPage /> },
+        Route::Device               => html! { <components::DevicePage /> },
+        Route::Login                => html! { <components::LoginPage /> },
+        Route::Logout               => html! { <components::LogoutPage /> },
+        Route::LogoutSuccess        => html! { <components::LogoutSuccessPage /> },
+        Route::Signup               => html! { <components::SignupPage /> },
+        Route::ScopeConfirmation    => html! { <components::ScopeConfirmationPage /> },
     }
 }
 

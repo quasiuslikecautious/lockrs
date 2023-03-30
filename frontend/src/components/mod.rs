@@ -4,6 +4,7 @@ mod id_card_container;
 mod login_page;
 mod logout_page;
 mod logout_success_page;
+mod scope_confirmation_page;
 mod signup_page;
 
 pub use self::{
@@ -13,5 +14,6 @@ pub use self::{
     login_page::*,
     logout_page::*,
     logout_success_page::*,
+    scope_confirmation_page::*,
     signup_page::*,
 };

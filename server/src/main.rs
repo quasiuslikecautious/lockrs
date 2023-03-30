@@ -25,30 +25,52 @@ use std::net::SocketAddr;
 use axum::{
     Router,
     body::{boxed, Body},
-    extract::{Json, Query},
+    extract::{Json, Path, Query},
     http::{Response, StatusCode},
     response::Redirect,
-    routing::{get, post},
+    routing::{get, post, put},
 };
 use auth_response::Rejection;
 use axum_macros::debug_handler;
 use serde::Deserialize;
 use tower::{ServiceBuilder, ServiceExt};
-use tower_http::services::ServeDir;
+use tower_http::{services::ServeDir, trace::TraceLayer};
+use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 use url::Url;
 use uuid::{uuid, Uuid};
 
 /// rfc: https://www.rfc-editor.org/rfc/rfc6749#section-4
 #[tokio::main]
 async fn main() {
-    let api_routes = Router::new()
+    let filter = Targets::new()
+        .with_target("tower_http::trace::on_response", tracing::Level::DEBUG)
+        .with_target("tower_http::trace::on_request", tracing::Level::DEBUG)
+        .with_target("tower_http::trace::make_span", tracing::Level::DEBUG)
+        .with_default(tracing::Level::INFO);
+
+    let tracing_layer = tracing_subscriber::fmt::layer();
+
+    tracing_subscriber::registry()
+        .with(tracing_layer)
+        .with(filter)
+        .init();
+
+    let oauth_routes = Router::new()
         .route("/authorize", post(handle_authorize))
         .route("/device/code", post(handle_device_auth_code))
         .route("/token", post(handle_token_request))
         .route("/error", get(handle_auth_error));
 
+    let api_routes = Router::new()
+        .nest("/oauth", oauth_routes)
+        .route("/user/create", put(handle_create_user))
+        .route("/user/login", post(handle_authenticate_user))
+        .route("/user/:user_id", get(handle_get_user))
+        .route("/client/create", post(handle_create_client))
+        .route("/client/:client_id", get(handle_get_client));
+
     let app = Router::new()
-        .nest("/oauth", api_routes)
+        .nest("/api/v1", api_routes)
         .fallback_service(get(|req| async move {
             match ServeDir::new(String::from("./dist")).oneshot(req).await {
                 Ok(res) => res.map(boxed),
@@ -58,6 +80,7 @@ async fn main() {
                     .expect("error response"),
             }
         }))
+        .layer(TraceLayer::new_for_http())
         .with_state(());
 
     // run it with hyper on localhost:8080
@@ -72,6 +95,42 @@ async fn main() {
 /// Fallback function - when a route is requested that doesn't exist this handler will be called.
 async fn fallback() -> Rejection {
     return Rejection::InvalidRequest;
+}
+
+
+async fn handle_create_user(
+    extract::BasicAuth((email, password)): extract::BasicAuth
+) -> StatusCode {
+    let new_user = models::UserCredentials::create_from_credentials(
+        email, 
+        password
+    );
+
+    match new_user {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::BAD_REQUEST,
+    }
+}
+
+async fn handle_authenticate_user(
+    extract::BasicAuth((email, password)): extract::BasicAuth
+) -> StatusCode {
+    match models::UserCredentials::get_from_credentials(email, password) {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::UNAUTHORIZED,
+    }
+}
+
+async fn handle_get_user(Path(user_id): Path<Uuid>) {
+
+}
+
+async fn handle_create_client() {
+    
+}
+
+async fn handle_get_client(Path(client_id): Path<String>) {
+
 }
 
 async fn handle_auth_error(
