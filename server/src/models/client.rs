@@ -1,6 +1,11 @@
+use base64::{Engine as _, engine::general_purpose};
+use ring::rand::{SecureRandom, SystemRandom};
+use url::Url;
+
 use crate::{
     auth_response,
     db::{DbError, models::DbClient},
+    models::User,
 };
 
 /// Use the HTTP Basic authentication scheme to authenticate with the authentication server. The
@@ -29,6 +34,45 @@ impl ClientCredentials {
             secret,
             client_type,
         }
+    }
+
+    fn generate_random_string() -> String {
+        let mut buffer = [0u8; 32];
+        let rng = SystemRandom::new();
+        rng.fill(&mut buffer).unwrap();
+        general_purpose::URL_SAFE_NO_PAD.encode(buffer).to_string()
+    }
+
+    pub fn create(
+        user: User,
+        is_confidential: bool,
+        name: String,
+        description: String,
+        homepage_url: Url,
+        redirect_url: Url
+    ) -> auth_response::Result<Client> {
+        let client_id = Self::generate_random_string();
+
+        let client_secret = match is_confidential {
+            true => Some(Self::generate_random_string()),
+            false => None,
+        };
+
+        let db_client = DbClient::insert(
+            &client_id,
+            &client_secret,
+            &user.get_id(),
+            &name,
+            &description,
+            &homepage_url,
+            &redirect_url
+        ).map_err(|err| {
+            match err {
+                _ => auth_response::Rejection::ServerError(None),
+            }
+        })?;
+
+        Ok(Client::from(db_client))
     }
 
     pub fn validate(&self) -> auth_response::Result<Client> {
@@ -66,6 +110,21 @@ impl Client {
 
     pub fn get_type(&self) -> ClientType {
         self.client_type
+    }
+}
+
+impl From<DbClient> for Client {
+    fn from(db_client: DbClient) -> Self {
+        let client_type = match db_client.secret {
+                Some(_) => ClientType::Confidential,
+                None => ClientType::Public,
+        };
+
+        Self {
+            id: db_client.id,
+            secret: db_client.secret,
+            client_type,
+        }
     }
 }
 

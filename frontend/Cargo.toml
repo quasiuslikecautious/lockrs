@@ -12,11 +12,13 @@ gloo-net = "0.2.6"
 log = "0.4.17"
 regex = "1.7.2"
 reqwasm = "0.5.0"
+serde = { version = "1.0.159", features = ["derive"] }
 serde_json = "1.0.95"
 stylist = { version = "0.12.0", features = ["yew"] }
+url = "2.3.1"
 wasm-bindgen = "0.2.84"
 wasm-bindgen-futures = "0.4.34"
 wasm-logger = "0.2.0"
-web-sys = "0.3.61"
+web-sys = { version = "0.3.61", features = ["HtmlDivElement", "HtmlButtonElement", "HtmlFormElement", "Element", "HtmlSelectElement"] }
 yew = { version = "0.20.0", features = ["csr"] }
 yew-router = "0.17.0"

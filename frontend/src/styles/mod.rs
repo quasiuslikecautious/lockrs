@@ -64,7 +64,7 @@ pub fn form_styles() -> Style {
                 display: flex;
                 flex-flow: column wrap;
                 align-items: center;
-                gap: 10px;
+                gap: 8px;
                 
                 border: 10px solid #EBEBEB;
                 border-radius: 8px;
@@ -101,7 +101,7 @@ pub fn form_styles() -> Style {
                 transform: rotate(-99.2deg);
                 position: absolute;
                 top: -100px;
-                left: 69px;
+                left: 70px;
 
                 border-bottom: 60px solid #F15025;
                 border-left: 10px solid transparent;
@@ -122,7 +122,7 @@ pub fn form_styles() -> Style {
                 
             }
 
-            input, textarea {
+            input, textarea, select {
                 border: 1px solid #CED0CE;
 
                 transition-duration: 0.1s;
@@ -139,7 +139,7 @@ pub fn form_styles() -> Style {
                 maxlength: 200;
             }
 
-            input:focus, textarea:focus {
+            input:focus, textarea:focus, select:focus {
                 outline: none;
                 border: 2px solid #25C6F1;
             }
@@ -153,16 +153,23 @@ pub fn form_styles() -> Style {
             }
 
             input[type=text], input[type=password] {
-                height: 30px;
+                height: 50px;
                 padding: 24px 10px;
             }
 
-            input[type=text], input[type=password], textarea {
+            input[type=text], input[type=password], textarea, select {
                 width: 100%;
                 box-sizing: border-box;
                 font-size: 16px;
 
+                background-color: #FFFFFF;
+
                 border-radius: 5px;
+            }
+
+            select {
+                height: 50px;
+                padding: 0 10px;
             }
 
             .input-container {
@@ -185,7 +192,7 @@ pub fn form_styles() -> Style {
                 transition-property: padding position color font-size;
             }
 
-            input:focus + .input-hint, textarea:focus + .input-hint {
+            input:focus + .input-hint, textarea:focus + .input-hint, select:focus + .input-hint {
                 padding: 0 4px;
 
                 font-size: 12px;
@@ -194,7 +201,7 @@ pub fn form_styles() -> Style {
                 transform: translateX(-4px) translateY(-23px);
             }
 
-            input:not(:placeholder-shown) + .input-hint, textarea:not(:placeholder-shown) + .input-hint {
+            input:not(:placeholder-shown) + .input-hint, textarea:not(:placeholder-shown) + .input-hint, select:valid + .input-hint {
                 padding: 0 4px;
 
                 font-size: 12px;
@@ -227,7 +234,7 @@ pub fn button_pair() -> Style {
 
             align-self: flex-end;
 
-            flex-flow: row wrap;
+            flex-flow: column wrap;
             align-items: center;
             justify-content: space-around;
             gap: 10px;
@@ -254,4 +261,3 @@ pub fn button_pair() -> Style {
         "#
     ).expect("Failed to mount style");
 }
-

@@ -31,10 +31,12 @@ diesel::table! {
 diesel::table! {
     clients (id) {
         id -> Varchar,
-        secret -> Nullable<Text>,
+        secret -> Nullable<Varchar>,
         user_id -> Uuid,
         is_public -> Bool,
         name -> Text,
+        description -> Varchar,
+        homepage_url -> Text,
     }
 }
 

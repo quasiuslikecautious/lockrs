@@ -66,7 +66,7 @@ async fn main() {
         .route("/user/create", put(handle_create_user))
         .route("/user/login", post(handle_authenticate_user))
         .route("/user/:user_id", get(handle_get_user))
-        .route("/client/create", post(handle_create_client))
+        .route("/client/create", put(handle_create_client))
         .route("/client/:client_id", get(handle_get_client));
 
     let app = Router::new()
@@ -122,15 +122,44 @@ async fn handle_authenticate_user(
 }
 
 async fn handle_get_user(Path(user_id): Path<Uuid>) {
-
-}
-
-async fn handle_create_client() {
     
 }
 
-async fn handle_get_client(Path(client_id): Path<String>) {
+async fn handle_create_client(
+    extract::BasicAuth((email, password)): extract::BasicAuth,
+    Json(request_body): Json<ClientCreateRequest>
+) -> StatusCode {
+    let Some(user) = models::UserCredentials::get_from_credentials(email, password).ok()
+    else {
+        return StatusCode::UNAUTHORIZED;
+    };
 
+    let client_create_attempt = models::ClientCredentials::create(
+        user,
+        request_body.is_confidential,
+        request_body.name,
+        request_body.description,
+        request_body.homepage_url,
+        request_body.callback_url
+    );
+
+    match client_create_attempt {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::BAD_REQUEST,
+    }
+}
+
+#[derive(Deserialize)]
+struct ClientCreateRequest {
+    pub name: String,
+    pub is_confidential: bool,
+    pub homepage_url: Url,
+    pub description: String,
+    pub callback_url: Url,
+}
+
+async fn handle_get_client(Path(client_id): Path<String>) {
+    
 }
 
 async fn handle_auth_error(
