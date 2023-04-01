@@ -1,5 +1,9 @@
 mod styles;
 mod components;
+mod services;
+mod models;
+mod views;
+mod controllers;
 
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -34,13 +38,14 @@ enum Route {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home                 => html! { <h1>{ "Hello Frontend" }</h1> },
-        Route::ClientRegister       => html! { <components::ClientRegistrationPage /> },
-        Route::Device               => html! { <components::DevicePage /> },
-        Route::Login                => html! { <components::LoginPage /> },
-        Route::Logout               => html! { <components::LogoutPage /> },
-        Route::LogoutSuccess        => html! { <components::LogoutSuccessPage /> },
-        Route::Signup               => html! { <components::SignupPage /> },
-        Route::ScopeConfirmation    => html! { <components::ScopeConfirmationPage /> },
+        Route::ClientRegister       => html! { <controllers::ClientRegistrationController /> },
+        Route::Device               => html! { <controllers::DeviceCodeController /> },
+        Route::Login                => html! { <controllers::LoginController /> },
+        Route::Logout               => html! { <controllers::LogoutController /> },
+        Route::LogoutSuccess        => html! { <controllers::LogoutSuccessController /> },
+        Route::ScopeConfirmation    => html! { <controllers::ScopeConfirmationController /> },
+        Route::Signup               => html! { <controllers::SignupController /> },
+        _ => html! { <h1>{ "Hello Frontend" }</h1> }
     }
 }
 
