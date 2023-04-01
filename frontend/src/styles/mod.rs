@@ -56,7 +56,7 @@ pub fn form_styles() -> Style {
 
             .container {
                 min-height: 500px;
-                width: 300px;
+                width: 275px;
                 position: relative;
                 margin-left: auto;
                 margin-right: auto;
@@ -101,7 +101,7 @@ pub fn form_styles() -> Style {
                 transform: rotate(-99.2deg);
                 position: absolute;
                 top: -100px;
-                left: 70px;
+                left: 60px;
 
                 border-bottom: 60px solid #F15025;
                 border-left: 10px solid transparent;
@@ -115,7 +115,7 @@ pub fn form_styles() -> Style {
                 transform: rotate(99.2deg);
                 position: absolute;
                 top: -119px;
-                left: 125px;
+                left: 115px;
 
                 border-bottom: 60px solid #C0330C;
                 border-right: 10px solid transparent;

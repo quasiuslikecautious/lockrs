@@ -10,10 +10,10 @@ use crate::{
 #[derive(Clone, Properties, PartialEq)]
 pub struct SignupViewProps {
     pub model: Rc<RefCell<SignupModel>>,
-    pub email_cb: Callback<Event>,
-    pub password_cb: Callback<Event>,
-    pub login_button_cb: Callback<MouseEvent>,
-    pub submit_button_cb: Callback<MouseEvent>,
+    pub email_onchange: Callback<Event>,
+    pub password_onchange: Callback<Event>,
+    pub login_button_onclick: Callback<MouseEvent>,
+    pub submit_button_onclick: Callback<MouseEvent>,
 }
 
 pub struct SignupView;
@@ -41,7 +41,7 @@ impl Component for SignupView {
                             id="email" 
                             name="email" 
                             placeholder=" "
-                            onchange={ctx.props().email_cb.clone()}
+                            onchange={ctx.props().email_onchange.clone()}
                             value={model.form_data.email.clone()}
                         />
                         <label for="email" class="input-hint">
@@ -54,7 +54,7 @@ impl Component for SignupView {
                             id="password"
                             name="password"
                             placeholder=" "
-                            onchange={ctx.props().password_cb.clone()}
+                            onchange={ctx.props().password_onchange.clone()}
                             value={model.form_data.password.clone()}
                         />
                         <label for="password" class="input-hint">
@@ -66,12 +66,12 @@ impl Component for SignupView {
                 <div class={ styles::button_pair() }>
                     <button 
                         class="secondary" 
-                        onclick={ctx.props().login_button_cb.clone()}
+                        onclick={ctx.props().login_button_onclick.clone()}
                     >
                         <p>{ "Login instead" }</p>
                     </button>
 
-                    <button onclick={ctx.props().submit_button_cb.clone()}>
+                    <button onclick={ctx.props().submit_button_onclick.clone()}>
                        <p>{ "Continue" }</p>
                     </button>
                 </div>

@@ -28,12 +28,12 @@ impl Component for LogoutSuccessController {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let login_button_cb = ctx.link().callback(|_| Self::Message::LoginButtonClicked);
+        let login_button_onclick = ctx.link().callback(|_| Self::Message::LoginButtonClicked);
 
         html! {
             <LogoutSuccessView
                 model={self.model.clone()}
-                login_button_cb={login_button_cb}
+                login_button_onclick={login_button_onclick}
             />
         }
     }
@@ -42,7 +42,7 @@ impl Component for LogoutSuccessController {
         match msg {
             Self::Message::LoginButtonClicked => {
                 let navigator = ctx.link().navigator().unwrap();
-                navigator.push(&Route::Login);
+                navigator.push(&Route::LoginRoute);
             }
         }
         

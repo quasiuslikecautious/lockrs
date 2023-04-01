@@ -10,14 +10,16 @@ use crate::{
 #[derive(Clone, Properties, PartialEq)]
 pub struct ClientRegistrationViewProps {
     pub model: Rc<RefCell<ClientRegistrationModel>>,
-    pub application_name_cb: Callback<Event>,
-    pub application_description_cb: Callback<KeyboardEvent>,
-    pub application_type_cb: Callback<Event>,
-    pub homepage_url_cb: Callback<Event>,
-    pub redirect_url_cb: Callback<Event>,
-    pub next_button_cb: Callback<MouseEvent>,
-    pub previous_button_cb: Callback<MouseEvent>,
-    pub submit_button_cb: Callback<MouseEvent>,
+
+    pub application_name_onchange: Callback<Event>,
+    pub application_description_onkeyup: Callback<KeyboardEvent>,
+    pub application_type_onchange: Callback<Event>,
+    pub homepage_url_onchange: Callback<Event>,
+    pub redirect_url_onchange: Callback<Event>,
+
+    pub next_button_onclick: Callback<MouseEvent>,
+    pub previous_button_onclick: Callback<MouseEvent>,
+    pub submit_button_onclick: Callback<MouseEvent>,
 }
 
 pub struct ClientRegistrationView;
@@ -46,7 +48,7 @@ impl Component for ClientRegistrationView {
                                 id="application-name" 
                                 name="application-name" 
                                 placeholder=" "
-                                onchange={ctx.props().application_name_cb.clone()}
+                                onchange={ctx.props().application_name_onchange.clone()}
                                 value={model.form_data.application_name.clone()}
                             />
                             <label for="application-name" class="input-hint">
@@ -59,7 +61,7 @@ impl Component for ClientRegistrationView {
                                 class="large-text-input"
                                 name="application-description" 
                                 placeholder=" "
-                                onkeyup={ctx.props().application_description_cb.clone()}
+                                onkeyup={ctx.props().application_description_onkeyup.clone()}
                                 value={model.form_data.application_description.clone()}
                             />
                             <label for="application-description" class="input-hint">
@@ -76,7 +78,7 @@ impl Component for ClientRegistrationView {
                                 id="application-type"
                                 name="application-type"
                                 required=true
-                                onchange={ctx.props().application_type_cb.clone()}
+                                onchange={ctx.props().application_type_onchange.clone()}
                                 value={model.form_data.application_type.clone()}
                             >
                                 <option value="" disabled=true selected=true hidden=true></option>
@@ -95,7 +97,7 @@ impl Component for ClientRegistrationView {
                                 id="homepage-url" 
                                 name="homepage-url" 
                                 placeholder=" "
-                                onchange={ctx.props().homepage_url_cb.clone()}
+                                onchange={ctx.props().homepage_url_onchange.clone()}
                                 value={model.form_data.homepage_url.clone()}
                             />
                             <label for="homepage-url" class="input-hint">
@@ -108,7 +110,7 @@ impl Component for ClientRegistrationView {
                                 id="redirect-url" 
                                 name="redirect-url" 
                                 placeholder=" "
-                                onchange={ctx.props().redirect_url_cb.clone()}
+                                onchange={ctx.props().redirect_url_onchange.clone()}
                                 value={model.form_data.redirect_url.clone()}
                             />
                             <label for="redirect-url" class="input-hint">
@@ -120,21 +122,21 @@ impl Component for ClientRegistrationView {
                 <div class={styles::button_pair()}>
                     <button 
                         class="secondary"
-                        onclick={ctx.props().previous_button_cb.clone()}
+                        onclick={ctx.props().previous_button_onclick.clone()}
                         hidden={model.previous_button_hidden}
                     >
                         <p>{ "Back" }</p>
                     </button>
 
                     <button 
-                        onclick={ctx.props().next_button_cb.clone()}
+                        onclick={ctx.props().next_button_onclick.clone()}
                         hidden={model.next_button_hidden}
                     >
                         <p>{ "Continue" }</p>
                     </button>
 
                     <button 
-                        onclick={ctx.props().submit_button_cb.clone()}
+                        onclick={ctx.props().submit_button_onclick.clone()}
                         hidden={model.submit_button_hidden}
                     >
                         <p>{ "Submit" }</p>

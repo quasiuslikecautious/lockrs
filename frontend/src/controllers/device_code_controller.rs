@@ -33,14 +33,14 @@ impl Component for DeviceCodeController {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let user_code_cb = ctx.link().callback(Self::Message::UserCodeUpdated);
-        let submit_button_cb = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
+        let user_code_onchange = ctx.link().callback(Self::Message::UserCodeUpdated);
+        let submit_button_onclick = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
 
         html! {
             <DeviceCodeView
                 model={self.model.clone()}
-                user_code_cb={user_code_cb}
-                submit_button_cb={submit_button_cb}
+                user_code_onchange={user_code_onchange}
+                submit_button_onclick={submit_button_onclick}
             />
         }
     }

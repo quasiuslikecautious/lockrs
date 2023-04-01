@@ -30,12 +30,12 @@ impl Component for LogoutController {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let logout_button_cb = ctx.link().callback(|_| Self::Message::LogoutButtonClicked);
+        let logout_button_onclick = ctx.link().callback(|_| Self::Message::LogoutButtonClicked);
 
         html! {
             <LogoutView
                 model={self.model.clone()}
-                logout_button_cb={logout_button_cb}
+                logout_button_onclick={logout_button_onclick}
             />
         }
     }
@@ -45,7 +45,7 @@ impl Component for LogoutController {
             Self::Message::LogoutButtonClicked => {
                 self.submit_logout();
                 let navigator = ctx.link().navigator().unwrap();
-                navigator.push(&Route::LogoutSuccess);
+                navigator.push(&Route::LogoutSuccessRoute);
             },
         };
 

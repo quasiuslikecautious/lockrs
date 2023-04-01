@@ -7,8 +7,8 @@ use crate::models::DeviceCodeModel;
 #[derive(Clone, Properties, PartialEq)]
 pub struct DeviceCodeViewProps {
     pub model: Rc<RefCell<DeviceCodeModel>>,
-    pub user_code_cb: Callback<Event>,
-    pub submit_button_cb: Callback<MouseEvent>,
+    pub user_code_onchange: Callback<Event>,
+    pub submit_button_onclick: Callback<MouseEvent>,
 }
 
 pub struct DeviceCodeView;
@@ -39,7 +39,7 @@ impl Component for DeviceCodeView {
                             maxlength="8"
                             style="text-transform: uppercase;"
                             placeholder=" "
-                            onchange={ctx.props().user_code_cb.clone()}
+                            onchange={ctx.props().user_code_onchange.clone()}
                             value={model.form_data.user_code.clone()}
                         />
                         <label for="device-code" class="input-hint">
@@ -48,7 +48,7 @@ impl Component for DeviceCodeView {
                     </div>
                 </form>
                 <br/>
-                <button onclick={ctx.props().submit_button_cb.clone()}>
+                <button onclick={ctx.props().submit_button_onclick.clone()}>
                 <p>{ "Continue" }</p>
                 </button>
             </>

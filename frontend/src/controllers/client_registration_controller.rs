@@ -38,27 +38,27 @@ impl Component for ClientRegistrationController {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let application_name_cb = ctx.link().callback(Self::Message::ApplicationNameUpdated);
-        let application_description_cb = ctx.link().callback(Self::Message::ApplicationDescriptionUpdated);
-        let application_type_cb = ctx.link().callback(Self::Message::ApplicationTypeUpdated);
-        let homepage_url_cb = ctx.link().callback(Self::Message::HomepageUrlUpdated);
-        let redirect_url_cb = ctx.link().callback(Self::Message::RedirectUrlUpdated);
+        let application_name_oninput = ctx.link().callback(Self::Message::ApplicationNameUpdated);
+        let application_description_onkeyup = ctx.link().callback(Self::Message::ApplicationDescriptionUpdated);
+        let application_type_onchange = ctx.link().callback(Self::Message::ApplicationTypeUpdated);
+        let homepage_url_onchange = ctx.link().callback(Self::Message::HomepageUrlUpdated);
+        let redirect_url_onchange = ctx.link().callback(Self::Message::RedirectUrlUpdated);
 
-        let next_button_cb = ctx.link().callback(|_| Self::Message::NextButtonClicked);
-        let previous_button_cb = ctx.link().callback(|_| Self::Message::PreviousButtonClicked);
-        let submit_button_cb = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
+        let next_button_onclick = ctx.link().callback(|_| Self::Message::NextButtonClicked);
+        let previous_button_onclick = ctx.link().callback(|_| Self::Message::PreviousButtonClicked);
+        let submit_button_onclick = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
 
         html! {
             <ClientRegistrationView
                 model={self.model.clone()}
-                application_name_cb={application_name_cb}
-                application_description_cb={application_description_cb}
-                application_type_cb={application_type_cb}
-                homepage_url_cb={homepage_url_cb}
-                redirect_url_cb={redirect_url_cb}
-                next_button_cb={next_button_cb}
-                previous_button_cb={previous_button_cb}
-                submit_button_cb={submit_button_cb}
+                application_name_onchange={application_name_oninput}
+                application_description_onkeyup={application_description_onkeyup}
+                application_type_onchange={application_type_onchange}
+                homepage_url_onchange={homepage_url_onchange}
+                redirect_url_onchange={redirect_url_onchange}
+                next_button_onclick={next_button_onclick}
+                previous_button_onclick={previous_button_onclick}
+                submit_button_onclick={submit_button_onclick}
             />
         }
     }

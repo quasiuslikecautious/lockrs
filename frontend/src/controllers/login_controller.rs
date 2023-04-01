@@ -37,19 +37,19 @@ impl Component for LoginController {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let email_cb = ctx.link().callback(Self::Message::EmailUpdated);
-        let password_cb = ctx.link().callback(Self::Message::PasswordUpdated);
+        let email_onchange = ctx.link().callback(Self::Message::EmailUpdated);
+        let password_onchange = ctx.link().callback(Self::Message::PasswordUpdated);
         
-        let signup_button_cb = ctx.link().callback(|_| Self::Message::SignupButtonClicked);
-        let submit_button_cb = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
+        let signup_button_onclick = ctx.link().callback(|_| Self::Message::SignupButtonClicked);
+        let submit_button_onclick = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
 
         html! {
             <LoginView
                 model={self.model.clone()}
-                email_cb={email_cb}
-                password_cb={password_cb}
-                signup_button_cb={signup_button_cb}
-                submit_button_cb={submit_button_cb}
+                email_onchange={email_onchange}
+                password_onchange={password_onchange}
+                signup_button_onclick={signup_button_onclick}
+                submit_button_onclick={submit_button_onclick}
             />
         }
     }
@@ -98,7 +98,7 @@ impl Component for LoginController {
             },
             Self::Message::SignupButtonClicked => {
                 let navigator = ctx.link().navigator().unwrap();
-                navigator.push(&Route::Signup);
+                navigator.push(&Route::SignupRoute);
             },
             Self::Message::SubmitButtonClicked => {
                 if !(model.email_error == None &&
