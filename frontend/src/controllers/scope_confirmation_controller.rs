@@ -1,5 +1,3 @@
-use std::{cell::RefCell, rc::Rc};
-
 use yew::prelude::*;
 
 use crate::{
@@ -12,7 +10,7 @@ pub enum ScopeConfirmationMessage {
 }
 
 pub struct ScopeConfirmationController {
-    model: Rc<RefCell<ScopeConfirmationModel>>,
+    model: ScopeConfirmationModel,
 }
 
 impl Component for ScopeConfirmationController {
@@ -21,7 +19,7 @@ impl Component for ScopeConfirmationController {
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            model: Rc::new(RefCell::new(ScopeConfirmationModel::new())),
+            model: ScopeConfirmationModel::new(),
         }
     }
 

@@ -1,12 +1,10 @@
-use std::{cell::RefCell, rc::Rc};
-
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     Route,
     models::LogoutSuccessModel,
-    views::LogoutSuccessView,
+    views::{LogoutSuccessView, LogoutSuccessRedirectCallbacks},
 };
 
 pub enum LogoutSuccessMessage {
@@ -14,26 +12,28 @@ pub enum LogoutSuccessMessage {
 }
 
 pub struct LogoutSuccessController {
-    model: Rc<RefCell<LogoutSuccessModel>>,
+    model: LogoutSuccessModel,
+    redirect_callbacks: LogoutSuccessRedirectCallbacks,
 }
 
 impl Component for LogoutSuccessController {
     type Message = LogoutSuccessMessage;
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: Rc::new(RefCell::new(LogoutSuccessModel::new()))
+            model: LogoutSuccessModel::new(),
+            redirect_callbacks: LogoutSuccessRedirectCallbacks {
+                on_login_click: ctx.link().callback(|_| Self::Message::LoginButtonClicked),
+            },
         }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let login_button_onclick = ctx.link().callback(|_| Self::Message::LoginButtonClicked);
-
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <LogoutSuccessView
                 model={self.model.clone()}
-                login_button_onclick={login_button_onclick}
+                redirect_callbacks={self.redirect_callbacks.clone()}
             />
         }
     }

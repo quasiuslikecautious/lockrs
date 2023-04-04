@@ -80,7 +80,7 @@ pub fn form_styles() -> Style {
             
             /* Container specific attr that should apply to children */
             #form-container {
-                margin-top: 50px;
+                margin-top: 100px;
                 padding: 20px 40px;
                 background-color: #FFFFFF;
                 box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
@@ -95,31 +95,58 @@ pub fn form_styles() -> Style {
                 box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2) inset;
             }
 
+            #lanyard-metal {
+                height: 26px;
+                width: 22px;
+
+                position: absolute;
+                top: -40px;
+
+                background-color: #AAAAAA;
+                box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
+
+                border-radius: 4px;
+            }
+
+            #lanyard-middle {
+                height: 50px;
+                width: 28px;
+
+                position: absolute;
+                top: -20px;
+
+                background-color: #F15025;
+                box-shadow: 2px 2px rgba(0, 0, 0, 0.1);
+                
+                border-radius: 9px;
+            }
+
             #lanyard-front {
                 width: 200px;
 
-                transform: rotate(-99.2deg);
+                transform: rotate(-111deg);
                 position: absolute;
-                top: -100px;
-                left: 60px;
+                top: -140px;
+                left: 36px;
 
-                border-bottom: 60px solid #F15025;
+                border-bottom: 25px solid #F15025;
                 border-left: 10px solid transparent;
 
                 box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
+                border-radius: 40%;
             }
 
             #lanyard-back {
-                width: 160px;
+                width: 200px;
 
-                transform: rotate(99.2deg);
+                transform: rotate(111deg);
                 position: absolute;
-                top: -119px;
-                left: 115px;
+                top: -140px;
+                left: 109px;
 
-                border-bottom: 60px solid #C0330C;
+                border-bottom: 25px solid #F25015;
                 border-right: 10px solid transparent;
-                
+                border-radius: 40%;
             }
 
             input, textarea, select {

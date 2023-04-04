@@ -1,12 +1,10 @@
-use std::{cell::RefCell, rc::Rc};
-
 use yew::prelude::*;
 
 use crate::{styles, models::ScopeConfirmationModel};
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct ScopeConfirmationViewProps {
-    pub model: Rc<RefCell<ScopeConfirmationModel>>,
+    pub model: ScopeConfirmationModel,
 }
 
 pub struct ScopeConfirmationView;

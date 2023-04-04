@@ -15,6 +15,8 @@ pub fn id_card_container(props: &Props) -> Html {
                 <div id="cutout" />
                 <div id="lanyard-back" />
                 <div id="lanyard-front" />
+                <div id="lanyard-middle" />
+                <div id="lanyard-metal" />
 
                 <img 
                     src="../img/rusty-lock.png" 

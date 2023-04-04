@@ -1,5 +1,3 @@
-use std::{cell::RefCell, rc::Rc};
-
 use base64::{Engine as _, engine::general_purpose};
 use regex::Regex;
 use reqwasm::http::Request;
@@ -11,7 +9,12 @@ use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     models::LoginModel,
-    views::LoginView, Route,
+    views::{
+        LoginView,
+        LoginRedirectCallbacks,
+        LoginFormCallbacks
+    },
+    Route,
 };
 
 pub enum LoginMessage {
@@ -23,40 +26,40 @@ pub enum LoginMessage {
 }
 
 pub struct LoginController {
-    model: Rc<RefCell<LoginModel>>
+    model: LoginModel,
+    form_callbacks: LoginFormCallbacks,
+    redirect_callbacks: LoginRedirectCallbacks
 }
 
-impl Component for LoginController {
+impl Component for LoginController {    
     type Message = LoginMessage;
     type Properties = ();
     
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: Rc::new(RefCell::new(LoginModel::new())),
+            model: LoginModel::new(),
+            form_callbacks: LoginFormCallbacks {
+                on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
+                on_email_change: ctx.link().callback(Self::Message::EmailUpdated),
+                on_password_change: ctx.link().callback(Self::Message::PasswordUpdated),
+            },
+            redirect_callbacks: LoginRedirectCallbacks {
+                on_signup_click: ctx.link().callback(|_| Self::Message::SignupButtonClicked),
+            },
         }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let email_onchange = ctx.link().callback(Self::Message::EmailUpdated);
-        let password_onchange = ctx.link().callback(Self::Message::PasswordUpdated);
-        
-        let signup_button_onclick = ctx.link().callback(|_| Self::Message::SignupButtonClicked);
-        let submit_button_onclick = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
-
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <LoginView
                 model={self.model.clone()}
-                email_onchange={email_onchange}
-                password_onchange={password_onchange}
-                signup_button_onclick={signup_button_onclick}
-                submit_button_onclick={submit_button_onclick}
+                form_callbacks={self.form_callbacks.clone()}
+                redirect_callbacks={self.redirect_callbacks.clone()}
             />
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let mut model = self.model.borrow_mut();
-        
         match msg {
             Self::Message::EmailUpdated(event) => {
                 let target = event.target();
@@ -67,14 +70,14 @@ impl Component for LoginController {
                     return false;
                 };
 
-                model.form_data.email = input.value();
+                self.model.email = input.value();
 
                 let email_regex = Regex::new(r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})").unwrap();
 
                 if email_regex.is_match(&input.value()) {
-                    model.email_error = None;
+                    self.model.email_error = None;
                 } else {
-                    model.email_error = Some(String::from("Invalid email"));
+                    self.model.email_error = Some(String::from("Invalid email"));
                 }
             },
             Self::Message::PasswordUpdated(event) => {
@@ -86,14 +89,14 @@ impl Component for LoginController {
                     return false;
                 };
 
-                model.form_data.password = input.value();
+                self.model.password = input.value();
 
                 let password_regex = Regex::new(r"^(.{8,})").unwrap();
 
                 if password_regex.is_match(&input.value()) {
-                    model.password_error = None;
+                    self.model.password_error = None;
                 } else {
-                    model.password_error = Some(String::from("Invalid password"));
+                    self.model.password_error = Some(String::from("Invalid password"));
                 }
             },
             Self::Message::SignupButtonClicked => {
@@ -101,8 +104,8 @@ impl Component for LoginController {
                 navigator.push(&Route::SignupRoute);
             },
             Self::Message::SubmitButtonClicked => {
-                if !(model.email_error == None &&
-                     model.password_error == None)
+                if !(self.model.email_error == None &&
+                     self.model.password_error == None)
                 {
                     return false;
                 }
@@ -118,13 +121,11 @@ impl Component for LoginController {
 impl LoginController {
     fn submit_form(&self) {
         spawn_local({
-            let form_data = self.model.borrow().form_data.clone();
+            let credentials = format!("{}:{}", &self.model.email, &self.model.password);
+            let encoded = general_purpose::URL_SAFE_NO_PAD.encode(credentials);
+            let basic_auth = format!("Basic {}", encoded);
 
             async move {
-                let credentials = format!("{}:{}", &form_data.email, &form_data.password);
-                let encoded = general_purpose::URL_SAFE_NO_PAD.encode(credentials);
-                let basic_auth = format!("Basic {}", encoded);
-
                 Request::post("/api/v1/user/login")
                     .header("Authorization", &basic_auth)
                     .send()

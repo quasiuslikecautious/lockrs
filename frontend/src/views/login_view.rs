@@ -1,5 +1,3 @@
-use std::{cell::RefCell, rc::Rc};
-
 use yew::prelude::*;
 
 use crate::{
@@ -7,13 +5,23 @@ use crate::{
     models::LoginModel,
 };
 
+#[derive(Clone, PartialEq)]
+pub struct LoginFormCallbacks {
+    pub on_submit: Callback<MouseEvent>,
+    pub on_email_change: Callback<Event>,
+    pub on_password_change: Callback<Event>,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct LoginRedirectCallbacks {
+    pub on_signup_click: Callback<MouseEvent>,
+}
+
 #[derive(Clone, Properties, PartialEq)]
 pub struct LoginViewProps {
-    pub model: Rc<RefCell<LoginModel>>,
-    pub email_onchange: Callback<Event>,
-    pub password_onchange: Callback<Event>,
-    pub signup_button_onclick: Callback<MouseEvent>,
-    pub submit_button_onclick: Callback<MouseEvent>,
+    pub model: LoginModel,
+    pub form_callbacks: LoginFormCallbacks,
+    pub redirect_callbacks: LoginRedirectCallbacks,
 }
 
 pub struct LoginView;
@@ -27,8 +35,6 @@ impl Component for LoginView {
     }
 
     fn view (&self, ctx: &Context<Self>) -> Html {
-        let model = ctx.props().model.borrow();
-
         html! {
             <> 
                 <h2>{ "Login to your account" }</h2>
@@ -41,8 +47,8 @@ impl Component for LoginView {
                             id="email" 
                             name="email" 
                             placeholder=" "
-                            onchange={ctx.props().email_onchange.clone()}
-                            value={model.form_data.email.clone()}
+                            onchange={ctx.props().form_callbacks.on_email_change.clone()}
+                            value={ctx.props().model.email.clone()}
                         />
                         <label for="email" class="input-hint">
                             { "Enter email" }
@@ -54,8 +60,8 @@ impl Component for LoginView {
                             id="password"
                             name="password"
                             placeholder=" "
-                            onchange={ctx.props().password_onchange.clone()}
-                            value={model.form_data.password.clone()}
+                            onchange={ctx.props().form_callbacks.on_password_change.clone()}
+                            value={ctx.props().model.password.clone()}
                         />
                         <label for="password" class="input-hint">
                             { "Enter password" }
@@ -66,12 +72,12 @@ impl Component for LoginView {
                 <div class={ styles::button_pair() }>
                     <button 
                         class="secondary" 
-                        onclick={ctx.props().signup_button_onclick.clone()}
+                        onclick={ctx.props().redirect_callbacks.on_signup_click.clone()}
                     >
                         <p>{ "Create account" }</p>
                     </button> 
 
-                    <button onclick={ctx.props().submit_button_onclick.clone()}>
+                    <button onclick={ctx.props().form_callbacks.on_submit.clone()}>
                         <p>{ "Continue" }</p>
                     </button>
                 </div>

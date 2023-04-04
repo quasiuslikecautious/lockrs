@@ -1,13 +1,17 @@
-use std::{cell::RefCell, rc::Rc};
-
 use yew::prelude::*;
 
 use crate::{styles, models::LogoutModel};
 
+#[derive(Clone, PartialEq)]
+pub struct LogoutRedirectCallbacks {
+    pub on_logout_click: Callback<MouseEvent>,
+    pub on_cancel_click: Callback<MouseEvent>,
+}
+
 #[derive(Clone, Properties, PartialEq)]
 pub struct LoginViewProps {
-    pub model: Rc<RefCell<LogoutModel>>,
-    pub logout_button_onclick: Callback<MouseEvent>,
+    pub model: LogoutModel,
+    pub redirect_callbacks: LogoutRedirectCallbacks,
 }
 
 pub struct LogoutView;
@@ -27,10 +31,10 @@ impl Component for LogoutView {
                 <h4>{ "Are you sure you want to log out of your account?" }</h4>
                 <br/>
                 <div class={ styles::button_pair() }>
-                    <button onclick={ctx.props().logout_button_onclick.clone()}>
+                    <button onclick={ctx.props().redirect_callbacks.on_logout_click.clone()}>
                         <p>{ "Yes, I'm sure" }</p>
                     </button>
-                    <button class="secondary">
+                    <button class="secondary" onclick={ctx.props().redirect_callbacks.on_cancel_click.clone()}>
                         <p>{ "No" }</p>
                     </button> 
                 </div>

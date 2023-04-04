@@ -1,5 +1,3 @@
-use std::{cell::RefCell, rc::Rc};
-
 use regex::Regex;
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
@@ -9,7 +7,7 @@ use yew::prelude::*;
 
 use crate::{
     models::DeviceCodeModel,
-    views::DeviceCodeView,
+    views::{DeviceCodeView, DeviceCodeFormCallbacks},
 };
 
 pub enum DeviceCodeMessage {
@@ -19,35 +17,36 @@ pub enum DeviceCodeMessage {
 }
 
 pub struct DeviceCodeController {
-    model: Rc<RefCell<DeviceCodeModel>>,
+    model: DeviceCodeModel,
+    form_callbacks: DeviceCodeFormCallbacks,
 }
 
 impl Component for DeviceCodeController {
     type Message = DeviceCodeMessage;
     type Properties = ();
     
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+
         Self {
-            model: Rc::new(RefCell::new(DeviceCodeModel::new())),
+            model: DeviceCodeModel::new(),
+            form_callbacks: DeviceCodeFormCallbacks {
+                on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
+                on_user_code_change: ctx.link().callback(Self::Message::UserCodeUpdated),
+            }
         }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let user_code_onchange = ctx.link().callback(Self::Message::UserCodeUpdated);
-        let submit_button_onclick = ctx.link().callback(|_| Self::Message::SubmitButtonClicked);
+    fn view(&self, _ctx: &Context<Self>) -> Html {
 
         html! {
             <DeviceCodeView
                 model={self.model.clone()}
-                user_code_onchange={user_code_onchange}
-                submit_button_onclick={submit_button_onclick}
+                form_callbacks={self.form_callbacks.clone()}
             />
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let mut model = self.model.borrow_mut();
-
         match msg {
             Self::Message::UserCodeUpdated(event) => {
                 let target = event.target();
@@ -58,18 +57,18 @@ impl Component for DeviceCodeController {
                     return false;
                 };
 
-                model.form_data.user_code = input.value();
+                self.model.user_code = input.value();
 
                 let user_code_regex = Regex::new(r"^([b-df-hj-np-tv-xz0-9]{8})").unwrap();
 
                 if user_code_regex.is_match(&input.value()) {
-                    model.user_code_error = None;
+                    self.model.user_code_error = None;
                 } else {
-                    model.user_code_error = Some(String::from("Invalid user code"));
+                    self.model.user_code_error = Some(String::from("Invalid user code"));
                 }
             },
             Self::Message::SubmitButtonClicked => {
-                if !(model.user_code_error == None) {
+                if !(self.model.user_code_error == None) {
                     return false;
                 }
 
@@ -84,10 +83,9 @@ impl Component for DeviceCodeController {
 impl DeviceCodeController {
     fn submit_form(&self) {
         spawn_local({
-            let form_data = self.model.borrow().form_data.clone();
+            let body = serde_json::to_string(&self.model).unwrap();
 
             async move {
-                let body = serde_json::to_string(&form_data).unwrap();
 
                 Request::post("/api/v1/device/code")
                     .header("Content-Type", "application/json")

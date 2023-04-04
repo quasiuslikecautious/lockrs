@@ -1,5 +1,3 @@
-use std::{cell::RefCell, rc::Rc};
-
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -8,34 +6,38 @@ use yew_router::scope_ext::RouterScopeExt;
 use crate::{
     Route,
     models::LogoutModel,
-    views::LogoutView,
+    views::{LogoutView, LogoutRedirectCallbacks},
 };
 
 pub enum LogoutMessage {
     LogoutButtonClicked,
+    CancelButtonClicked,
 }
 
 pub struct LogoutController {
-    model: Rc<RefCell<LogoutModel>>,
+    model: LogoutModel,
+    redirect_callbacks: LogoutRedirectCallbacks,
 }
 
 impl Component for LogoutController {
     type Message = LogoutMessage;
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: Rc::new(RefCell::new(LogoutModel::new()))
+            model: LogoutModel::new(),
+            redirect_callbacks: LogoutRedirectCallbacks {
+                on_logout_click: ctx.link().callback(|_| Self::Message::LogoutButtonClicked),
+                on_cancel_click: ctx.link().callback(|_| Self::Message::CancelButtonClicked),
+            },
         }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let logout_button_onclick = ctx.link().callback(|_| Self::Message::LogoutButtonClicked);
-
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <LogoutView
                 model={self.model.clone()}
-                logout_button_onclick={logout_button_onclick}
+                redirect_callbacks={self.redirect_callbacks.clone()}
             />
         }
     }
@@ -46,6 +48,10 @@ impl Component for LogoutController {
                 self.submit_logout();
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.push(&Route::LogoutSuccessRoute);
+            },
+            Self::Message::CancelButtonClicked => {
+                let navigator = ctx.link().navigator().unwrap();
+                navigator.back();
             },
         };
 

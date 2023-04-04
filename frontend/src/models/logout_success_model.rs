@@ -1,4 +1,4 @@
-#[derive(PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LogoutSuccessModel;
 
 impl LogoutSuccessModel {

@@ -1,14 +1,17 @@
-use std::{cell::RefCell, rc::Rc};
-
 use yew::prelude::*;
 
 use crate::models::DeviceCodeModel;
 
+#[derive(Clone, PartialEq)]
+pub struct DeviceCodeFormCallbacks {
+    pub on_submit: Callback<MouseEvent>,
+    pub on_user_code_change: Callback<Event>
+}
+
 #[derive(Clone, Properties, PartialEq)]
 pub struct DeviceCodeViewProps {
-    pub model: Rc<RefCell<DeviceCodeModel>>,
-    pub user_code_onchange: Callback<Event>,
-    pub submit_button_onclick: Callback<MouseEvent>,
+    pub model: DeviceCodeModel,
+    pub form_callbacks: DeviceCodeFormCallbacks,
 }
 
 pub struct DeviceCodeView;
@@ -22,8 +25,6 @@ impl Component for DeviceCodeView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let model = ctx.props().model.borrow();
-
         html! {
             <>
                 <h2>{ "Connect a device" }</h2>
@@ -39,8 +40,8 @@ impl Component for DeviceCodeView {
                             maxlength="8"
                             style="text-transform: uppercase;"
                             placeholder=" "
-                            onchange={ctx.props().user_code_onchange.clone()}
-                            value={model.form_data.user_code.clone()}
+                            onchange={ctx.props().form_callbacks.on_user_code_change.clone()}
+                            value={ctx.props().model.user_code.clone()}
                         />
                         <label for="device-code" class="input-hint">
                             { "Enter code" }
@@ -48,7 +49,7 @@ impl Component for DeviceCodeView {
                     </div>
                 </form>
                 <br/>
-                <button onclick={ctx.props().submit_button_onclick.clone()}>
+                <button onclick={ctx.props().form_callbacks.on_submit.clone()}>
                 <p>{ "Continue" }</p>
                 </button>
             </>
