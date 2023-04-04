@@ -1,11 +1,11 @@
 mod client_model;
-mod device_code_models;
 mod scope_model;
 mod user_model;
+mod user_code_models;
 
 pub use self::{
     client_model::*,
-    device_code_models::*,
     scope_model::*,
     user_model::*,
+    user_code_models::*,
 };

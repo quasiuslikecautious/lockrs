@@ -1,4 +1,3 @@
-use regex::Regex;
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
@@ -6,7 +5,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use crate::{
-    models::DeviceCodeModel,
+    models::UserCodeModel,
     views::{DeviceCodeView, DeviceCodeFormCallbacks},
 };
 
@@ -17,7 +16,7 @@ pub enum DeviceCodeMessage {
 }
 
 pub struct DeviceCodeController {
-    model: DeviceCodeModel,
+    model: UserCodeModel,
     form_callbacks: DeviceCodeFormCallbacks,
 }
 
@@ -28,7 +27,7 @@ impl Component for DeviceCodeController {
     fn create(ctx: &Context<Self>) -> Self {
 
         Self {
-            model: DeviceCodeModel::new(),
+            model: UserCodeModel::new(),
             form_callbacks: DeviceCodeFormCallbacks {
                 on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
                 on_user_code_change: ctx.link().callback(Self::Message::UserCodeUpdated),
@@ -57,18 +56,10 @@ impl Component for DeviceCodeController {
                     return false;
                 };
 
-                self.model.user_code = input.value();
-
-                let user_code_regex = Regex::new(r"^([b-df-hj-np-tv-xz0-9]{8})").unwrap();
-
-                if user_code_regex.is_match(&input.value()) {
-                    self.model.user_code_error = None;
-                } else {
-                    self.model.user_code_error = Some(String::from("Invalid user code"));
-                }
+                self.model.set_user_code(input.value());
             },
             Self::Message::SubmitButtonClicked => {
-                if !(self.model.user_code_error == None) {
+                if !self.model.validate() {
                     return false;
                 }
 
@@ -86,7 +77,6 @@ impl DeviceCodeController {
             let body = serde_json::to_string(&self.model).unwrap();
 
             async move {
-
                 Request::post("/api/v1/device/code")
                     .header("Content-Type", "application/json")
                     .body(body)

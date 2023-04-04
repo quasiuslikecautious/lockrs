@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::models::DeviceCodeModel;
+use crate::models::UserCodeModel;
 
 #[derive(Clone, PartialEq)]
 pub struct DeviceCodeFormCallbacks {
@@ -10,7 +10,7 @@ pub struct DeviceCodeFormCallbacks {
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct DeviceCodeViewProps {
-    pub model: DeviceCodeModel,
+    pub model: UserCodeModel,
     pub form_callbacks: DeviceCodeFormCallbacks,
 }
 

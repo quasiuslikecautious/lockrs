@@ -1,5 +1,4 @@
 use base64::{Engine as _, engine::general_purpose};
-use regex::Regex;
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
@@ -70,16 +69,8 @@ impl Component for LoginController {
                     return false;
                 };
 
-                self.model.email = input.value();
-
-                let email_regex = Regex::new(r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})").unwrap();
-
-                if email_regex.is_match(&input.value()) {
-                    self.model.email_error = None;
-                } else {
-                    self.model.email_error = Some(String::from("Invalid email"));
-                }
-            },
+                self.model.set_email(input.value());
+           },
             Self::Message::PasswordUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
@@ -89,24 +80,14 @@ impl Component for LoginController {
                     return false;
                 };
 
-                self.model.password = input.value();
-
-                let password_regex = Regex::new(r"^(.{8,})").unwrap();
-
-                if password_regex.is_match(&input.value()) {
-                    self.model.password_error = None;
-                } else {
-                    self.model.password_error = Some(String::from("Invalid password"));
-                }
+                self.model.set_password(input.value());
             },
             Self::Message::SignupButtonClicked => {
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.push(&Route::SignupRoute);
             },
             Self::Message::SubmitButtonClicked => {
-                if !(self.model.email_error == None &&
-                     self.model.password_error == None)
-                {
+                if !self.model.validate() {
                     return false;
                 }
 

@@ -1,4 +1,4 @@
-
+use url::Url;
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -37,4 +37,58 @@ impl ClientModel {
             redirect_url_error: None,
         }
     }
+
+    pub fn set_application_name(&mut self, app_name: String) {
+        self.application_name = app_name;
+
+        self.application_name_error = None;
+    }
+
+    pub fn set_application_description(&mut self, app_description: String) {
+        self.application_description = app_description;
+
+        if self.application_description.len() > 300 {
+            self.application_description_error = Some(String::from("Application description exceeds the maximum length"));
+        } else {
+            self.application_description_error = None;
+        }
+    }
+
+    pub fn set_application_type(&mut self, app_type: String) {
+        self.application_type = app_type;
+
+        self.application_type_error = match self.application_type.as_str() {
+            "confidential" | "public"   => None,
+            _                           => Some(String::from("Invalid application type selected")),
+        };
+    }
+
+    pub fn set_homepage_url(&mut self, url: String) {
+        self.homepage_url = url;
+
+        if let Some(_) = Url::parse(self.homepage_url.as_str()).ok() {
+            self.homepage_url_error = None;
+        } else {
+            self.homepage_url_error = Some(String::from("Invalid homepage url"));
+        }
+    }
+
+    pub fn set_redirect_url(&mut self, url: String) {
+        self.redirect_url = url;
+
+        if let Some(_) = Url::parse(self.redirect_url.as_str()).ok() {
+            self.homepage_url_error = None;
+        } else {
+            self.homepage_url_error = Some(String::from("Invalid homepage url"));
+        }
+    }
+
+    pub fn validate(&self) -> bool {
+        return self.application_name_error.is_none() &&
+                self.application_description_error.is_none() &&
+                self.application_type_error.is_none() &&
+                self.homepage_url_error.is_none() &&
+                self.redirect_url_error.is_none();
+    }
 }
+

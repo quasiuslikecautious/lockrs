@@ -62,7 +62,7 @@ impl Component for ClientRegistrationController {
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
 
                 if let Some(input) = input {
-                    self.model.application_name = input.value();
+                    self.model.set_application_name(input.value());
                 }
             },
             Self::Message::ApplicationDescriptionUpdated(event) => {
@@ -74,16 +74,14 @@ impl Component for ClientRegistrationController {
                     return false;
                 };
 
-                let value = input.value();
-
-                self.model.application_description = value;
+                self.model.set_application_description(input.value());
             },
             Self::Message::ApplicationTypeUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
 
                 if let Some(input) = input {
-                    self.model.application_type = input.value();
+                    self.model.set_application_type(input.value());
                 }
             },
             Self::Message::HomepageUrlUpdated(event) => {
@@ -91,7 +89,7 @@ impl Component for ClientRegistrationController {
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
 
                 if let Some(input) = input {
-                    self.model.homepage_url = input.value();
+                    self.model.set_homepage_url(input.value());
                 }
             },
             Self::Message::RedirectUrlUpdated(event) => {
@@ -99,16 +97,11 @@ impl Component for ClientRegistrationController {
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
 
                 if let Some(input) = input {
-                    self.model.redirect_url = input.value();
+                    self.model.set_redirect_url(input.value());
                 }
             },
             Self::Message::SubmitButtonClicked => {
-                if !(self.model.application_name_error == None &&
-                     self.model.application_description_error == None &&
-                     self.model.application_type_error == None &&
-                     self.model.homepage_url_error == None &&
-                     self.model.redirect_url_error == None)
-                {
+                if !self.model.validate() {
                     return false;
                 }
                 
@@ -126,7 +119,6 @@ impl ClientRegistrationController {
             let body = serde_json::to_string(&self.model).unwrap();
 
             async move {
-
                 Request::put("/api/v1/client/create")
                     .header("Content-Type", "application/json")
                     .body(body)
