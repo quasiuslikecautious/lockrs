@@ -10,42 +10,49 @@ use yew_router::prelude::*;
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
+    #[at("/client/:id")]
+    ClientDetailsRoute {id: String },
+
     #[at("/client/register")]
-    ClientRegister,
+    ClientRegisterRoute,
 
     #[at("/device")]
-    Device,
+    DeviceRoute,
 
     #[at("/")]
-    Home, 
+    HomeRoute, 
 
     #[at("/login")]
-    Login,
+    LoginRoute,
 
     #[at("/logout")]
-    Logout,
+    LogoutRoute,
 
     #[at("/logout/success")]
-    LogoutSuccess,
+    LogoutSuccessRoute,
 
     #[at("/scopes/confirm")]
-    ScopeConfirmation,
+    ScopeConfirmationRoute,
 
     #[at("/signup")]
-    Signup,
+    SignupRoute,
+
+    #[at("/user/:id")]
+    UserDetailsRoute { id: String },
 }
 
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home                 => html! { <h1>{ "Hello Frontend" }</h1> },
-        Route::ClientRegister       => html! { <controllers::ClientRegistrationController /> },
-        Route::Device               => html! { <controllers::DeviceCodeController /> },
-        Route::Login                => html! { <controllers::LoginController /> },
-        Route::Logout               => html! { <controllers::LogoutController /> },
-        Route::LogoutSuccess        => html! { <controllers::LogoutSuccessController /> },
-        Route::ScopeConfirmation    => html! { <controllers::ScopeConfirmationController /> },
-        Route::Signup               => html! { <controllers::SignupController /> },
-        _ => html! { <h1>{ "Hello Frontend" }</h1> }
+        Route::HomeRoute                => html! { <h1>{ "Hello Frontend" }</h1> },
+        Route::ClientDetailsRoute { id }=> html! { <h1>{ id }</h1> },
+        Route::ClientRegisterRoute      => html! { <controllers::ClientRegistrationController /> },
+        Route::DeviceRoute              => html! { <controllers::DeviceCodeController /> },
+        Route::LoginRoute               => html! { <controllers::LoginController /> },
+        Route::LogoutRoute              => html! { <controllers::LogoutController /> },
+        Route::LogoutSuccessRoute       => html! { <controllers::LogoutSuccessController /> },
+        Route::ScopeConfirmationRoute   => html! { <controllers::ScopeConfirmationController /> },
+        Route::SignupRoute              => html! { <controllers::SignupController /> },
+        Route::UserDetailsRoute { id }  => html! { <controllers::UserDetailsController user_id={id} /> },
     }
 }
 

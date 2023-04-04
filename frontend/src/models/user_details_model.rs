@@ -1,4 +1,4 @@
-#[derive(PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UserDetailsModel {
     
 }
