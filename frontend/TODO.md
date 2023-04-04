@@ -37,3 +37,9 @@
     - [ ] Determine Authentication System for user access
     - [ ] Incorporate /login, /signup, /logout with authentication system
 
+## Improvements
+
+- [ ] Re-encapsulate props in Rc to avoid cloning every prop value
+- [ ] Move repeated UI elements to components
+    - [x] move form input fields to form input container
+

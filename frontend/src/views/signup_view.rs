@@ -1,7 +1,8 @@
 use yew::prelude::*;
 
 use crate::{
-    styles, 
+    styles,
+    components::FormFieldContainer,
     models::UserModel,
 };
 
@@ -41,7 +42,7 @@ impl Component for SignupView {
                 <h4>{ "Enter an email and password" }</h4>
     
                  <form id="signup-form">
-                    <div class="input-container">
+                    <FormFieldContainer name="email" prompt="Enter an email">
                         <input 
                             type="text" 
                             id="email" 
@@ -50,11 +51,9 @@ impl Component for SignupView {
                             onchange={ctx.props().form_callbacks.on_email_change.clone()}
                             value={ctx.props().model.email.clone()}
                         />
-                        <label for="email" class="input-hint">
-                            { "Enter an email" }
-                        </label>
-                    </div>
-                    <div class="input-container">
+                    </FormFieldContainer>
+
+                    <FormFieldContainer name="password" prompt="Enter a password">
                         <input 
                             type="password"
                             id="password"
@@ -63,10 +62,7 @@ impl Component for SignupView {
                             onchange={ctx.props().form_callbacks.on_password_change.clone()}
                             value={ctx.props().model.password.clone()}
                         />
-                        <label for="password" class="input-hint">
-                            { "Enter a password" }
-                        </label>
-                    </div>
+                    </FormFieldContainer>
                 </form>
                 <br/>
                 <div class={ styles::button_pair() }>

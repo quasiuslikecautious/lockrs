@@ -1,6 +1,9 @@
 use yew::prelude::*;
 
-use crate::models::UserCodeModel;
+use crate::{
+    components::FormFieldContainer, 
+    models::UserCodeModel,
+};
 
 #[derive(Clone, PartialEq)]
 pub struct DeviceCodeFormCallbacks {
@@ -31,7 +34,7 @@ impl Component for DeviceCodeView {
                 <h4>{ "Enter the code displayed on your device" }</h4>
 
                 <form id="device-code-form">
-                    <div class="input-container">
+                    <FormFieldContainer name="user-code" prompt="Enter code">
                         <input 
                             type="text"
                             id="user-code" 
@@ -43,10 +46,7 @@ impl Component for DeviceCodeView {
                             onchange={ctx.props().form_callbacks.on_user_code_change.clone()}
                             value={ctx.props().model.user_code.clone()}
                         />
-                        <label for="device-code" class="input-hint">
-                            { "Enter code" }
-                        </label>
-                    </div>
+                    </FormFieldContainer>
                 </form>
                 <br/>
                 <button onclick={ctx.props().form_callbacks.on_submit.clone()}>

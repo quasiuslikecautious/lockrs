@@ -3,12 +3,12 @@ use yew::{function_component, html, Children, Html, Properties};
 use crate::styles;
 
 #[derive(PartialEq, Properties)]
-pub struct Props {
+pub struct IdCardContainerProps {
     pub children: Children,
 }
 
 #[function_component(IdCardContainer)]
-pub fn id_card_container(props: &Props) -> Html {
+pub fn id_card_container(props: &IdCardContainerProps) -> Html {
     html! {
         <div class={ styles::form_styles() } id="client-registration-page">
             <div class="container" id="form-container">

@@ -1,8 +1,9 @@
 use yew::prelude::*;
 
 use crate::{
-    models::ClientModel,
     styles,
+    components::FormFieldContainer,
+    models::ClientModel,
 };
 
 pub enum ClientRegistrationViewMessage {
@@ -125,7 +126,7 @@ impl Component for ClientRegistrationView {
 
                 <form id="client-registration-form">
                     <div id="page-1" hidden={self.page_hidden_states[0]}>
-                        <div class="input-container">
+                        <FormFieldContainer name="application-name" prompt="Application name">
                             <input 
                                 type="text" 
                                 id="application-name" 
@@ -134,11 +135,9 @@ impl Component for ClientRegistrationView {
                                 onchange={ctx.props().form_callbacks.on_application_name_change.clone()}
                                 value={ctx.props().model.application_name.clone()}
                             />
-                            <label for="application-name" class="input-hint">
-                                { "Application name" }
-                            </label>
-                        </div>
-                        <div class="input-container">
+                        </FormFieldContainer>
+
+                        <FormFieldContainer name="application-description" prompt="Application description">
                             <textarea 
                                 id="application-description"
                                 class="large-text-input"
@@ -147,16 +146,10 @@ impl Component for ClientRegistrationView {
                                 onkeyup={ctx.props().form_callbacks.on_application_description_keyup.clone()}
                                 value={ctx.props().model.application_description.clone()}
                             />
-                            <label for="application-description" class="input-hint">
-            { "Application Description" }
-                            </label>
-                            <div id="char-counter">
-                                <span id="counter">{ format!("{} / {}", self.char_count, self.max_chars) }</span>
-                            </div>
-                        </div>
+                        </FormFieldContainer>
                     </div>
                     <div id="page-2" hidden={self.page_hidden_states[1]}>
-                        <div class="input-container">
+                        <FormFieldContainer name="application-type" prompt="Application type">
                             <select
                                 id="application-type"
                                 name="application-type"
@@ -170,11 +163,9 @@ impl Component for ClientRegistrationView {
                                 <option value="public">{ "Web" }</option>
                                 <option value="confidential">{ "Service" }</option> 
                             </select>
-                            <label for="application-type" class="input-hint">
-                                { "Application Type" }
-                            </label>
-                        </div>
-                        <div class="input-container">
+                        </FormFieldContainer>
+
+                        <FormFieldContainer name="homepage-url" prompt="Homepage url">
                             <input 
                                 type="text" 
                                 id="homepage-url" 
@@ -183,11 +174,9 @@ impl Component for ClientRegistrationView {
                                 onchange={ctx.props().form_callbacks.on_homepage_url_change.clone()}
                                 value={ctx.props().model.homepage_url.clone()}
                             />
-                            <label for="homepage-url" class="input-hint">
-                                { "Homepage URL" }
-                            </label>
-                        </div>
-                        <div class="input-container">
+                        </FormFieldContainer>
+
+                        <FormFieldContainer name="redirect-url" prompt="OAuth redirect url">
                             <input 
                                 type="text" 
                                 id="redirect-url" 
@@ -196,10 +185,7 @@ impl Component for ClientRegistrationView {
                                 onchange={ctx.props().form_callbacks.on_redirect_url_change.clone()}
                                 value={ctx.props().model.redirect_url.clone()}
                             />
-                            <label for="redirect-url" class="input-hint">
-                                { "OAuth Redirect URL" }
-                            </label>
-                        </div>
+                        </FormFieldContainer>
                     </div>
                 </form>
                 <div class={styles::button_pair()}>
