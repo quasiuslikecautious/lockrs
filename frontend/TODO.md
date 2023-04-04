@@ -7,16 +7,16 @@
 
 ## Unimplemented
 
-- [ ] Refactor pages to use MVC
+- [x] Refactor pages to use MVC
     - [x] Move view specific internal states to live in the view, not model
     - [x] Create callback struct for controller, to debloat view calls rto render the view.
     - [x] Consolidate models to represent data, not work on a page by page basis
     - [x] Determine where to move form validation methods
 
-- [ ] Add form validation errors
+- [x] Add form validation errors
     - [x] Move validation to model, as validation is considered business logic
     - [x] Add implementation into controllers to allow for view update based on validation
-    - [ ] Add error message display and conditional disable based on validation to views
+    - [x] Add error message display and conditional disable based on validation to views
 
 - [ ] Add user details page
     - [x] Create skeleton MVC
@@ -39,7 +39,6 @@
 
 ## Improvements
 
-- [ ] Re-encapsulate props in Rc to avoid cloning every prop value
 - [ ] Move repeated UI elements to components
     - [x] move form input fields to form input container
 

@@ -171,11 +171,11 @@ pub fn form_styles() -> Style {
                 border: 2px solid #25C6F1;
             }
 
-            input.invalid, textarea.invalid {
+            .invalid input, .invalid textarea {
                 border: 1px solid #F12560 !important;
             }
 
-            input.invalid:focus, textarea.invalid:focus {
+            .invalid input:focus, .invalid textarea:focus {
                 border: 2px solid #D30D45 !important;
             }
 
@@ -222,10 +222,34 @@ pub fn form_styles() -> Style {
             input:focus + .input-hint, textarea:focus + .input-hint, select:focus + .input-hint {
                 padding: 0 4px;
 
-                font-size: 12px;
+                font-size: 14px;
                 color: #25C6F1;
 
                 transform: translateX(-4px) translateY(-23px);
+            }
+
+            .input-error {
+                width: 100%;
+
+                position: absolute;
+                bottom: -5px;
+
+                font-size: 10px;
+                font-weight: bold;
+                color: #F12560;
+                text-align: right;
+            }
+
+            .input-error p {
+                display: inline-block;
+
+                padding: 0 4px;
+                margin: 0 6px;
+
+                font-size: 12px;
+                text-align: right;
+
+                background-color: #FFFFFF;
             }
 
             input:not(:placeholder-shown) + .input-hint, textarea:not(:placeholder-shown) + .input-hint, select:valid + .input-hint {
@@ -236,7 +260,7 @@ pub fn form_styles() -> Style {
                 transform: translateX(-4px) translateY(-22px);
             }
 
-            input.invalid + .input-hint, textarea.invalid + .input-hint {
+            .invalid .input-hint {
                 color: #F12560 !important;
             }
 

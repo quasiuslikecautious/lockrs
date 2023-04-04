@@ -48,7 +48,7 @@ impl ClientModel {
         self.application_description = app_description;
 
         if self.application_description.len() > 300 {
-            self.application_description_error = Some(String::from("Application description exceeds the maximum length"));
+            self.application_description_error = Some(String::from("Description exceeds max length"));
         } else {
             self.application_description_error = None;
         }
@@ -77,9 +77,9 @@ impl ClientModel {
         self.redirect_url = url;
 
         if let Some(_) = Url::parse(self.redirect_url.as_str()).ok() {
-            self.homepage_url_error = None;
+            self.redirect_url_error = None;
         } else {
-            self.homepage_url_error = Some(String::from("Invalid homepage url"));
+            self.redirect_url_error = Some(String::from("Invalid OAuth redirect url"));
         }
     }
 

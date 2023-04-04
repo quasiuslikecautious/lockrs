@@ -39,10 +39,14 @@ impl Component for LoginView {
         html! {
             <> 
                 <h2>{ "Login to your account" }</h2>
-                <h4>{ "Enter your email and password" }</h4>
+                <h4>{ "Enter your email and password" }</h4> 
 
                 <form id="login-form">
-                    <FormFieldContainer name="email" prompt="Enter email">
+                    <FormFieldContainer
+                        name="email"
+                        prompt="Enter email"
+                        error={ctx.props().model.email_error.clone()}
+                    >
                         <input
                             type="text"
                             id="email" 
@@ -52,7 +56,11 @@ impl Component for LoginView {
                             value={ctx.props().model.email.clone()}
                         />
                     </FormFieldContainer>
-                    <FormFieldContainer name="password" prompt="Enter password">
+                    <FormFieldContainer
+                        name="password"
+                        prompt="Enter password"
+                        error={ctx.props().model.password_error.clone()}
+                    >
                         <input 
                             type="password"
                             id="password"

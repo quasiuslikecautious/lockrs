@@ -25,11 +25,13 @@ impl Component for UserDetailsView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let props = ctx.props().clone();
+
         html! {
             <>
-                <h2>{ctx.props().user_id.clone()}</h2>
+                <h2>{props.user_id}</h2>
 
-                <button onclick={ctx.props().redirect_callbacks.on_logout_click.clone()}>
+                <button onclick={props.redirect_callbacks.on_logout_click}>
                     <p>{ "Logout" }</p>
                 </button>
             </>

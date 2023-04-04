@@ -42,7 +42,11 @@ impl Component for SignupView {
                 <h4>{ "Enter an email and password" }</h4>
     
                  <form id="signup-form">
-                    <FormFieldContainer name="email" prompt="Enter an email">
+                    <FormFieldContainer 
+                        name="email"
+                        prompt="Enter an email"
+                        error={ctx.props().model.email_error.clone()}
+                    >
                         <input 
                             type="text" 
                             id="email" 
@@ -53,7 +57,11 @@ impl Component for SignupView {
                         />
                     </FormFieldContainer>
 
-                    <FormFieldContainer name="password" prompt="Enter a password">
+                    <FormFieldContainer
+                        name="password"
+                        prompt="Enter a password"
+                        error={ctx.props().model.password_error.clone()}
+                    >
                         <input 
                             type="password"
                             id="password"

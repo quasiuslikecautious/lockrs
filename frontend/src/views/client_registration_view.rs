@@ -126,7 +126,11 @@ impl Component for ClientRegistrationView {
 
                 <form id="client-registration-form">
                     <div id="page-1" hidden={self.page_hidden_states[0]}>
-                        <FormFieldContainer name="application-name" prompt="Application name">
+                        <FormFieldContainer
+                            name="application-name"
+                            prompt="Application name"
+                            error={ctx.props().model.application_name_error.clone()}
+                        >
                             <input 
                                 type="text" 
                                 id="application-name" 
@@ -137,7 +141,11 @@ impl Component for ClientRegistrationView {
                             />
                         </FormFieldContainer>
 
-                        <FormFieldContainer name="application-description" prompt="Application description">
+                        <FormFieldContainer
+                            name="application-description"
+                            prompt="Application description"
+                            error={ctx.props().model.application_description_error.clone()}
+                        >
                             <textarea 
                                 id="application-description"
                                 class="large-text-input"
@@ -149,7 +157,11 @@ impl Component for ClientRegistrationView {
                         </FormFieldContainer>
                     </div>
                     <div id="page-2" hidden={self.page_hidden_states[1]}>
-                        <FormFieldContainer name="application-type" prompt="Application type">
+                        <FormFieldContainer 
+                            name="application-type" 
+                            prompt="Application type"
+                            error={ctx.props().model.application_type_error.clone()}
+                        >
                             <select
                                 id="application-type"
                                 name="application-type"
@@ -165,7 +177,11 @@ impl Component for ClientRegistrationView {
                             </select>
                         </FormFieldContainer>
 
-                        <FormFieldContainer name="homepage-url" prompt="Homepage url">
+                        <FormFieldContainer
+                            name="homepage-url"
+                            prompt="Homepage url"
+                            error={ctx.props().model.homepage_url_error.clone()}
+                        >
                             <input 
                                 type="text" 
                                 id="homepage-url" 
@@ -176,7 +192,11 @@ impl Component for ClientRegistrationView {
                             />
                         </FormFieldContainer>
 
-                        <FormFieldContainer name="redirect-url" prompt="OAuth redirect url">
+                        <FormFieldContainer
+                            name="redirect-url"
+                            prompt="OAuth redirect url"
+                            error={ctx.props().model.redirect_url_error.clone()}
+                        >
                             <input 
                                 type="text" 
                                 id="redirect-url" 
