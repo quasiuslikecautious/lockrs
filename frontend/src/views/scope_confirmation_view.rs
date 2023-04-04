@@ -1,10 +1,10 @@
 use yew::prelude::*;
 
-use crate::{styles, models::ScopeConfirmationModel};
+use crate::{styles, models::ScopeModel};
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct ScopeConfirmationViewProps {
-    pub model: ScopeConfirmationModel,
+    pub model: ScopeModel,
 }
 
 pub struct ScopeConfirmationView;

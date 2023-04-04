@@ -1,7 +1,8 @@
+
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct ClientRegistrationModel {
+pub struct ClientModel {
     pub application_name: String,
     pub application_description: String,
     pub application_type: String,
@@ -20,7 +21,7 @@ pub struct ClientRegistrationModel {
     pub redirect_url_error: Option<String>,
 }
 
-impl ClientRegistrationModel {
+impl ClientModel {
     pub fn new() -> Self {
         Self {
             application_name: String::new(),

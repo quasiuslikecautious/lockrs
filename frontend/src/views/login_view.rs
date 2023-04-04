@@ -2,7 +2,7 @@ use yew::prelude::*;
 
 use crate::{
     styles, 
-    models::LoginModel,
+    models::UserModel,
 };
 
 #[derive(Clone, PartialEq)]
@@ -19,7 +19,7 @@ pub struct LoginRedirectCallbacks {
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct LoginViewProps {
-    pub model: LoginModel,
+    pub model: UserModel,
     pub form_callbacks: LoginFormCallbacks,
     pub redirect_callbacks: LoginRedirectCallbacks,
 }

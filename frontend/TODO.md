@@ -10,7 +10,7 @@
 - [ ] Refactor pages to use MVC
     - [x] Move view specific internal states to live in the view, not model
     - [x] Create callback struct for controller, to debloat view calls rto render the view.
-    - [ ] Consolidate models to represent data, not work on a page by page basis
+    - [x] Consolidate models to represent data, not work on a page by page basis
     - [ ] Determine where to move form validation methods
         - [ ] Move validation to model, as validation is considered business logic
         - [ ] Add implementation into controllers to allow for view update based on validation

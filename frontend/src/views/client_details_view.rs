@@ -1,10 +1,10 @@
 use yew::prelude::*;
 
-use crate::models::ClientDetailsModel;
+use crate::models::ClientModel;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct ClientDetailsViewProps {
-    pub model: ClientDetailsModel,
+    pub model: ClientModel,
     pub client_id: String,
 }
 

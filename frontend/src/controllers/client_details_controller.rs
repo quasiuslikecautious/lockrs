@@ -1,7 +1,7 @@
 use yew::prelude::*;
 
 use crate::{
-    models::ClientDetailsModel,
+    models::ClientModel,
     views::ClientDetailsView,
 };
 
@@ -15,16 +15,16 @@ pub struct ClientDetailsControllerProps {
 }
 
 pub struct ClientDetailsController {
-    model: ClientDetailsModel,
+    model: ClientModel,
 }
 
 impl Component for ClientDetailsController {
     type Message = ClientDetailsMessage;
     type Properties = ClientDetailsControllerProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            model: ClientDetailsModel::new(),
+            model: ClientModel::new(),
         }
     }
 

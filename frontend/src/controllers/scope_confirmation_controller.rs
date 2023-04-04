@@ -1,7 +1,7 @@
 use yew::prelude::*;
 
 use crate::{
-    models::ScopeConfirmationModel,
+    models::ScopeModel,
     views::ScopeConfirmationView,
 };
 
@@ -10,7 +10,7 @@ pub enum ScopeConfirmationMessage {
 }
 
 pub struct ScopeConfirmationController {
-    model: ScopeConfirmationModel,
+    model: ScopeModel,
 }
 
 impl Component for ScopeConfirmationController {
@@ -19,7 +19,7 @@ impl Component for ScopeConfirmationController {
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            model: ScopeConfirmationModel::new(),
+            model: ScopeModel::new(),
         }
     }
 

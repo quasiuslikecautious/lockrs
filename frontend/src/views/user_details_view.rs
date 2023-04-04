@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::models::UserDetailsModel;
+use crate::models::UserModel;
 
 #[derive(Clone, PartialEq)]
 pub struct UserDetailsRedirectCallbacks {
@@ -9,7 +9,7 @@ pub struct UserDetailsRedirectCallbacks {
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct UserDetailsViewProps {
-    pub model: UserDetailsModel,
+    pub model: UserModel,
     pub user_id: String,
     pub redirect_callbacks: UserDetailsRedirectCallbacks,
 }

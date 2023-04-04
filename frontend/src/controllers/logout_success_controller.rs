@@ -3,7 +3,7 @@ use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     Route,
-    models::LogoutSuccessModel,
+    models::UserModel,
     views::{LogoutSuccessView, LogoutSuccessRedirectCallbacks},
 };
 
@@ -12,7 +12,7 @@ pub enum LogoutSuccessMessage {
 }
 
 pub struct LogoutSuccessController {
-    model: LogoutSuccessModel,
+    model: UserModel,
     redirect_callbacks: LogoutSuccessRedirectCallbacks,
 }
 
@@ -22,7 +22,7 @@ impl Component for LogoutSuccessController {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: LogoutSuccessModel::new(),
+            model: UserModel::new(),
             redirect_callbacks: LogoutSuccessRedirectCallbacks {
                 on_login_click: ctx.link().callback(|_| Self::Message::LoginButtonClicked),
             },

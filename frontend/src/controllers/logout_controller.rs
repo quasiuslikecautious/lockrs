@@ -5,7 +5,7 @@ use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     Route,
-    models::LogoutModel,
+    models::UserModel,
     views::{LogoutView, LogoutRedirectCallbacks},
 };
 
@@ -15,7 +15,7 @@ pub enum LogoutMessage {
 }
 
 pub struct LogoutController {
-    model: LogoutModel,
+    model: UserModel,
     redirect_callbacks: LogoutRedirectCallbacks,
 }
 
@@ -25,7 +25,7 @@ impl Component for LogoutController {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: LogoutModel::new(),
+            model: UserModel::new(),
             redirect_callbacks: LogoutRedirectCallbacks {
                 on_logout_click: ctx.link().callback(|_| Self::Message::LogoutButtonClicked),
                 on_cancel_click: ctx.link().callback(|_| Self::Message::CancelButtonClicked),

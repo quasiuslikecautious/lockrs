@@ -8,7 +8,7 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
-    models::SignupModel,
+    models::UserModel,
     views::{
         SignupView,
         SignupFormCallbacks,
@@ -26,7 +26,7 @@ pub enum SignupMessage {
 }
 
 pub struct SignupController {
-    model: SignupModel,
+    model: UserModel,
     form_callbacks: SignupFormCallbacks,
     redirect_callbacks: SignupRedirectCallbacks,
 }
@@ -37,7 +37,7 @@ impl Component for SignupController {
     
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: SignupModel::new(),
+            model: UserModel::new(),
             form_callbacks: SignupFormCallbacks { 
                 on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
                 on_email_change: ctx.link().callback(Self::Message::EmailUpdated), 

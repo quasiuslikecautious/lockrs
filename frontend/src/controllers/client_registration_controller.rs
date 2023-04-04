@@ -5,7 +5,7 @@ use web_sys::{KeyboardEvent, HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
 
 use crate::{
-    models::ClientRegistrationModel,
+    models::ClientModel,
     views::{
         ClientRegistrationView, 
         ClientRegistrationFormCallbacks, 
@@ -23,7 +23,7 @@ pub enum ClientRegistrationControllerMessage {
 }
 
 pub struct ClientRegistrationController {
-    model: ClientRegistrationModel,
+    model: ClientModel,
     form_callbacks: ClientRegistrationFormCallbacks,
 }
 
@@ -33,7 +33,7 @@ impl Component for ClientRegistrationController {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: ClientRegistrationModel::new(),
+            model: ClientModel::new(),
             form_callbacks: ClientRegistrationFormCallbacks { 
                 on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked), 
                 on_application_name_change: ctx.link().callback(Self::Message::ApplicationNameUpdated), 

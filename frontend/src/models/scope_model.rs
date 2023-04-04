@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, PartialEq)]
-pub struct LogoutModel;
+pub struct ScopeModel;
 
-impl LogoutModel {
+impl ScopeModel {
     pub fn new() -> Self {
         Self
     }

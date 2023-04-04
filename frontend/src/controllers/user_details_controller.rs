@@ -2,7 +2,7 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
-    models::UserDetailsModel,
+    models::UserModel,
     views::{UserDetailsView, UserDetailsRedirectCallbacks}, Route,
 };
 
@@ -16,7 +16,7 @@ pub struct UserDetailsControllerProps {
 }
 
 pub struct UserDetailsController {
-    model: UserDetailsModel,
+    model: UserModel,
     redirect_callbacks: UserDetailsRedirectCallbacks,
 }
 
@@ -26,7 +26,7 @@ impl Component for UserDetailsController {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: UserDetailsModel::new(),
+            model: UserModel::new(),
             redirect_callbacks: UserDetailsRedirectCallbacks {
                 on_logout_click: ctx.link().callback(|_| Self::Message::LogoutButtonClicked),
             },

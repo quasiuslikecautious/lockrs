@@ -1,7 +1,7 @@
 use yew::prelude::*;
 
 use crate::{
-    models::ClientRegistrationModel,
+    models::ClientModel,
     styles,
 };
 
@@ -24,7 +24,7 @@ pub struct ClientRegistrationFormCallbacks {
 pub struct ClientRegistrationViewProps {
     pub description_max_len: usize,
 
-    pub model: ClientRegistrationModel,
+    pub model: ClientModel,
 
     pub form_callbacks: ClientRegistrationFormCallbacks,
 }

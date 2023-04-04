@@ -8,7 +8,7 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
-    models::LoginModel,
+    models::UserModel,
     views::{
         LoginView,
         LoginRedirectCallbacks,
@@ -26,7 +26,7 @@ pub enum LoginMessage {
 }
 
 pub struct LoginController {
-    model: LoginModel,
+    model: UserModel,
     form_callbacks: LoginFormCallbacks,
     redirect_callbacks: LoginRedirectCallbacks
 }
@@ -37,7 +37,7 @@ impl Component for LoginController {
     
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            model: LoginModel::new(),
+            model: UserModel::new(),
             form_callbacks: LoginFormCallbacks {
                 on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
                 on_email_change: ctx.link().callback(Self::Message::EmailUpdated),

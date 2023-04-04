@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::models::LogoutSuccessModel;
+use crate::models::UserModel;
 
 #[derive(Clone, PartialEq)]
 pub struct LogoutSuccessRedirectCallbacks {
@@ -9,7 +9,7 @@ pub struct LogoutSuccessRedirectCallbacks {
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct LogoutSuccessViewProps {
-    pub model: LogoutSuccessModel,
+    pub model: UserModel,
     pub redirect_callbacks: LogoutSuccessRedirectCallbacks,
 }
 
