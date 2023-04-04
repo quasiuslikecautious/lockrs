@@ -61,13 +61,16 @@ async fn main() {
         .route("/token", post(handle_token_request))
         .route("/error", get(handle_auth_error));
 
-    let api_routes = Router::new()
-        .nest("/oauth", oauth_routes)
+    let auth_routes = Router::new()
         .route("/user/create", put(handle_create_user))
         .route("/user/login", post(handle_authenticate_user))
         .route("/user/:user_id", get(handle_get_user))
         .route("/client/create", put(handle_create_client))
         .route("/client/:client_id", get(handle_get_client));
+
+    let api_routes = Router::new()
+        .nest("/oauth", oauth_routes)
+        .nest("/auth", auth_routes);
 
     let app = Router::new()
         .nest("/api/v1", api_routes)
