@@ -5,9 +5,9 @@
 ## Unimplemented
 
 - [ ] Authentication System
-    - [ ] Setup bcrypt for password salting
+    - [x] Setup bcrypt for password salting
     - [ ] Use redis for session management
-    - [ ] Determine end user Authentication System for user access
+    - [x] Determine end user Authentication System for user access
 
 - [ ] Use JWTs
   - [ ] Access Tokens
@@ -40,15 +40,15 @@
 
 ## Improvements
 
-- [ ] Refactor server to use MVC
-  - [ ] Consolidate models to dir
-  - [ ] Consolidate controllers to dir
-  - [ ] Consolidate "views"
-  - [ ] Refactor to move logic to associated category
-  - [ ] Add services
+- [x] Refactor server to use MVC
+  - [x] Consolidate models to dir
+  - [x] Consolidate controllers to dir
+  - [x] Consolidate "views"
+  - [x] Refactor to move logic to associated category
+  - [x] Add services
 
-- [ ] Better separation between auth and oauth
+- [x] Better separation between auth and oauth
 
-- [ ] better redirect/errors
-  - [ ] description handling
+- [x] better redirect/errors
+  - [x] description handling
 

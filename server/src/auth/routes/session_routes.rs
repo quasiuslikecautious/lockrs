@@ -1,0 +1,16 @@
+use axum::{Router, routing::{delete, get, post, put}};
+
+use crate::auth::controllers::SessionController;
+
+pub fn routes() -> Router {
+    Router::new()
+        .route("/", post(SessionController::create))
+}
+
+pub fn user_routes() -> Router {
+    Router::new()
+        .route("/", get(SessionController::read_all))
+        .route("/:session_id", get(SessionController::read))
+        .route("/:session_id", put(SessionController::update))
+        .route("/:session_id", delete(SessionController::delete))
+}

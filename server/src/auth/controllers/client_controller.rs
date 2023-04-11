@@ -1,0 +1,41 @@
+use axum::{
+    extract::Path,
+    http::StatusCode,
+    response::IntoResponse,
+};
+use uuid::Uuid;
+
+pub struct ClientController;
+
+impl ClientController {
+    pub async fn read_all(
+        Path(user_id): Path<Uuid>,
+    ) -> impl IntoResponse {
+        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/clients", user_id))
+    }
+
+    pub async fn create(
+        Path(user_id): Path<Uuid>,
+    ) -> impl IntoResponse {
+        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/clients", user_id))
+    }
+
+    pub async fn read(
+        Path((user_id, client_id)): Path<(Uuid, String)>,
+    ) -> impl IntoResponse {
+        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/clients/{}", user_id, client_id))
+    }
+
+    pub async fn update(
+        Path((user_id, client_id)): Path<(Uuid, String)>,
+    ) -> impl IntoResponse {
+        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/clients/{}", user_id, client_id))
+    }
+
+    pub async fn delete(
+        Path((user_id, client_id)): Path<(Uuid, String)>,
+    ) -> impl IntoResponse {
+        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/clients/{}", user_id, client_id))
+    }
+}
+
