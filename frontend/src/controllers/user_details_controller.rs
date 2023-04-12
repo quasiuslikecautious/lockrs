@@ -3,7 +3,8 @@ use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     models::UserModel,
-    views::{UserDetailsView, UserDetailsRedirectCallbacks}, Route,
+    views::{UserDetailsRedirectCallbacks, UserDetailsView},
+    Route,
 };
 
 pub enum UserDetailsMessage {
@@ -44,13 +45,13 @@ impl Component for UserDetailsController {
             </>
         }
     }
-    
+
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Self::Message::LogoutButtonClicked => {
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.push(&Route::LogoutRoute);
-            },
+            }
         }
 
         false

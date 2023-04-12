@@ -6,7 +6,7 @@ use yew::prelude::*;
 
 use crate::{
     models::UserCodeModel,
-    views::{DeviceCodeView, DeviceCodeFormCallbacks},
+    views::{DeviceCodeFormCallbacks, DeviceCodeView},
 };
 
 pub enum DeviceCodeMessage {
@@ -23,20 +23,18 @@ pub struct DeviceCodeController {
 impl Component for DeviceCodeController {
     type Message = DeviceCodeMessage;
     type Properties = ();
-    
-    fn create(ctx: &Context<Self>) -> Self {
 
+    fn create(ctx: &Context<Self>) -> Self {
         Self {
             model: UserCodeModel::new(),
             form_callbacks: DeviceCodeFormCallbacks {
                 on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
                 on_user_code_change: ctx.link().callback(Self::Message::UserCodeUpdated),
-            }
+            },
         }
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-
         html! {
             <DeviceCodeView
                 model={self.model.clone()}
@@ -51,13 +49,13 @@ impl Component for DeviceCodeController {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
 
-                let Some(input) = input 
+                let Some(input) = input
                 else {
                     return false;
                 };
 
                 self.model.set_user_code(input.value());
-            },
+            }
             Self::Message::SubmitButtonClicked => {
                 if !self.model.validate() {
                     return false;

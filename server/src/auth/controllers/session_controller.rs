@@ -4,7 +4,11 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    auth::{services::{UserAuthService, UserAuthServiceError}, responses::SessionResponse}, models::UserAuthModel,
+    auth::{
+        responses::SessionResponse,
+        services::{UserAuthService, UserAuthServiceError},
+    },
+    models::UserAuthModel,
 };
 
 pub struct SessionController;
@@ -37,13 +41,10 @@ impl SessionController {
             password: new_session.password,
         };
 
-        let session = UserAuthService::login(&user_auth)
-            .map_err(|err| {
-                match err {
-                    UserAuthServiceError::NotFoundError => SessionControllerError::InvalidCredentials, 
-                    _ => SessionControllerError::InternalError,
-                }
-            })?;
+        let session = UserAuthService::login(&user_auth).map_err(|err| match err {
+            UserAuthServiceError::NotFoundError => SessionControllerError::InvalidCredentials,
+            _ => SessionControllerError::InternalError,
+        })?;
 
         let session_response = SessionResponse {
             id: session.id,
@@ -70,15 +71,14 @@ impl SessionController {
         )
     }
 
-    pub async fn delete(Path((user_id, session_id)): Path<(Uuid, String)>) -> Result<Json<SessionResponse>, SessionControllerError> {
-        let session = UserAuthService::logout(&session_id)
-            .map_err(|err| {
-                match err {
-                    UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,
-                    _ => SessionControllerError::InternalError,
-                }
-            })?;
-        
+    pub async fn delete(
+        Path((user_id, session_id)): Path<(Uuid, String)>,
+    ) -> Result<Json<SessionResponse>, SessionControllerError> {
+        let session = UserAuthService::logout(&session_id).map_err(|err| match err {
+            UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,
+            _ => SessionControllerError::InternalError,
+        })?;
+
         let session_response = SessionResponse {
             id: session.id,
             token: session.token,
@@ -97,7 +97,9 @@ pub enum SessionControllerError {
 impl SessionControllerError {
     pub fn error_code(&self) -> &'static str {
         match self {
-            Self::InternalError => "An error has occurred while processing your request. Please try again later.",
+            Self::InternalError => {
+                "An error has occurred while processing your request. Please try again later."
+            }
             Self::InvalidCredentials => "Invalid credentials",
             Self::SessionNotFound => "Session token not found",
         }
@@ -109,4 +111,3 @@ impl IntoResponse for SessionControllerError {
         (StatusCode::BAD_REQUEST, self.error_code()).into_response()
     }
 }
-

@@ -20,13 +20,13 @@ pub fn form_field_container(props: &FormFieldContainerProps) -> Html {
 
     html! {
         <div class={ class_list }>
-        
+
             { props.children.clone() }
 
             <label for={props.name.clone()} class="input-hint">
                 { props.prompt.clone() }
             </label>
-                
+
             <div class="input-error">
                 <p>{error_msg}</p>
             </div>

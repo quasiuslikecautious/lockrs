@@ -1,10 +1,6 @@
 use yew::prelude::*;
 
-use crate::{
-    styles,
-    components::FormFieldContainer,
-    models::ClientModel,
-};
+use crate::{components::FormFieldContainer, models::ClientModel, styles};
 
 pub enum ClientRegistrationViewMessage {
     NextButtonClicked,
@@ -94,7 +90,7 @@ impl Component for ClientRegistrationView {
                 }
 
                 self.current_page_index = next_index;
-            },
+            }
             Self::Message::PreviousButtonClicked => {
                 let current_index = self.current_page_index;
                 let prev_index = (current_index + 1) % self.num_pages;
@@ -112,13 +108,13 @@ impl Component for ClientRegistrationView {
                 }
 
                 self.current_page_index = prev_index;
-            },
+            }
         };
 
         true
     }
 
-    fn view(&self, ctx: &Context<Self>)-> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <>
                 <h2>{ "Register a client" }</h2>
@@ -131,10 +127,10 @@ impl Component for ClientRegistrationView {
                             prompt="Application name"
                             error={ctx.props().model.application_name_error.clone()}
                         >
-                            <input 
-                                type="text" 
-                                id="application-name" 
-                                name="application-name" 
+                            <input
+                                type="text"
+                                id="application-name"
+                                name="application-name"
                                 placeholder=" "
                                 onchange={ctx.props().form_callbacks.on_application_name_change.clone()}
                                 value={ctx.props().model.application_name.clone()}
@@ -146,10 +142,10 @@ impl Component for ClientRegistrationView {
                             prompt="Application description"
                             error={ctx.props().model.application_description_error.clone()}
                         >
-                            <textarea 
+                            <textarea
                                 id="application-description"
                                 class="large-text-input"
-                                name="application-description" 
+                                name="application-description"
                                 placeholder=" "
                                 onkeyup={ctx.props().form_callbacks.on_application_description_keyup.clone()}
                                 value={ctx.props().model.application_description.clone()}
@@ -157,8 +153,8 @@ impl Component for ClientRegistrationView {
                         </FormFieldContainer>
                     </div>
                     <div id="page-2" hidden={self.page_hidden_states[1]}>
-                        <FormFieldContainer 
-                            name="application-type" 
+                        <FormFieldContainer
+                            name="application-type"
                             prompt="Application type"
                             error={ctx.props().model.application_type_error.clone()}
                         >
@@ -173,7 +169,7 @@ impl Component for ClientRegistrationView {
                                 <option value="public">{ "Native" }</option>
                                 <option value="public">{ "Single-Page App" }</option>
                                 <option value="public">{ "Web" }</option>
-                                <option value="confidential">{ "Service" }</option> 
+                                <option value="confidential">{ "Service" }</option>
                             </select>
                         </FormFieldContainer>
 
@@ -182,10 +178,10 @@ impl Component for ClientRegistrationView {
                             prompt="Homepage url"
                             error={ctx.props().model.homepage_url_error.clone()}
                         >
-                            <input 
-                                type="text" 
-                                id="homepage-url" 
-                                name="homepage-url" 
+                            <input
+                                type="text"
+                                id="homepage-url"
+                                name="homepage-url"
                                 placeholder=" "
                                 onchange={ctx.props().form_callbacks.on_homepage_url_change.clone()}
                                 value={ctx.props().model.homepage_url.clone()}
@@ -197,10 +193,10 @@ impl Component for ClientRegistrationView {
                             prompt="OAuth redirect url"
                             error={ctx.props().model.redirect_url_error.clone()}
                         >
-                            <input 
-                                type="text" 
-                                id="redirect-url" 
-                                name="redirect-url" 
+                            <input
+                                type="text"
+                                id="redirect-url"
+                                name="redirect-url"
                                 placeholder=" "
                                 onchange={ctx.props().form_callbacks.on_redirect_url_change.clone()}
                                 value={ctx.props().model.redirect_url.clone()}
@@ -209,7 +205,7 @@ impl Component for ClientRegistrationView {
                     </div>
                 </form>
                 <div class={styles::button_pair()}>
-                    <button 
+                    <button
                         class="secondary"
                         onclick={ctx.link().callback(|_| Self::Message::PreviousButtonClicked)}
                         hidden={self.previous_button_hidden}
@@ -217,14 +213,14 @@ impl Component for ClientRegistrationView {
                         <p>{ "Back" }</p>
                     </button>
 
-                    <button 
+                    <button
                         onclick={ctx.link().callback(|_| Self::Message::NextButtonClicked)}
                         hidden={self.next_button_hidden}
                     >
                         <p>{ "Continue" }</p>
                     </button>
 
-                    <button 
+                    <button
                         onclick={ctx.props().form_callbacks.on_submit.clone()}
                         hidden={self.submit_button_hidden}
                     >

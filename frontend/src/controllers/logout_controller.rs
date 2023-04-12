@@ -4,9 +4,9 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
-    Route,
     models::UserModel,
-    views::{LogoutView, LogoutRedirectCallbacks},
+    views::{LogoutRedirectCallbacks, LogoutView},
+    Route,
 };
 
 pub enum LogoutMessage {
@@ -48,11 +48,11 @@ impl Component for LogoutController {
                 self.submit_logout();
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.push(&Route::LogoutSuccessRoute);
-            },
+            }
             Self::Message::CancelButtonClicked => {
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.back();
-            },
+            }
         };
 
         true

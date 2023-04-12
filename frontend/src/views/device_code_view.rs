@@ -1,14 +1,11 @@
 use yew::prelude::*;
 
-use crate::{
-    components::FormFieldContainer, 
-    models::UserCodeModel,
-};
+use crate::{components::FormFieldContainer, models::UserCodeModel};
 
 #[derive(Clone, PartialEq)]
 pub struct DeviceCodeFormCallbacks {
     pub on_submit: Callback<MouseEvent>,
-    pub on_user_code_change: Callback<Event>
+    pub on_user_code_change: Callback<Event>,
 }
 
 #[derive(Clone, Properties, PartialEq)]
@@ -35,11 +32,11 @@ impl Component for DeviceCodeView {
 
                 <form id="device-code-form">
                     <FormFieldContainer name="user-code" prompt="Enter code">
-                        <input 
+                        <input
                             type="text"
-                            id="user-code" 
-                            name="user-code" 
-                            minlength="8" 
+                            id="user-code"
+                            name="user-code"
+                            minlength="8"
                             maxlength="8"
                             style="text-transform: uppercase;"
                             placeholder=" "

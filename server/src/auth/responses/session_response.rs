@@ -5,4 +5,3 @@ pub struct SessionResponse {
     pub id: String,
     pub token: String,
 }
-

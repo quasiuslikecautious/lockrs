@@ -1,13 +1,8 @@
 use yew::prelude::*;
 
-use crate::{
-    models::ClientModel,
-    views::ClientDetailsView,
-};
+use crate::{models::ClientModel, views::ClientDetailsView};
 
-pub enum ClientDetailsMessage {
-
-}
+pub enum ClientDetailsMessage {}
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct ClientDetailsControllerProps {
@@ -38,7 +33,7 @@ impl Component for ClientDetailsController {
             </>
         }
     }
-    
+
     fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
         false
     }

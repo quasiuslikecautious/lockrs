@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
@@ -8,11 +8,7 @@ use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     models::UserModel,
-    views::{
-        SignupView,
-        SignupFormCallbacks,
-        SignupRedirectCallbacks
-    },
+    views::{SignupFormCallbacks, SignupRedirectCallbacks, SignupView},
     Route,
 };
 
@@ -33,18 +29,18 @@ pub struct SignupController {
 impl Component for SignupController {
     type Message = SignupMessage;
     type Properties = ();
-    
+
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             model: UserModel::new(),
-            form_callbacks: SignupFormCallbacks { 
+            form_callbacks: SignupFormCallbacks {
                 on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
-                on_email_change: ctx.link().callback(Self::Message::EmailUpdated), 
-                on_password_change: ctx.link().callback(Self::Message::PasswordUpdated), 
+                on_email_change: ctx.link().callback(Self::Message::EmailUpdated),
+                on_password_change: ctx.link().callback(Self::Message::PasswordUpdated),
             },
             redirect_callbacks: SignupRedirectCallbacks {
                 on_login_click: ctx.link().callback(|_| Self::Message::LoginButtonClicked),
-            }
+            },
         }
     }
 
@@ -70,7 +66,7 @@ impl Component for SignupController {
                 };
 
                 self.model.set_email(input.value());
-            },
+            }
             Self::Message::PasswordUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
@@ -81,18 +77,18 @@ impl Component for SignupController {
                 };
 
                 self.model.set_password(input.value());
-            },
+            }
             Self::Message::LoginButtonClicked => {
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.push(&Route::LoginRoute);
-            },
+            }
             Self::Message::SubmitButtonClicked => {
                 if !self.model.validate() {
                     return false;
                 }
 
                 self.submit_form();
-            },
+            }
         };
 
         true

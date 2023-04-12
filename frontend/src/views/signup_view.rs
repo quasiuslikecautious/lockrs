@@ -1,10 +1,6 @@
 use yew::prelude::*;
 
-use crate::{
-    styles,
-    components::FormFieldContainer,
-    models::UserModel,
-};
+use crate::{components::FormFieldContainer, models::UserModel, styles};
 
 #[derive(Clone, PartialEq)]
 pub struct SignupFormCallbacks {
@@ -35,22 +31,22 @@ impl Component for SignupView {
         Self
     }
 
-    fn view (&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <>
                 <h2>{ "Create your account" }</h2>
                 <h4>{ "Enter an email and password" }</h4>
-    
+
                  <form id="signup-form">
-                    <FormFieldContainer 
+                    <FormFieldContainer
                         name="email"
                         prompt="Enter an email"
                         error={ctx.props().model.email_error.clone()}
                     >
-                        <input 
-                            type="text" 
-                            id="email" 
-                            name="email" 
+                        <input
+                            type="text"
+                            id="email"
+                            name="email"
                             placeholder=" "
                             onchange={ctx.props().form_callbacks.on_email_change.clone()}
                             value={ctx.props().model.email.clone()}
@@ -62,7 +58,7 @@ impl Component for SignupView {
                         prompt="Enter a password"
                         error={ctx.props().model.password_error.clone()}
                     >
-                        <input 
+                        <input
                             type="password"
                             id="password"
                             name="password"
@@ -74,8 +70,8 @@ impl Component for SignupView {
                 </form>
                 <br/>
                 <div class={ styles::button_pair() }>
-                    <button 
-                        class="secondary" 
+                    <button
+                        class="secondary"
                         onclick={ctx.props().redirect_callbacks.on_login_click.clone()}
                     >
                         <p>{ "Login instead" }</p>
@@ -85,7 +81,7 @@ impl Component for SignupView {
                        <p>{ "Continue" }</p>
                     </button>
                 </div>
-    
+
             </>
         }
     }

@@ -1,15 +1,12 @@
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{KeyboardEvent, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{HtmlInputElement, HtmlTextAreaElement, KeyboardEvent};
 use yew::prelude::*;
 
 use crate::{
     models::ClientModel,
-    views::{
-        ClientRegistrationView, 
-        ClientRegistrationFormCallbacks, 
-    },
+    views::{ClientRegistrationFormCallbacks, ClientRegistrationView},
 };
 
 pub enum ClientRegistrationControllerMessage {
@@ -34,13 +31,19 @@ impl Component for ClientRegistrationController {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             model: ClientModel::new(),
-            form_callbacks: ClientRegistrationFormCallbacks { 
-                on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked), 
-                on_application_name_change: ctx.link().callback(Self::Message::ApplicationNameUpdated), 
-                on_application_description_keyup: ctx.link().callback(Self::Message::ApplicationDescriptionUpdated), 
-                on_application_type_change: ctx.link().callback(Self::Message::ApplicationTypeUpdated), 
-                on_homepage_url_change: ctx.link().callback(Self::Message::HomepageUrlUpdated), 
-                on_redirect_url_change: ctx.link().callback(Self::Message::RedirectUrlUpdated), 
+            form_callbacks: ClientRegistrationFormCallbacks {
+                on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
+                on_application_name_change: ctx
+                    .link()
+                    .callback(Self::Message::ApplicationNameUpdated),
+                on_application_description_keyup: ctx
+                    .link()
+                    .callback(Self::Message::ApplicationDescriptionUpdated),
+                on_application_type_change: ctx
+                    .link()
+                    .callback(Self::Message::ApplicationTypeUpdated),
+                on_homepage_url_change: ctx.link().callback(Self::Message::HomepageUrlUpdated),
+                on_redirect_url_change: ctx.link().callback(Self::Message::RedirectUrlUpdated),
             },
         }
     }
@@ -64,7 +67,7 @@ impl Component for ClientRegistrationController {
                 if let Some(input) = input {
                     self.model.set_application_name(input.value());
                 }
-            },
+            }
             Self::Message::ApplicationDescriptionUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok());
@@ -75,7 +78,7 @@ impl Component for ClientRegistrationController {
                 };
 
                 self.model.set_application_description(input.value());
-            },
+            }
             Self::Message::ApplicationTypeUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
@@ -83,7 +86,7 @@ impl Component for ClientRegistrationController {
                 if let Some(input) = input {
                     self.model.set_application_type(input.value());
                 }
-            },
+            }
             Self::Message::HomepageUrlUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
@@ -91,7 +94,7 @@ impl Component for ClientRegistrationController {
                 if let Some(input) = input {
                     self.model.set_homepage_url(input.value());
                 }
-            },
+            }
             Self::Message::RedirectUrlUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
@@ -99,14 +102,14 @@ impl Component for ClientRegistrationController {
                 if let Some(input) = input {
                     self.model.set_redirect_url(input.value());
                 }
-            },
+            }
             Self::Message::SubmitButtonClicked => {
                 if !self.model.validate() {
                     return false;
                 }
-                
+
                 self.submit_form();
-            },
+            }
         };
 
         true

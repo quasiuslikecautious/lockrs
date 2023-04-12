@@ -1,5 +1,5 @@
-use url::Url;
 use serde::Serialize;
+use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct ClientModel {
@@ -48,7 +48,8 @@ impl ClientModel {
         self.application_description = app_description;
 
         if self.application_description.len() > 300 {
-            self.application_description_error = Some(String::from("Description exceeds max length"));
+            self.application_description_error =
+                Some(String::from("Description exceeds max length"));
         } else {
             self.application_description_error = None;
         }
@@ -58,8 +59,8 @@ impl ClientModel {
         self.application_type = app_type;
 
         self.application_type_error = match self.application_type.as_str() {
-            "confidential" | "public"   => None,
-            _                           => Some(String::from("Invalid application type selected")),
+            "confidential" | "public" => None,
+            _ => Some(String::from("Invalid application type selected")),
         };
     }
 
@@ -84,11 +85,10 @@ impl ClientModel {
     }
 
     pub fn validate(&self) -> bool {
-        return self.application_name_error.is_none() &&
-                self.application_description_error.is_none() &&
-                self.application_type_error.is_none() &&
-                self.homepage_url_error.is_none() &&
-                self.redirect_url_error.is_none();
+        return self.application_name_error.is_none()
+            && self.application_description_error.is_none()
+            && self.application_type_error.is_none()
+            && self.homepage_url_error.is_none()
+            && self.redirect_url_error.is_none();
     }
 }
-

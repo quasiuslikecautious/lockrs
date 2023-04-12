@@ -4,7 +4,8 @@ use uuid::Uuid;
 
 use crate::{
     auth::responses::UserResponse,
-    services::{UserService, UserServiceError}, models::UserCreateModel,
+    models::UserCreateModel,
+    services::{UserService, UserServiceError},
 };
 
 #[derive(Deserialize)]
@@ -22,20 +23,19 @@ pub struct UserUpdateRequest {
 pub struct UserController;
 
 impl UserController {
-    pub async fn create(Json(user_request): Json<UserCreateRequest>) -> Result<Json<UserResponse>, UserControllerError> {
+    pub async fn create(
+        Json(user_request): Json<UserCreateRequest>,
+    ) -> Result<Json<UserResponse>, UserControllerError> {
         let new_user = UserCreateModel {
             email: user_request.email,
             password: user_request.password,
         };
 
-        let user = UserService::create_user(new_user)
-            .map_err(|err| {
-                match err {
-                    UserServiceError::AlreadyExistsError => UserControllerError::CreateConflict,
-                    _ => UserControllerError::InternalError,
-                }
-            })?;
-            
+        let user = UserService::create_user(new_user).map_err(|err| match err {
+            UserServiceError::AlreadyExistsError => UserControllerError::CreateConflict,
+            _ => UserControllerError::InternalError,
+        })?;
+
         let user_response = UserResponse {
             id: user.id,
             email: user.email,
@@ -44,14 +44,13 @@ impl UserController {
         Ok(Json(user_response))
     }
 
-    pub async fn read(Path(user_id): Path<Uuid>) -> Result<Json<UserResponse>, UserControllerError> {
-        let user = UserService::get_user_by_id(&user_id)
-            .map_err(|err| {
-                match err {
-                    UserServiceError::NotFoundError => UserControllerError::NotFound, 
-                    _ => UserControllerError::InternalError,
-                }
-            })?;
+    pub async fn read(
+        Path(user_id): Path<Uuid>,
+    ) -> Result<Json<UserResponse>, UserControllerError> {
+        let user = UserService::get_user_by_id(&user_id).map_err(|err| match err {
+            UserServiceError::NotFoundError => UserControllerError::NotFound,
+            _ => UserControllerError::InternalError,
+        })?;
 
         Ok(Json(UserResponse {
             id: user.id,
@@ -89,4 +88,3 @@ impl IntoResponse for UserControllerError {
         (StatusCode::BAD_REQUEST, self.error_message()).into_response()
     }
 }
-

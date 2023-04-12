@@ -1,13 +1,8 @@
 use yew::prelude::*;
 
-use crate::{
-    models::ScopeModel,
-    views::ScopeConfirmationView,
-};
+use crate::{models::ScopeModel, views::ScopeConfirmationView};
 
-pub enum ScopeConfirmationMessage {
-
-}
+pub enum ScopeConfirmationMessage {}
 
 pub struct ScopeConfirmationController {
     model: ScopeModel,

@@ -2,7 +2,8 @@ use bcrypt::verify;
 
 use crate::{
     auth::models::SessionModel,
-    services::{UserService, UserServiceError}, models::UserAuthModel,
+    models::UserAuthModel,
+    services::{UserService, UserServiceError},
 };
 
 pub struct UserAuthService;
@@ -19,8 +20,8 @@ impl UserAuthService {
             },
         };
 
-        let valid_password =
-            verify(&user_auth.password, &user.password_hash).map_err(|_| UserAuthServiceError::HashError)?;
+        let valid_password = verify(&user_auth.password, &user.password_hash)
+            .map_err(|_| UserAuthServiceError::HashError)?;
 
         if !valid_password {
             return Err(UserAuthServiceError::InvalidPasswordError);

@@ -1,10 +1,6 @@
 use yew::prelude::*;
 
-use crate::{
-    styles,
-    components::FormFieldContainer,
-    models::UserModel,
-};
+use crate::{components::FormFieldContainer, models::UserModel, styles};
 
 #[derive(Clone, PartialEq)]
 pub struct LoginFormCallbacks {
@@ -35,11 +31,11 @@ impl Component for LoginView {
         Self
     }
 
-    fn view (&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <> 
+            <>
                 <h2>{ "Login to your account" }</h2>
-                <h4>{ "Enter your email and password" }</h4> 
+                <h4>{ "Enter your email and password" }</h4>
 
                 <form id="login-form">
                     <FormFieldContainer
@@ -49,8 +45,8 @@ impl Component for LoginView {
                     >
                         <input
                             type="text"
-                            id="email" 
-                            name="email" 
+                            id="email"
+                            name="email"
                             placeholder=" "
                             onchange={ctx.props().form_callbacks.on_email_change.clone()}
                             value={ctx.props().model.email.clone()}
@@ -61,7 +57,7 @@ impl Component for LoginView {
                         prompt="Enter password"
                         error={ctx.props().model.password_error.clone()}
                     >
-                        <input 
+                        <input
                             type="password"
                             id="password"
                             name="password"
@@ -73,12 +69,12 @@ impl Component for LoginView {
                 </form>
                 <br/>
                 <div class={ styles::button_pair() }>
-                    <button 
-                        class="secondary" 
+                    <button
+                        class="secondary"
                         onclick={ctx.props().redirect_callbacks.on_signup_click.clone()}
                     >
                         <p>{ "Create account" }</p>
-                    </button> 
+                    </button>
 
                     <button onclick={ctx.props().form_callbacks.on_submit.clone()}>
                         <p>{ "Continue" }</p>

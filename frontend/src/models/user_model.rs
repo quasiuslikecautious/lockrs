@@ -26,7 +26,10 @@ impl UserModel {
     pub fn set_email(&mut self, email: String) {
         self.email = email;
 
-        let email_regex = Regex::new(r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})").unwrap();
+        let email_regex = Regex::new(
+            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+        )
+        .unwrap();
         if email_regex.is_match(&self.email) {
             self.email_error = None;
         } else {
@@ -46,7 +49,6 @@ impl UserModel {
     }
 
     pub fn validate(&self) -> bool {
-        return self.email_error.is_none() &&
-                self.password_error.is_none();
+        return self.email_error.is_none() && self.password_error.is_none();
     }
 }

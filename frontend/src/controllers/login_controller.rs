@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
@@ -8,11 +8,7 @@ use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     models::UserModel,
-    views::{
-        LoginView,
-        LoginRedirectCallbacks,
-        LoginFormCallbacks
-    },
+    views::{LoginFormCallbacks, LoginRedirectCallbacks, LoginView},
     Route,
 };
 
@@ -27,13 +23,13 @@ pub enum LoginMessage {
 pub struct LoginController {
     model: UserModel,
     form_callbacks: LoginFormCallbacks,
-    redirect_callbacks: LoginRedirectCallbacks
+    redirect_callbacks: LoginRedirectCallbacks,
 }
 
-impl Component for LoginController {    
+impl Component for LoginController {
     type Message = LoginMessage;
     type Properties = ();
-    
+
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             model: UserModel::new(),
@@ -70,7 +66,7 @@ impl Component for LoginController {
                 };
 
                 self.model.set_email(input.value());
-           },
+            }
             Self::Message::PasswordUpdated(event) => {
                 let target = event.target();
                 let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
@@ -81,18 +77,18 @@ impl Component for LoginController {
                 };
 
                 self.model.set_password(input.value());
-            },
+            }
             Self::Message::SignupButtonClicked => {
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.push(&Route::SignupRoute);
-            },
+            }
             Self::Message::SubmitButtonClicked => {
                 if !self.model.validate() {
                     return false;
                 }
 
                 self.submit_form();
-            },
+            }
         };
 
         true

@@ -310,5 +310,6 @@ pub fn button_pair() -> Style {
                 color: #F15025;
             }
         "#
-    ).expect("Failed to mount style");
+    )
+    .expect("Failed to mount style");
 }

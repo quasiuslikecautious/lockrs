@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::{styles, models::UserModel};
+use crate::{models::UserModel, styles};
 
 #[derive(Clone, PartialEq)]
 pub struct LogoutRedirectCallbacks {
@@ -36,9 +36,9 @@ impl Component for LogoutView {
                     </button>
                     <button class="secondary" onclick={ctx.props().redirect_callbacks.on_cancel_click.clone()}>
                         <p>{ "No" }</p>
-                    </button> 
+                    </button>
                 </div>
-            </>    
+            </>
         }
     }
 }

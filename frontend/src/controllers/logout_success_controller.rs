@@ -2,9 +2,9 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
-    Route,
     models::UserModel,
-    views::{LogoutSuccessView, LogoutSuccessRedirectCallbacks},
+    views::{LogoutSuccessRedirectCallbacks, LogoutSuccessView},
+    Route,
 };
 
 pub enum LogoutSuccessMessage {
@@ -45,7 +45,7 @@ impl Component for LogoutSuccessController {
                 navigator.push(&Route::LoginRoute);
             }
         }
-        
+
         true
     }
 }

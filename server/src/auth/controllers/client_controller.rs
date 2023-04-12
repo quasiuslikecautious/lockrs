@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::responses::{ClientListResponse, ClientResponse},
-    models::{ClientUpdateModel, ClientCreateModel},
+    models::{ClientCreateModel, ClientUpdateModel},
     services::{ClientService, ClientServiceError},
 };
 
@@ -92,7 +92,7 @@ impl ClientController {
         Path((_user_id, client_id)): Path<(Uuid, String)>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<Json<ClientResponse>, ClientControllerError> {
-        let update_client = ClientUpdateModel { 
+        let update_client = ClientUpdateModel {
             name: update_client_request.name,
             description: update_client_request.description,
             homepage_url: update_client_request.homepage_url,

@@ -18,8 +18,8 @@ pub fn id_card_container(props: &IdCardContainerProps) -> Html {
                 <div id="lanyard-middle" />
                 <div id="lanyard-metal" />
 
-                <img 
-                    src="../img/rusty-lock.png" 
+                <img
+                    src="../img/rusty-lock.png"
                     alt="Rusty Lock"
                     height=60px
                     width=60px
@@ -31,4 +31,3 @@ pub fn id_card_container(props: &IdCardContainerProps) -> Html {
         </div>
     }
 }
-
