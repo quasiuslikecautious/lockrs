@@ -20,6 +20,7 @@ use crate::{
 pub struct TokenService;
 
 impl TokenService {
+    #[allow(clippy::all)]
     pub fn create_token(
         client_id: &str,
         user_id: &Option<Uuid>,

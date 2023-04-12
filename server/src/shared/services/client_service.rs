@@ -16,6 +16,7 @@ use crate::{
 pub struct ClientService;
 
 impl ClientService {
+    #[allow(clippy::all)]
     pub fn create_client(new_client: ClientCreateModel) -> Result<ClientModel, ClientServiceError> {
         let id = Self::generate_random_string();
         let secret = match new_client.is_public {
