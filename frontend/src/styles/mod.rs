@@ -7,7 +7,7 @@ use stylist::{style, Style};
 // tetradic   #F15025 #60F125 #25C6F1 #B625F1
 
 pub fn form_styles() -> Style {
-    return style!(
+    style!(
         r#"
             height: 100%;
             width: 100%;
@@ -273,11 +273,11 @@ pub fn form_styles() -> Style {
                 font-size: 0.875rem;
             }
         "#
-    ).expect("Failed to mount style");
+    ).expect("Failed to mount style")
 }
 
 pub fn button_pair() -> Style {
-    return style!(
+    style!(
         r#"
             display: flex;
             width: 100%;
@@ -311,5 +311,5 @@ pub fn button_pair() -> Style {
             }
         "#
     )
-    .expect("Failed to mount style");
+    .expect("Failed to mount style")
 }

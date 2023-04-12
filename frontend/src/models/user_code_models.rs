@@ -31,6 +31,6 @@ impl UserCodeModel {
     }
 
     pub fn validate(&self) -> bool {
-        return self.user_code_error.is_none();
+        self.user_code_error.is_none()
     }
 }

@@ -49,6 +49,6 @@ impl UserModel {
     }
 
     pub fn validate(&self) -> bool {
-        return self.email_error.is_none() && self.password_error.is_none();
+        self.email_error.is_none() && self.password_error.is_none()
     }
 }

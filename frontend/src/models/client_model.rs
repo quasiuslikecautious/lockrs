@@ -67,7 +67,7 @@ impl ClientModel {
     pub fn set_homepage_url(&mut self, url: String) {
         self.homepage_url = url;
 
-        if let Some(_) = Url::parse(self.homepage_url.as_str()).ok() {
+        if Url::parse(self.homepage_url.as_str()).is_ok() {
             self.homepage_url_error = None;
         } else {
             self.homepage_url_error = Some(String::from("Invalid homepage url"));
@@ -77,7 +77,7 @@ impl ClientModel {
     pub fn set_redirect_url(&mut self, url: String) {
         self.redirect_url = url;
 
-        if let Some(_) = Url::parse(self.redirect_url.as_str()).ok() {
+        if Url::parse(self.redirect_url.as_str()).is_ok() {
             self.redirect_url_error = None;
         } else {
             self.redirect_url_error = Some(String::from("Invalid OAuth redirect url"));
@@ -85,10 +85,10 @@ impl ClientModel {
     }
 
     pub fn validate(&self) -> bool {
-        return self.application_name_error.is_none()
+        self.application_name_error.is_none()
             && self.application_description_error.is_none()
             && self.application_type_error.is_none()
             && self.homepage_url_error.is_none()
-            && self.redirect_url_error.is_none();
+            && self.redirect_url_error.is_none()
     }
 }
