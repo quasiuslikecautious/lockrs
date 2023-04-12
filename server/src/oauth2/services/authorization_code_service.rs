@@ -1,6 +1,6 @@
 use url::Url;
 
-use crate::oauth2::models::Scopes;
+use crate::oauth2::models::ScopesModel;
 
 pub struct AuthorizationCodeService;
 
@@ -11,7 +11,7 @@ impl AuthorizationCodeService {
         code: &str,
         is_plain: bool,
         redirect_uri: Url,
-        scopes: Scopes,
+        scopes: ScopesModel,
     ) {
 
     }

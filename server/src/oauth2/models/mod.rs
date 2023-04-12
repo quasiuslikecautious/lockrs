@@ -1,10 +1,10 @@
-mod access_token;
-mod refresh_token;
+mod authorization;
 mod scope;
+mod token;
 
 pub use self::{
-    access_token::*,
-    refresh_token::*,
+    authorization::*,
     scope::*,
+    token::*,
 };
 

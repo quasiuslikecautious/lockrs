@@ -10,8 +10,10 @@ use crate::{
         models::DbDeviceAuthorization,
     }, 
     mappers::DeviceAuthorizationMapper,
-    oauth2::models::Scopes,
-    oauth2::responses::DeviceAuthorizationResponse, 
+    oauth2::models::{
+        DeviceAuthorizationModel,
+        ScopesModel,
+    },
 };
 
 pub struct DeviceAuthorizationService;
@@ -19,8 +21,8 @@ pub struct DeviceAuthorizationService;
 impl DeviceAuthorizationService {
     pub fn create_device_authorization(
         client_id: &str,
-        scopes: Scopes,
-    ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationServiceError> {
+        scopes: ScopesModel,
+    ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
         let expires_at = (Utc::now() + Duration::minutes(5)).naive_utc();
         let scopes = scopes.scopes.into_iter().map(|s| Some(s)).collect::<Vec<Option<String>>>();
 
@@ -45,7 +47,7 @@ impl DeviceAuthorizationService {
 
     pub fn get_from_device_code(
         device_code: &str,
-    ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationServiceError> {
+    ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();
@@ -61,7 +63,7 @@ impl DeviceAuthorizationService {
 
     pub fn get_from_user_code(
         user_code: &str,
-    ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationServiceError> {
+    ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();

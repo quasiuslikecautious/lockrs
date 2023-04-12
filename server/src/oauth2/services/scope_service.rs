@@ -2,13 +2,13 @@ use diesel::prelude::*;
 
 use crate::{
     db::{establish_connection, schema::scopes}, 
-    oauth2::models::Scopes
+    oauth2::models::ScopesModel,
 };
 
 pub struct ScopeService;
 
 impl ScopeService {
-    pub fn get_from_list(scope: &str) -> Result<Scopes, ScopeServiceError> {
+    pub fn get_from_list(scope: &str) -> Result<ScopesModel, ScopeServiceError> {
         let scopes_list = scope.split(' ').map(|s| s.to_string()).collect::<Vec<String>>();
     
         let connection = &mut establish_connection();
@@ -27,7 +27,7 @@ impl ScopeService {
                 }
             })?;
 
-        return Ok(Scopes {
+        return Ok(ScopesModel {
             scopes: validated_scopes,
         });       
     }

@@ -4,12 +4,9 @@ use serde::Deserialize;
 use crate::{
     oauth2::responses::DeviceAuthorizationResponse,
     oauth2::services::{
-        ScopeService, ScopeServiceError,
+        ClientAuthService, ClientAuthServiceError, 
         DeviceAuthorizationService,
-    },
-    services::{
-        ClientAuthService,
-        ClientAuthServiceError, 
+        ScopeService, ScopeServiceError,
     }, 
     utils::extractors::ExtractClientCredentials, 
 };
@@ -47,7 +44,7 @@ impl DeviceAuthorizationController {
         let device_authorization = DeviceAuthorizationService::create_device_authorization(&client_credentials.id, scopes)
             .map_err(|_| DeviceAuthorizationControllerError::InternalError)?;
 
-        Ok(Json(device_authorization))
+        Ok(Json(DeviceAuthorizationResponse::new(&device_authorization.user_code, &device_authorization.device_code)))
     }
 }
 

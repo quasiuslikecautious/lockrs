@@ -1,14 +1,14 @@
 use bcrypt::verify;
 
 use crate::{
-    auth::models::Session,
+    auth::models::SessionModel,
     services::{UserService, UserServiceError},
 };
 
 pub struct UserAuthService;
 
 impl UserAuthService {
-    pub fn login(email: &str, password: &str) -> Result<Session, UserAuthServiceError> {
+    pub fn login(email: &str, password: &str) -> Result<SessionModel, UserAuthServiceError> {
         let user = match UserService::get_user_by_email(email) {
             Ok(user) => user,
             Err(err) => {
@@ -26,7 +26,7 @@ impl UserAuthService {
             return Err(UserAuthServiceError::InvalidPasswordError);
         }
     
-        Ok(Session {
+        Ok(SessionModel {
             id: user.id.to_string(),
             token: String::from("TODO"),
         })

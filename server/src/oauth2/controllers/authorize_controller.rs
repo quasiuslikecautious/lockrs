@@ -3,11 +3,12 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    oauth2::services::{ScopeService, ScopeServiceError},
-    services::{
+    oauth2::services::{
         ClientAuthService,
-        RedirectService,
-        RedirectServiceError, 
+        ScopeService, ScopeServiceError,
+    },
+    services::{
+        RedirectService, RedirectServiceError, 
     },
     utils::extractors::ExtractClientCredentials, 
 };

@@ -7,7 +7,7 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    auth::requests::NewSessionRequest,
+    auth::models::NewSessionModel,
     auth::services::{UserAuthService, UserAuthServiceError}, 
 };
 
@@ -22,7 +22,7 @@ impl SessionController {
 
     pub async fn create(
         Path(user_id): Path<Uuid>,
-        Json(new_session): Json<NewSessionRequest>,
+        Json(new_session): Json<NewSessionModel>,
     ) -> impl IntoResponse {
         let login_attempt = UserAuthService::login(&new_session.email, &new_session.password);
     

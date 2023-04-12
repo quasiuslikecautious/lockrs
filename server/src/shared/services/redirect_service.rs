@@ -7,13 +7,13 @@ use crate::{
         models::DbRedirectUri,
         schema::redirect_uris,
     },
-    models::RedirectUri, mappers::RedirectMapper, 
+    models::RedirectUriModel, mappers::RedirectMapper, 
 };
 
 pub struct RedirectService;
 
 impl RedirectService {
-    pub fn get_redirects_from_client(client_id: &str) -> Result<Vec<RedirectUri>, RedirectServiceError> {
+    pub fn get_redirects_from_client(client_id: &str) -> Result<Vec<RedirectUriModel>, RedirectServiceError> {
         let connection = &mut establish_connection();
         let db_redirects = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
@@ -26,14 +26,11 @@ impl RedirectService {
         })?;
 
         Ok(
-            db_redirects.into_iter().map(|x| RedirectMapper::from_db(x)).collect::<Vec<RedirectUri>>()
+            db_redirects.into_iter().map(|x| RedirectMapper::from_db(x)).collect::<Vec<RedirectUriModel>>()
         )
     }
 
-    pub fn verify_redirect(client_id: &str, uri: &Url) -> Result<RedirectUri, RedirectServiceError> {
-
-        println!("{}", &uri.to_string());
-
+    pub fn verify_redirect(client_id: &str, uri: &Url) -> Result<RedirectUriModel, RedirectServiceError> {
         let connection = &mut establish_connection();
         let db_redirect = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
@@ -49,7 +46,7 @@ impl RedirectService {
         Ok(RedirectMapper::from_db(db_redirect))
     }
 
-    pub fn create_redirect(client_id: &String, uri: &Url) -> Result<RedirectUri, RedirectServiceError> {
+    pub fn create_redirect(client_id: &String, uri: &Url) -> Result<RedirectUriModel, RedirectServiceError> {
         let connection = &mut establish_connection();
         let db_redirect = connection.build_transaction()
             .read_write()

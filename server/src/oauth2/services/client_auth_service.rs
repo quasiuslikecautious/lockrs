@@ -6,13 +6,13 @@ use crate::{
         models::DbClient,
         schema::clients,
     },
-    models::Client,
+    models::ClientModel,
 };
 
 pub struct ClientAuthService;
 
 impl ClientAuthService {
-    pub fn verify_credentials(id: &str, secret: &Option<String>) -> Result<Client, ClientAuthServiceError> {
+    pub fn verify_credentials(id: &str, secret: &Option<String>) -> Result<ClientModel, ClientAuthServiceError> {
         let mut query = clients::table
             .into_boxed()
             .filter(clients::id.eq(&id));
@@ -25,7 +25,7 @@ impl ClientAuthService {
         let db_client = query.first::<DbClient>(connection);
 
         match db_client {
-            Ok(client) => Ok(Client {
+            Ok(client) => Ok(ClientModel {
                 id: client.id,
                 secret: client.secret,
                 name: client.name,

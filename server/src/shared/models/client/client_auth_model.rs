@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub struct ClientAuth {
+pub struct ClientAuthModel {
     pub id: String,
     pub secret: Option<String>,
 }

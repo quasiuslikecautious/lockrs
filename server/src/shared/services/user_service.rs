@@ -9,12 +9,12 @@ use crate::db::{
 };
 
 use crate::mappers::UserMapper;
-use crate::models::{NewUser, User};
+use crate::models::{NewUserModel, UserModel};
 
 pub struct UserService;
 
 impl UserService {
-    pub fn create_user(new_user: NewUser) -> Result<User, UserServiceError> {
+    pub fn create_user(new_user: NewUserModel) -> Result<UserModel, UserServiceError> {
         let password_hash = hash(new_user.password, DEFAULT_COST)
             .map_err(|_| UserServiceError::HashError)?;
     
@@ -36,7 +36,7 @@ impl UserService {
         }
     }
     
-    pub fn get_user_by_id(id: &Uuid) -> Result<User, UserServiceError> {
+    pub fn get_user_by_id(id: &Uuid) -> Result<UserModel, UserServiceError> {
         let connection = &mut establish_connection();
         let result = users::table
             .filter(users::id.eq(id))
@@ -48,7 +48,7 @@ impl UserService {
         }
     }
     
-    pub fn get_user_by_email(email: &str) -> Result<User, UserServiceError> {
+    pub fn get_user_by_email(email: &str) -> Result<UserModel, UserServiceError> {
         let connection = &mut establish_connection();
         let result = users::table
             .filter(users::email.eq(email))

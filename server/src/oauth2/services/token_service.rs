@@ -10,7 +10,7 @@ use crate::{
         models::{DbAccessToken, DbRefreshToken},
         schema::{access_tokens, refresh_tokens},
     },
-    oauth2::models::{RefreshToken, Scopes},
+    oauth2::models::{RefreshTokenModel, ScopesModel},
     oauth2::responses::TokenResponse, mappers::RefreshTokenMapper, 
 };
 
@@ -20,7 +20,7 @@ impl TokenService {
     pub fn create_token(
         client_id: &str,
         user_id: &Option<Uuid>,
-        scopes: Scopes,
+        scopes: ScopesModel,
     ) -> Result<TokenResponse, TokenServiceError> {
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
         let refresh_expiry = (Utc::now() + Duration::hours(24)).naive_utc();
@@ -66,7 +66,7 @@ impl TokenService {
         client_id: &str,
         user_id: &Option<Uuid>,
         token: &str,
-    ) -> Result<Scopes, TokenServiceError> {
+    ) -> Result<ScopesModel, TokenServiceError> {
         let now = Utc::now().naive_utc();
         let connection = &mut establish_connection();
 
@@ -89,7 +89,7 @@ impl TokenService {
             })
             .collect::<Vec<String>>();
 
-        Ok(Scopes {
+        Ok(ScopesModel {
             scopes,
         })
     }
@@ -97,7 +97,7 @@ impl TokenService {
     pub fn verify_refresh_token(
         client_id: &str,
         token: &str,
-    ) -> Result<RefreshToken, TokenServiceError> {
+    ) -> Result<RefreshTokenModel, TokenServiceError> {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();

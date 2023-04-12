@@ -2,7 +2,7 @@ use serde::Deserialize;
 use url::Url;
 
 #[derive(Deserialize)]
-pub struct NewClient {
+pub struct NewClientModel {
     pub is_public: bool,
     pub name: String,
     pub description: String,

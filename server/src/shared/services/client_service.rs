@@ -9,13 +9,13 @@ use crate::{
         models::{DbClient, DbRedirectUri},
         schema::{clients, redirect_uris},
     },
-    models::{Client, NewClient, UpdateClient}, mappers::ClientMapper,
+    models::{ClientModel, NewClientModel, UpdateClientModel}, mappers::ClientMapper,
 };
 
 pub struct ClientService;
 
 impl ClientService {
-    pub fn create_client(new_client: NewClient, user_id: &Uuid) -> Result<Client, ClientServiceError> {
+    pub fn create_client(new_client: NewClientModel, user_id: &Uuid) -> Result<ClientModel, ClientServiceError> {
         let id = Self::generate_random_string();
         let secret = match new_client.is_public {
             true => None,
@@ -52,7 +52,7 @@ impl ClientService {
         Ok(ClientMapper::from_db(db_client))
     }
     
-    pub fn get_client_by_id(id: &str) -> Result<Client, ClientServiceError> {
+    pub fn get_client_by_id(id: &str) -> Result<ClientModel, ClientServiceError> {
         let connection = &mut establish_connection();
         let db_client = clients::table
             .filter(clients::id.eq(id))
@@ -62,7 +62,7 @@ impl ClientService {
         Ok(ClientMapper::from_db(db_client))
     }
     
-    pub fn get_clients_by_user(user_id: &Uuid) -> Result<Vec<Client>, ClientServiceError> {
+    pub fn get_clients_by_user(user_id: &Uuid) -> Result<Vec<ClientModel>, ClientServiceError> {
         let connection = &mut establish_connection();
         let clients = clients::table
             .filter(clients::user_id.eq(user_id))
@@ -72,11 +72,11 @@ impl ClientService {
         Ok(clients
            .into_iter()
            .map(|c| ClientMapper::from_db(c))
-           .collect::<Vec<Client>>()
+           .collect::<Vec<ClientModel>>()
         )
     }
 
-    pub fn update_client_by_id(client_id: &str, update_client: UpdateClient) -> Result<Client, ClientServiceError> {
+    pub fn update_client_by_id(client_id: &str, update_client: UpdateClientModel) -> Result<ClientModel, ClientServiceError> {
         let connection = &mut establish_connection();
         let db_client = connection.build_transaction()
             .read_write()
@@ -91,7 +91,7 @@ impl ClientService {
         Ok(ClientMapper::from_db(db_client))    
     }
 
-    pub fn delete_client_by_id(client_id: &str) -> Result<Client, ClientServiceError> {
+    pub fn delete_client_by_id(client_id: &str) -> Result<ClientModel, ClientServiceError> {
         let connection = &mut establish_connection();
         let db_client = connection.build_transaction()
             .read_write()

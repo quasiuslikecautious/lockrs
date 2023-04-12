@@ -6,12 +6,12 @@ use axum::{
     http::{request::Parts, StatusCode}, 
     response::IntoResponse,
 };
-use crate::models::ClientAuth;
+use crate::models::ClientAuthModel;
 
 use super::BasicAuth;
 
 #[derive(Debug)]
-pub struct ExtractClientCredentials(pub ClientAuth);
+pub struct ExtractClientCredentials(pub ClientAuthModel);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for ExtractClientCredentials
@@ -30,7 +30,7 @@ where
             .await
             .ok()
         { 
-            return Ok(Self(ClientAuth {
+            return Ok(Self(ClientAuthModel {
                 id: client_credentials.public,
                 secret: Some(client_credentials.private),
             }));
@@ -71,7 +71,7 @@ fn query_into_hashmap(query: &str) -> HashMap<String, Option<String>> {
         .collect::<HashMap<String, Option<String>>>()
 }
 
-fn get_client_from_query(query: Option<&str>) -> Option<ClientAuth> {
+fn get_client_from_query(query: Option<&str>) -> Option<ClientAuthModel> {
     let Some(query) = query
     else {
         return None;
@@ -89,7 +89,7 @@ fn get_client_from_query(query: Option<&str>) -> Option<ClientAuth> {
         return None;
     };
 
-    Some(ClientAuth {
+    Some(ClientAuthModel {
         id: client_id_val.to_owned(),
         secret: None,
     })

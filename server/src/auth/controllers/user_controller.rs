@@ -8,7 +8,7 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    models::NewUser,
+    models::NewUserModel,
     auth::responses::UserResponse,
     services::{UserService, UserServiceError},
 };
@@ -17,7 +17,7 @@ pub struct UserController;
 
 impl UserController {
     pub async fn create(
-        Json(new_user): Json<NewUser>,
+        Json(new_user): Json<NewUserModel>,
     ) -> impl IntoResponse {
         let login_attempt = UserService::create_user(new_user);
     

@@ -1,4 +1,4 @@
-pub struct Client {
+pub struct ClientModel {
     pub id: String,
     pub secret: Option<String>,
     pub name: String,

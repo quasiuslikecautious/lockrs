@@ -1,10 +1,10 @@
-use crate::{db::models::DbClient, models::Client};
+use crate::{db::models::DbClient, models::ClientModel};
 
 pub struct ClientMapper;
 
 impl ClientMapper {
-    pub fn from_db(db_client: DbClient) -> Client {
-        Client {
+    pub fn from_db(db_client: DbClient) -> ClientModel {
+        ClientModel {
             id: db_client.id,
             secret: db_client.secret,
             name: db_client.name,

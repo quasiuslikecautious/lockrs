@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct Session {
+pub struct SessionModel {
     pub id: String,
     pub token: String,
 }

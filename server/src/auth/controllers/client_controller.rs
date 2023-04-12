@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::responses::{ClientResponse, ClientListResponse},
-    models::{NewClient, UpdateClient}, 
+    models::{NewClientModel, UpdateClientModel}, 
     services::{ClientService, ClientServiceError}, 
 };
 
@@ -35,7 +35,7 @@ impl ClientController {
 
     pub async fn create(
         Path(user_id): Path<Uuid>,
-        Json(new_client): Json<NewClient>,
+        Json(new_client): Json<NewClientModel>,
     ) -> Result<Json<ClientResponse>, ClientControllerError> {
         let client = ClientService::create_client(new_client, &user_id)
             .map_err(|_| ClientControllerError::InternalError)?;
@@ -69,7 +69,7 @@ impl ClientController {
 
     pub async fn update(
         Path((_user_id, client_id)): Path<(Uuid, String)>,
-        Json(update_client): Json<UpdateClient>,
+        Json(update_client): Json<UpdateClientModel>,
     ) -> Result<Json<ClientResponse>, ClientControllerError> {
         let client = ClientService::update_client_by_id(&client_id, update_client)
             .map_err(|err| {

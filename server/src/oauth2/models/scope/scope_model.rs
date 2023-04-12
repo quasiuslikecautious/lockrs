@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub struct Scopes {
+pub struct ScopesModel {
     pub scopes: Vec<String>,
 }
 

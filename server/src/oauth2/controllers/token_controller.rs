@@ -8,15 +8,13 @@ use url::Url;
 
 
 use crate::{
-    models::Client,
-    oauth2::models::Scopes,
+    models::ClientModel,
+    oauth2::models::ScopesModel,
     oauth2::responses::TokenResponse, 
     oauth2::services::{
-        TokenService, TokenServiceError,
-        ScopeService, ScopeServiceError, 
-    },
-    services::{
         ClientAuthService, ClientAuthServiceError, 
+        ScopeService, ScopeServiceError, 
+        TokenService, TokenServiceError,
     }, 
     utils::extractors::ExtractClientCredentials, 
 };
@@ -91,8 +89,8 @@ impl TokenController {
     }
 
     pub fn client_credentials_token(
-        client: Client,
-        scopes: Scopes,
+        client: ClientModel,
+        scopes: ScopesModel,
     ) -> Result<TokenResponse, TokenControllerError> {
         if client.secret == None {
             return Err(TokenControllerError::InvalidClient);
@@ -105,8 +103,8 @@ impl TokenController {
     }
 
     pub fn refresh_token(
-        client: Client, 
-        scopes: Scopes,
+        client: ClientModel, 
+        scopes: ScopesModel,
         params: TokenRequest,
     ) -> Result<TokenResponse, TokenControllerError> {
         let Some(token) = params.refresh_token
