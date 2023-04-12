@@ -1,22 +1,16 @@
-use axum::{
-    extract::Query, 
-    http::StatusCode,
-    response::IntoResponse, Json, 
-};
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 use url::Url;
-
 
 use crate::{
     models::ClientModel,
     oauth2::models::ScopesModel,
-    oauth2::responses::TokenResponse, 
+    oauth2::responses::TokenResponse,
     oauth2::services::{
-        ClientAuthService, ClientAuthServiceError, 
-        ScopeService, ScopeServiceError, 
-        TokenService, TokenServiceError,
-    }, 
-    utils::extractors::ExtractClientCredentials, 
+        ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError, TokenService,
+        TokenServiceError,
+    },
+    utils::extractors::ExtractClientCredentials,
 };
 
 #[derive(Deserialize)]
@@ -33,7 +27,7 @@ pub struct TokenRequest {
     // device authorization
     pub device_code: Option<String>,
 
-    // refresh token 
+    // refresh token
     pub refresh_token: Option<String>,
 }
 
@@ -45,21 +39,18 @@ impl TokenController {
         Query(params): Query<TokenRequest>,
     ) -> Result<Json<TokenResponse>, TokenControllerError> {
         let client = ClientAuthService::verify_credentials(
-            &client_credentials.id, 
-            &client_credentials.secret
-        ).map_err(|err| {
-            match err {
-                ClientAuthServiceError::NotFoundError => TokenControllerError::InvalidClient,
-                _ => TokenControllerError::InternalError,
-            }
+            &client_credentials.id,
+            &client_credentials.secret,
+        )
+        .map_err(|err| match err {
+            ClientAuthServiceError::NotFoundError => TokenControllerError::InvalidClient,
+            _ => TokenControllerError::InternalError,
         })?;
 
-        let scopes = ScopeService::get_from_list(params.scope.as_str())
-            .map_err(|err| {
-                match err {
-                    ScopeServiceError::InvalidScopes => TokenControllerError::InvalidScopes,
-                    _ => TokenControllerError::InternalError,
-                }
+        let scopes =
+            ScopeService::get_from_list(params.scope.as_str()).map_err(|err| match err {
+                ScopeServiceError::InvalidScopes => TokenControllerError::InvalidScopes,
+                _ => TokenControllerError::InternalError,
             })?;
 
         let token: TokenResponse = match params.grant_type.as_str() {
@@ -96,14 +87,14 @@ impl TokenController {
             return Err(TokenControllerError::InvalidClient);
         }
 
-         let token = TokenService::create_token(&client.id, &None, scopes)
-             .map_err(|_| TokenControllerError::InternalError)?;
+        let token = TokenService::create_token(&client.id, &None, scopes)
+            .map_err(|_| TokenControllerError::InternalError)?;
 
-         Ok(token)
+        Ok(token)
     }
 
     pub fn refresh_token(
-        client: ClientModel, 
+        client: ClientModel,
         scopes: ScopesModel,
         params: TokenRequest,
     ) -> Result<TokenResponse, TokenControllerError> {
@@ -113,11 +104,9 @@ impl TokenController {
         };
 
         let refresh_token = TokenService::verify_refresh_token(&client.id, token.as_str())
-            .map_err(|err| {
-                match err {
-                    TokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
-                    _ => TokenControllerError::InternalError,
-                }
+            .map_err(|err| match err {
+                TokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
+                _ => TokenControllerError::InternalError,
             })?;
 
         TokenService::use_refresh_token(&client.id, &refresh_token.token)
@@ -155,4 +144,3 @@ impl IntoResponse for TokenControllerError {
         (StatusCode::BAD_REQUEST, self.error_message()).into_response()
     }
 }
-

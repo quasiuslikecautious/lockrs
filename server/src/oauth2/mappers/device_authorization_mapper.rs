@@ -1,7 +1,4 @@
-use crate::{
-    db::models::DbDeviceAuthorization, 
-    oauth2::models::DeviceAuthorizationModel,
-};
+use crate::{db::models::DbDeviceAuthorization, oauth2::models::DeviceAuthorizationModel};
 
 use super::ScopeMapper;
 
@@ -18,4 +15,3 @@ impl DeviceAuthorizationMapper {
         }
     }
 }
-

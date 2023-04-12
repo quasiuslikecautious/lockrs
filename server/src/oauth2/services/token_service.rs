@@ -1,5 +1,5 @@
-use base64::{Engine as _, engine::general_purpose};
-use chrono::{Utc, Duration};
+use base64::{engine::general_purpose, Engine as _};
+use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
@@ -10,8 +10,11 @@ use crate::{
         models::{DbAccessToken, DbRefreshToken},
         schema::{access_tokens, refresh_tokens},
     },
-    oauth2::models::{RefreshTokenModel, ScopesModel},
-    oauth2::responses::TokenResponse, mappers::RefreshTokenMapper, 
+    oauth2::{
+        mappers::RefreshTokenMapper,
+        models::{RefreshTokenModel, ScopesModel},
+        responses::TokenResponse,
+    },
 };
 
 pub struct TokenService;
@@ -26,7 +29,8 @@ impl TokenService {
         let refresh_expiry = (Utc::now() + Duration::hours(24)).naive_utc();
 
         let connection = &mut establish_connection();
-        let (access_token, refresh_token) = connection.build_transaction()
+        let (access_token, refresh_token) = connection
+            .build_transaction()
             .read_write()
             .run(|conn| {
                 let access_token = diesel::insert_into(access_tokens::table)
@@ -58,7 +62,10 @@ impl TokenService {
             expires_in: 5000,
             access_token: access_token.token,
             refresh_token: refresh_token.token,
-            scopes: scopes.scopes.into_iter().fold(String::new(), |c, s| format!("{} {}", c, s)),
+            scopes: scopes
+                .scopes
+                .into_iter()
+                .fold(String::new(), |c, s| format!("{} {}", c, s)),
         })
     }
 
@@ -79,19 +86,16 @@ impl TokenService {
             .first::<DbAccessToken>(connection)
             .map_err(|err| TokenServiceError::from(err))?;
 
-        let scopes = db_token.scopes
+        let scopes = db_token
+            .scopes
             .into_iter()
-            .filter_map(|s| {
-                match s {
-                    Some(s) => Some(s),
-                    None => None,
-                }
+            .filter_map(|s| match s {
+                Some(s) => Some(s),
+                None => None,
             })
             .collect::<Vec<String>>();
 
-        Ok(ScopesModel {
-            scopes,
-        })
+        Ok(ScopesModel { scopes })
     }
 
     pub fn verify_refresh_token(
@@ -113,14 +117,12 @@ impl TokenService {
         Ok(RefreshTokenMapper::from_db(db_token))
     }
 
-    pub fn use_refresh_token(
-        client_id: &str,
-        token: &str,
-    ) -> Result<(), TokenServiceError> {
+    pub fn use_refresh_token(client_id: &str, token: &str) -> Result<(), TokenServiceError> {
         let now = Utc::now().naive_utc();
 
         let connection = &mut establish_connection();
-        connection.build_transaction()
+        connection
+            .build_transaction()
             .read_write()
             .run(|conn| {
                 diesel::update(refresh_tokens::table)
@@ -133,7 +135,7 @@ impl TokenService {
                     .get_result::<DbRefreshToken>(conn)
             })
             .map_err(|err| TokenServiceError::from(err))?;
-        
+
         Ok(())
     }
 
@@ -158,4 +160,3 @@ impl From<diesel::result::Error> for TokenServiceError {
         }
     }
 }
-

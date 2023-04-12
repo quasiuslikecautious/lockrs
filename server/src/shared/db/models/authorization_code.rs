@@ -4,11 +4,7 @@ use diesel::result::Error;
 use url::Url;
 use uuid::Uuid;
 
-use crate::db::{
-    DbError,
-    establish_connection,
-    schema::authorization_codes, self,
-};
+use crate::db::{self, establish_connection, schema::authorization_codes, DbError};
 
 #[derive(Debug, Queryable, Insertable)]
 #[diesel(primary_key(id), table_name = authorization_codes)]
@@ -47,12 +43,10 @@ impl DbAuthorizationCode {
             .filter(authorization_codes::expires_at.gt(&now))
             .filter(authorization_codes::used.eq(false))
             .first::<Self>(connection)
-        .map_err(|err| {
-            match err {
+            .map_err(|err| match err {
                 Error::NotFound => DbError::NotFound,
-                _               => DbError::InternalError,
-            }
-        })
+                _ => DbError::InternalError,
+            })
     }
 
     pub fn get_no_challenge(
@@ -71,12 +65,10 @@ impl DbAuthorizationCode {
             .filter(authorization_codes::expires_at.gt(&now))
             .filter(authorization_codes::used.eq(false))
             .first::<Self>(connection)
-        .map_err(|err| {
-            match err {
+            .map_err(|err| match err {
                 Error::NotFound => DbError::NotFound,
-                _               => DbError::InternalError,
-            }
-        })
+                _ => DbError::InternalError,
+            })
     }
 
     pub fn insert(
@@ -90,10 +82,15 @@ impl DbAuthorizationCode {
         scopes: Vec<String>,
     ) -> Result<Self, DbError> {
         let expires_at = (Utc::now() + expiry.clone()).naive_utc();
-        let scopes = scopes.clone().into_iter().map(|s| Some(s)).collect::<Vec<Option<String>>>();
+        let scopes = scopes
+            .clone()
+            .into_iter()
+            .map(|s| Some(s))
+            .collect::<Vec<Option<String>>>();
 
         let connection = &mut establish_connection();
-        connection.build_transaction()
+        connection
+            .build_transaction()
             .read_write()
             .run(|conn| {
                 diesel::insert_into(authorization_codes::table)
@@ -109,18 +106,15 @@ impl DbAuthorizationCode {
                     ))
                     .get_result::<Self>(conn)
             })
-            .map_err(|err| {
-                match err {
-                    _               => DbError::InternalError,
-                }
+            .map_err(|err| match err {
+                _ => DbError::InternalError,
             })
     }
 
-    pub fn use_token(
-        &self
-    ) -> Result<Self, DbError> {
+    pub fn use_token(&self) -> Result<Self, DbError> {
         let connection = &mut establish_connection();
-        connection.build_transaction()
+        connection
+            .build_transaction()
             .read_write()
             .run(|conn| {
                 diesel::update(authorization_codes::table)
@@ -128,11 +122,8 @@ impl DbAuthorizationCode {
                     .set(authorization_codes::used.eq(false))
                     .get_result::<Self>(conn)
             })
-            .map_err(|err| {
-                match err {
-                    _               => DbError::InternalError,
-                }
+            .map_err(|err| match err {
+                _ => DbError::InternalError,
             })
     }
 }
-

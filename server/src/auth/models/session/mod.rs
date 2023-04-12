@@ -1,10 +1,5 @@
-mod new_session_model;
+mod session_create_model;
 mod session_model;
-mod update_session_model;
+mod session_update_model;
 
-pub use self::{
-    new_session_model::*,
-    session_model::*,
-    update_session_model::*,
-};
-
+pub use self::{session_create_model::*, session_model::*, session_update_model::*};

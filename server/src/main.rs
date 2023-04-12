@@ -1,15 +1,15 @@
-mod shared;
 mod auth;
 mod oauth2;
+mod shared;
 
 use std::net::SocketAddr;
 
 use axum::{
-    Router,
     body::{boxed, Body},
     http::{Response, StatusCode},
     response::IntoResponse,
     routing::get,
+    Router,
 };
 use tower::ServiceExt;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -35,10 +35,10 @@ async fn main() {
 
     let app = Router::new()
         .nest(
-            "/api/v1", 
+            "/api/v1",
             Router::new()
                 .nest("/auth", auth::routes::routes())
-                .nest("/oauth2", oauth2::routes::routes())
+                .nest("/oauth2", oauth2::routes::routes()),
         )
         .fallback_service(get(|req| async move {
             match ServeDir::new(String::from("./dist")).oneshot(req).await {
@@ -65,4 +65,3 @@ async fn main() {
 async fn fallback() -> impl IntoResponse {
     return StatusCode::NOT_FOUND;
 }
-

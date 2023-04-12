@@ -1,7 +1,4 @@
-use crate::{
-    db::models::DbUser,
-    models::UserModel, 
-};
+use crate::{db::models::DbUser, models::UserModel};
 
 pub struct UserMapper;
 
@@ -14,4 +11,3 @@ impl UserMapper {
         }
     }
 }
-

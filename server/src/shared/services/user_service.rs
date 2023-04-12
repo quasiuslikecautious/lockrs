@@ -1,59 +1,53 @@
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{hash, DEFAULT_COST};
 use diesel::prelude::*;
 use uuid::Uuid;
 
-use crate::db::{
-    establish_connection,
-    models::DbUser,
-    schema::users,
-};
+use crate::db::{establish_connection, models::DbUser, schema::users};
 
 use crate::mappers::UserMapper;
-use crate::models::{NewUserModel, UserModel};
+use crate::models::{UserCreateModel, UserModel};
 
 pub struct UserService;
 
 impl UserService {
-    pub fn create_user(new_user: NewUserModel) -> Result<UserModel, UserServiceError> {
-        let password_hash = hash(new_user.password, DEFAULT_COST)
-            .map_err(|_| UserServiceError::HashError)?;
-    
+    pub fn create_user(new_user: UserCreateModel) -> Result<UserModel, UserServiceError> {
+        let password_hash =
+            hash(new_user.password, DEFAULT_COST).map_err(|_| UserServiceError::HashError)?;
+
         let connection = &mut establish_connection();
-        let result = connection.build_transaction()
-            .read_write()
-            .run(|conn| {
-                diesel::insert_into(users::table)
-                    .values((
-                        users::email.eq(&new_user.email),
-                        users::password_hash.eq(password_hash)
-                    ))
-                    .get_result::<DbUser>(conn)
-            });
-    
+        let result = connection.build_transaction().read_write().run(|conn| {
+            diesel::insert_into(users::table)
+                .values((
+                    users::email.eq(&new_user.email),
+                    users::password_hash.eq(password_hash),
+                ))
+                .get_result::<DbUser>(conn)
+        });
+
         match result {
             Ok(db_user) => Ok(UserMapper::from_db(db_user)),
             Err(err) => Err(UserServiceError::from(err)),
         }
     }
-    
+
     pub fn get_user_by_id(id: &Uuid) -> Result<UserModel, UserServiceError> {
         let connection = &mut establish_connection();
         let result = users::table
             .filter(users::id.eq(id))
             .first::<DbUser>(connection);
-        
+
         match result {
             Ok(db_user) => Ok(UserMapper::from_db(db_user)),
             Err(err) => Err(UserServiceError::from(err)),
         }
     }
-    
+
     pub fn get_user_by_email(email: &str) -> Result<UserModel, UserServiceError> {
         let connection = &mut establish_connection();
         let result = users::table
             .filter(users::email.eq(email))
             .first::<DbUser>(connection);
-        
+
         match result {
             Ok(db_user) => Ok(UserMapper::from_db(db_user)),
             Err(err) => Err(UserServiceError::from(err)),
@@ -72,14 +66,11 @@ impl From<diesel::result::Error> for UserServiceError {
     fn from(diesel_error: diesel::result::Error) -> Self {
         match diesel_error {
             diesel::result::Error::NotFound => Self::NotFoundError,
-            diesel::result::Error::DatabaseError(error_kind, _) => {
-                match error_kind {
-                    diesel::result::DatabaseErrorKind::UniqueViolation => Self::AlreadyExistsError,
-                    _ => Self::DbError,
-                }
-            }
+            diesel::result::Error::DatabaseError(error_kind, _) => match error_kind {
+                diesel::result::DatabaseErrorKind::UniqueViolation => Self::AlreadyExistsError,
+                _ => Self::DbError,
+            },
             _ => Self::DbError,
         }
     }
 }
-

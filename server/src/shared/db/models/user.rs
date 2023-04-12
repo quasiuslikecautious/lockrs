@@ -10,4 +10,3 @@ pub struct DbUser {
     pub email: String,
     pub password_hash: String,
 }
-

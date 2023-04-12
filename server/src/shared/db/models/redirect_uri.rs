@@ -1,10 +1,7 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
-use crate::db::{
-    models::DbClient,
-    schema::redirect_uris,
-};
+use crate::db::{models::DbClient, schema::redirect_uris};
 
 #[derive(Debug, Queryable, Insertable, Associations, Identifiable)]
 #[diesel(belongs_to(DbClient, foreign_key = client_id))]
@@ -16,4 +13,3 @@ pub struct DbRedirectUri {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
-

@@ -16,4 +16,3 @@ pub struct DbRefreshToken {
     pub used: bool,
     pub scopes: Vec<Option<String>>,
 }
-

@@ -10,6 +10,10 @@
 
 - [x] there is not an authorization code model
 
+- [ ] fix session_create_model, as what it currently is should be user_auth_model
+
+- [ ] fix controller errors to return error code dynamically instead of 400
+
 ## Improvements
 
 - [ ] Authentication System
@@ -62,14 +66,17 @@
 
 - [ ] Refactor models
     - [x] Add models to name of all models
-    - [x] Fix mappers to not use responses/move response to model
-        - [x] device_authorization
     - [x] Move all requests (mostly from /auth) into models
     - [x] Create separatation of models
 
-- [ ] Fix mappers
-    - [ ] move mappers to correct domain dirs instead of all in shared
-    - [ ] determine how model -> response mapping should be handled
+- [x] Fix mappers
+    - [x] move mappers to correct domain dirs instead of all in shared
+    - [x] Fix mappers to not use responses/move response to model
+        - [x] device_authorization
+
+- [ ] determine how model -> response mapping should be handled
 
 - [x] client_auth_service is only used by /oauth2
+
+- [ ] Response "views" should impl IntoResponse and use that as the view
 

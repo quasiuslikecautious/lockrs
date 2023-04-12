@@ -1,75 +1,92 @@
-
-use axum::{
-    Json,
-    extract::Path, 
-    http::StatusCode,
-    response::IntoResponse,
-};
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    models::NewUserModel,
     auth::responses::UserResponse,
-    services::{UserService, UserServiceError},
+    services::{UserService, UserServiceError}, models::UserCreateModel,
 };
+
+#[derive(Deserialize)]
+pub struct UserCreateRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Deserialize)]
+pub struct UserUpdateRequest {
+    pub email: Option<String>,
+    pub password: Option<String>,
+}
 
 pub struct UserController;
 
 impl UserController {
-    pub async fn create(
-        Json(new_user): Json<NewUserModel>,
-    ) -> impl IntoResponse {
-        let login_attempt = UserService::create_user(new_user);
-    
-        match login_attempt {
-            Ok(user) => {
-                let signup_response = UserResponse {
-                    id: user.id,
-                    email: user.email,
-                };
-    
-                Json(signup_response).into_response()
-            },
-    
-            Err(err) => {
+    pub async fn create(Json(user_request): Json<UserCreateRequest>) -> Result<Json<UserResponse>, UserControllerError> {
+        let new_user = UserCreateModel {
+            email: user_request.email,
+            password: user_request.password,
+        };
+
+        let user = UserService::create_user(new_user)
+            .map_err(|err| {
                 match err {
-                    UserServiceError::AlreadyExistsError => (StatusCode::CONFLICT, "An account is already associated with that email address").into_response(),
-                    _ => (StatusCode::INTERNAL_SERVER_ERROR, "Error proccessing signup request").into_response(),
+                    UserServiceError::AlreadyExistsError => UserControllerError::CreateConflict,
+                    _ => UserControllerError::InternalError,
                 }
-            }
-        }
-    }
-    
-    pub async fn read(
-        Path(user_id): Path<Uuid>
-    ) -> impl IntoResponse {
-        let user = UserService::get_user_by_id(&user_id);
-    
-        match user {
-            Ok(user) => (StatusCode::OK, Json(UserResponse {
-                id: user.id,
-                email: user.email,
-            })).into_response(),
-    
-            Err(err) => {
-                match err {
-                    UserServiceError::NotFoundError => (StatusCode::NOT_FOUND, "No user with that id found").into_response(),
-                    _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unable to access user").into_response(),
-                }
-            }
-        }
+            })?;
+            
+        let user_response = UserResponse {
+            id: user.id,
+            email: user.email,
+        };
+
+        Ok(Json(user_response))
     }
 
-    pub async fn update(
-        Path(user_id): Path<Uuid>,
-    ) -> impl IntoResponse {
+    pub async fn read(Path(user_id): Path<Uuid>) -> Result<Json<UserResponse>, UserControllerError> {
+        let user = UserService::get_user_by_id(&user_id)
+            .map_err(|err| {
+                match err {
+                    UserServiceError::NotFoundError => UserControllerError::NotFound, 
+                    _ => UserControllerError::InternalError,
+                }
+            })?;
+
+        Ok(Json(UserResponse {
+            id: user.id,
+            email: user.email,
+        }))
+    }
+
+    pub async fn update(Path(user_id): Path<Uuid>) -> impl IntoResponse {
         (StatusCode::NOT_IMPLEMENTED, format!("/users/{}", user_id))
     }
 
-    pub async fn delete(
-        Path(user_id): Path<Uuid>,
-    ) -> impl IntoResponse {
+    pub async fn delete(Path(user_id): Path<Uuid>) -> impl IntoResponse {
         (StatusCode::NOT_IMPLEMENTED, format!("/users/{}", user_id))
+    }
+}
+
+pub enum UserControllerError {
+    InternalError,
+    NotFound,
+    CreateConflict,
+}
+
+impl UserControllerError {
+    pub fn error_message(&self) -> &'static str {
+        match self {
+            Self::InternalError => "An error occurred while processing your request. Please try again later.",
+            Self::NotFound => "The requested user was not found.",
+            Self::CreateConflict => "An account is already associated with that email. Please login or use a different email.",
+        }
+    }
+}
+
+impl IntoResponse for UserControllerError {
+    fn into_response(self) -> axum::response::Response {
+        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
     }
 }
 

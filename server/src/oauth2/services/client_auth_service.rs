@@ -1,21 +1,18 @@
 use diesel::prelude::*;
 
 use crate::{
-    db::{
-        establish_connection,
-        models::DbClient,
-        schema::clients,
-    },
+    db::{establish_connection, models::DbClient, schema::clients},
     models::ClientModel,
 };
 
 pub struct ClientAuthService;
 
 impl ClientAuthService {
-    pub fn verify_credentials(id: &str, secret: &Option<String>) -> Result<ClientModel, ClientAuthServiceError> {
-        let mut query = clients::table
-            .into_boxed()
-            .filter(clients::id.eq(&id));
+    pub fn verify_credentials(
+        id: &str,
+        secret: &Option<String>,
+    ) -> Result<ClientModel, ClientAuthServiceError> {
+        let mut query = clients::table.into_boxed().filter(clients::id.eq(&id));
 
         if let Some(secret) = secret {
             query = query.filter(clients::secret.eq(secret));
@@ -50,4 +47,3 @@ impl From<diesel::result::Error> for ClientAuthServiceError {
         }
     }
 }
-

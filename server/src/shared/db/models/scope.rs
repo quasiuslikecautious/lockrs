@@ -10,4 +10,3 @@ pub struct DbScope {
     pub description: String,
     pub client_id: Option<String>,
 }
-

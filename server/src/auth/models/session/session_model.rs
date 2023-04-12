@@ -5,4 +5,3 @@ pub struct SessionModel {
     pub id: String,
     pub token: String,
 }
-

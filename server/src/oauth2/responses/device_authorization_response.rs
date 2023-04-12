@@ -11,17 +11,14 @@ pub struct DeviceAuthorizationResponse {
 }
 
 impl DeviceAuthorizationResponse {
-    pub fn new(
-        user_code: &str,
-        device_code: &str,
-    ) -> Self {
+    pub fn new(user_code: &str, device_code: &str) -> Self {
         Self {
             user_code: user_code.to_owned(),
             device_code: device_code.to_owned(),
-            verification_uri: Url::parse("http://127.0.0.1:8080/device").expect("Failed to parse device code verification url"),
+            verification_uri: Url::parse("http://127.0.0.1:8080/device")
+                .expect("Failed to parse device code verification url"),
             interval: 5000,
             expires_in: 30000,
         }
     }
 }
-

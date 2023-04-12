@@ -1,10 +1,5 @@
-mod new_redirect_model;
-mod redirect_url_model;
-mod update_redirect_model;
+mod redirect_create_model;
+mod redirect_model;
+mod redirect_update_model;
 
-pub use self::{
-    new_redirect_model::*,
-    redirect_url_model::*,
-    update_redirect_model::*,
-};
-
+pub use self::{redirect_create_model::*, redirect_model::*, redirect_update_model::*};

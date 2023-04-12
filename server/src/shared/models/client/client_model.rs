@@ -5,4 +5,3 @@ pub struct ClientModel {
     pub description: String,
     pub homepage_url: String,
 }
-

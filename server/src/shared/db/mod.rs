@@ -1,5 +1,5 @@
-pub mod schema;
 pub mod models;
+pub mod schema;
 
 mod db_error;
 pub use self::db_error::*;
@@ -8,7 +8,6 @@ use diesel::{Connection, PgConnection};
 use dotenvy::dotenv;
 use std::env;
 
-
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
 
@@ -16,6 +15,3 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
-
-
-

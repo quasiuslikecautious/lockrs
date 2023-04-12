@@ -7,4 +7,3 @@ pub struct ClientResponse {
     pub description: String,
     pub homepage_url: String,
 }
-

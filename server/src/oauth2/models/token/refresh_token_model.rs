@@ -3,9 +3,8 @@ use uuid::Uuid;
 
 pub struct RefreshTokenModel {
     pub token: String,
-    pub user_id: Option<Uuid>,
     pub client_id: String,
+    pub user_id: Option<Uuid>,
     pub scopes: Vec<String>,
     pub expires_at: NaiveDateTime,
 }
-

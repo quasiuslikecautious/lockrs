@@ -1,4 +1,7 @@
-use axum::{Router, routing::{delete, get, post, put}};
+use axum::{
+    routing::{delete, get, post, put},
+    Router,
+};
 
 use crate::auth::controllers::RedirectController;
 

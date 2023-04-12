@@ -5,4 +5,3 @@ pub struct UserModel {
     pub email: String,
     pub password_hash: String,
 }
-

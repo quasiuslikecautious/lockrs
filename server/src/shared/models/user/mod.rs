@@ -1,10 +1,11 @@
-mod new_user_model;
 mod user_model;
-mod update_user_model;
+mod user_auth_model;
+mod user_create_model;
+mod user_update_model;
 
 pub use self::{
-    new_user_model::*,
     user_model::*,
-    update_user_model::*,
+    user_auth_model::*,
+    user_create_model::*,
+    user_update_model::*,
 };
-

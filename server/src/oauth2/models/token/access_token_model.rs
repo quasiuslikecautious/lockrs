@@ -8,4 +8,3 @@ pub struct AccessTokenModel {
     pub scopes: Vec<String>,
     pub expires_at: NaiveDateTime,
 }
-

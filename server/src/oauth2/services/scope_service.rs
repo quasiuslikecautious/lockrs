@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 
 use crate::{
-    db::{establish_connection, schema::scopes}, 
+    db::{establish_connection, schema::scopes},
     oauth2::models::ScopesModel,
 };
 
@@ -9,10 +9,14 @@ pub struct ScopeService;
 
 impl ScopeService {
     pub fn get_from_list(scope: &str) -> Result<ScopesModel, ScopeServiceError> {
-        let scopes_list = scope.split(' ').map(|s| s.to_string()).collect::<Vec<String>>();
-    
+        let scopes_list = scope
+            .split(' ')
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+
         let connection = &mut establish_connection();
-        let validated_scopes = connection.build_transaction()
+        let validated_scopes = connection
+            .build_transaction()
             .read_only()
             .run(|conn| {
                 scopes::table
@@ -20,16 +24,14 @@ impl ScopeService {
                     .filter(scopes::name.eq_any(&scopes_list))
                     .load(conn)
             })
-            .map_err(|err| {
-                match err {
-                    diesel::result::Error::NotFound => ScopeServiceError::InvalidScopes,
-                    _ => ScopeServiceError::DbError,
-                }
+            .map_err(|err| match err {
+                diesel::result::Error::NotFound => ScopeServiceError::InvalidScopes,
+                _ => ScopeServiceError::DbError,
             })?;
 
         return Ok(ScopesModel {
             scopes: validated_scopes,
-        });       
+        });
     }
 }
 
@@ -46,5 +48,3 @@ impl From<diesel::result::Error> for ScopeServiceError {
         }
     }
 }
-
-

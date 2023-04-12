@@ -1,7 +1,4 @@
-use crate::{
-    db::models::DbRefreshToken, 
-    oauth2::models::RefreshTokenModel
-};
+use crate::{db::models::DbRefreshToken, oauth2::models::RefreshTokenModel};
 
 use super::ScopeMapper;
 
@@ -18,4 +15,3 @@ impl RefreshTokenMapper {
         }
     }
 }
-

@@ -14,4 +14,3 @@ pub struct DbClient {
     pub description: String,
     pub homepage_url: String,
 }
-

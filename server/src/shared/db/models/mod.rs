@@ -8,13 +8,6 @@ mod scope;
 mod user;
 
 pub use self::{
-    access_token::*,
-    authorization_code::*,
-    client::*,
-    device_authorization::*,
-    redirect_uri::*,
-    refresh_token::*,
-    scope::*,
-    user::*,
+    access_token::*, authorization_code::*, client::*, device_authorization::*, redirect_uri::*,
+    refresh_token::*, scope::*, user::*,
 };
-

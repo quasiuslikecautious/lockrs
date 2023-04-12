@@ -15,4 +15,3 @@ pub struct DbAccessToken {
     pub expires_at: NaiveDateTime,
     pub scopes: Vec<Option<String>>,
 }
-

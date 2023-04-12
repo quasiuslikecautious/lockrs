@@ -14,4 +14,3 @@ pub struct DbDeviceAuthorization {
     pub expires_at: NaiveDateTime,
     pub scopes: Vec<Option<String>>,
 }
-

@@ -1,12 +1,10 @@
 use axum::{
     async_trait,
     extract::FromRequestParts,
-    http::{
-        header::AUTHORIZATION,
-        request::Parts, StatusCode,
-    }, response::IntoResponse,
+    http::{header::AUTHORIZATION, request::Parts, StatusCode},
+    response::IntoResponse,
 };
-use base64::{Engine as _, engine::general_purpose}; 
+use base64::{engine::general_purpose, Engine as _};
 
 #[derive(Debug)]
 pub struct BasicAuthCredentials {
@@ -18,9 +16,9 @@ pub struct BasicAuthCredentials {
 pub struct BasicAuth(pub BasicAuthCredentials);
 
 #[async_trait()]
-impl<S> FromRequestParts<S> for BasicAuth 
+impl<S> FromRequestParts<S> for BasicAuth
 where
-    S: Send + Sync
+    S: Send + Sync,
 {
     type Rejection = BasicAuthError;
 
@@ -96,4 +94,3 @@ impl IntoResponse for BasicAuthError {
         (StatusCode::BAD_REQUEST, self.error_message()).into_response()
     }
 }
-

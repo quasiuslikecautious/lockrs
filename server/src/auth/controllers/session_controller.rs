@@ -1,68 +1,112 @@
-use axum::{
-    Json,
-    extract::Path,
-    http::StatusCode,
-    response::IntoResponse,
-};
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use axum_macros::debug_handler;
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    auth::models::NewSessionModel,
-    auth::services::{UserAuthService, UserAuthServiceError}, 
+    auth::{services::{UserAuthService, UserAuthServiceError}, responses::SessionResponse}, models::UserAuthModel,
 };
 
 pub struct SessionController;
 
+#[derive(Deserialize)]
+pub struct SessionCreateRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Deserialize)]
+pub struct SessionUpdateRequest {
+    token: Option<String>,
+}
+
 impl SessionController {
-    pub async fn read_all(
-        Path(user_id): Path<Uuid>,
-    ) -> impl IntoResponse {
-        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/sessions", user_id))
+    pub async fn read_all(Path(user_id): Path<Uuid>) -> impl IntoResponse {
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            format!("/users/{}/sessions", user_id),
+        )
     }
 
     pub async fn create(
         Path(user_id): Path<Uuid>,
-        Json(new_session): Json<NewSessionModel>,
-    ) -> impl IntoResponse {
-        let login_attempt = UserAuthService::login(&new_session.email, &new_session.password);
-    
-        match login_attempt {
-            Ok(login_response) => return Json(login_response).into_response(),
-            Err(err) => {
+        Json(new_session): Json<SessionCreateRequest>,
+    ) -> Result<Json<SessionResponse>, SessionControllerError> {
+        let user_auth = UserAuthModel {
+            email: new_session.email,
+            password: new_session.password,
+        };
+
+        let session = UserAuthService::login(&user_auth)
+            .map_err(|err| {
                 match err {
-                    UserAuthServiceError::NotFoundError => (StatusCode::UNAUTHORIZED, "Invalid credentials").into_response(),
-                    _ => (StatusCode::INTERNAL_SERVER_ERROR, "Error proccessing login request").into_response(),
+                    UserAuthServiceError::NotFoundError => SessionControllerError::InvalidCredentials, 
+                    _ => SessionControllerError::InternalError,
                 }
-            }
-        }
+            })?;
+
+        let session_response = SessionResponse {
+            id: session.id,
+            token: session.token,
+        };
+
+        Ok(Json(session_response))
     }
 
-    pub async fn read(
-        Path((user_id, session_id)): Path<(Uuid, String)>,
-    ) -> impl IntoResponse {
-        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/sessions/{}", user_id, session_id))
+    pub async fn read(Path((user_id, session_id)): Path<(Uuid, String)>) -> impl IntoResponse {
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            format!("/users/{}/sessions/{}", user_id, session_id),
+        )
     }
 
     pub async fn update(
         Path((user_id, session_id)): Path<(Uuid, String)>,
+        Json(session_update_request): Json<SessionUpdateRequest>,
     ) -> impl IntoResponse {
-        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}/sessions/{}", user_id, session_id))
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            format!("/users/{}/sessions/{}", user_id, session_id),
+        )
     }
 
-    pub async fn delete(
-        Path((user_id, session_id)): Path<(Uuid, String)>,
-    ) -> impl IntoResponse {
-        let logout_attempt = UserAuthService::logout(&session_id);
-    
-        match logout_attempt {
-            Ok(()) => (StatusCode::OK, "Successfully logged out").into_response(),
-            Err(err) => {
+    pub async fn delete(Path((user_id, session_id)): Path<(Uuid, String)>) -> Result<Json<SessionResponse>, SessionControllerError> {
+        let session = UserAuthService::logout(&session_id)
+            .map_err(|err| {
                 match err {
-                    UserAuthServiceError::NotFoundError => return (StatusCode::BAD_REQUEST, "Session token not found").into_response(),
-                    _ => return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete session token").into_response()
+                    UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,
+                    _ => SessionControllerError::InternalError,
                 }
-            }
+            })?;
+        
+        let session_response = SessionResponse {
+            id: session.id,
+            token: session.token,
+        };
+
+        Ok(Json(session_response))
+    }
+}
+
+pub enum SessionControllerError {
+    InternalError,
+    SessionNotFound,
+    InvalidCredentials,
+}
+
+impl SessionControllerError {
+    pub fn error_code(&self) -> &'static str {
+        match self {
+            Self::InternalError => "An error has occurred while processing your request. Please try again later.",
+            Self::InvalidCredentials => "Invalid credentials",
+            Self::SessionNotFound => "Session token not found",
         }
+    }
+}
+
+impl IntoResponse for SessionControllerError {
+    fn into_response(self) -> axum::response::Response {
+        (StatusCode::BAD_REQUEST, self.error_code()).into_response()
     }
 }
 

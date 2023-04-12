@@ -1,6 +1,5 @@
 #[derive(Debug)]
 pub enum DbError {
-   NotFound,
-   InternalError,
+    NotFound,
+    InternalError,
 }
-
