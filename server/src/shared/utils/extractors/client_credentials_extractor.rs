@@ -25,8 +25,7 @@ where
             return Ok(Self(client_credentials));
         }
 
-        if let Some(BasicAuth(client_credentials)) =
-            BasicAuth::from_request_parts(parts, state).await.ok()
+        if let Ok(BasicAuth(client_credentials)) = BasicAuth::from_request_parts(parts, state).await
         {
             return Ok(Self(ClientAuthModel {
                 id: client_credentials.public,

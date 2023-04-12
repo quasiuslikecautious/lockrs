@@ -60,7 +60,7 @@ impl ClientService {
         let db_client = clients::table
             .filter(clients::id.eq(id))
             .first::<DbClient>(connection)
-            .map_err(|err| ClientServiceError::from(err))?;
+            .map_err(ClientServiceError::from)?;
 
         Ok(ClientMapper::from_db(db_client))
     }
@@ -70,11 +70,11 @@ impl ClientService {
         let clients = clients::table
             .filter(clients::user_id.eq(user_id))
             .load::<DbClient>(connection)
-            .map_err(|err| ClientServiceError::from(err))?;
+            .map_err(ClientServiceError::from)?;
 
         Ok(clients
             .into_iter()
-            .map(|c| ClientMapper::from_db(c))
+            .map(ClientMapper::from_db)
             .collect::<Vec<ClientModel>>())
     }
 
@@ -92,7 +92,7 @@ impl ClientService {
                     .set(update_client)
                     .get_result::<DbClient>(conn)
             })
-            .map_err(|err| ClientServiceError::from(err))?;
+            .map_err(ClientServiceError::from)?;
 
         Ok(ClientMapper::from_db(db_client))
     }
@@ -107,7 +107,7 @@ impl ClientService {
                     .filter(clients::id.eq(client_id))
                     .get_result::<DbClient>(conn)
             })
-            .map_err(|err| ClientServiceError::from(err))?;
+            .map_err(ClientServiceError::from)?;
 
         Ok(ClientMapper::from_db(db_client))
     }
@@ -116,7 +116,7 @@ impl ClientService {
         let mut buffer = [0u8; 24];
         let rng = SystemRandom::new();
         rng.fill(&mut buffer).unwrap();
-        general_purpose::URL_SAFE_NO_PAD.encode(buffer).to_string()
+        general_purpose::URL_SAFE_NO_PAD.encode(buffer)
     }
 }
 

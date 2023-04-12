@@ -29,9 +29,9 @@ impl ScopeService {
                 _ => ScopeServiceError::DbError,
             })?;
 
-        return Ok(ScopesModel {
+        Ok(ScopesModel {
             scopes: validated_scopes,
-        });
+        })
     }
 }
 

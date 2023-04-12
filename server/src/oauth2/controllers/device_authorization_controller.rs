@@ -3,7 +3,6 @@ use serde::Deserialize;
 
 use crate::{
     oauth2::{
-        models::DeviceAuthorizationCreateModel,
         responses::DeviceAuthorizationResponse,
         services::{
             ClientAuthService, ClientAuthServiceError, DeviceAuthorizationService, ScopeService,

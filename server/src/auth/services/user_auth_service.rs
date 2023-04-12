@@ -33,7 +33,7 @@ impl UserAuthService {
         })
     }
 
-    pub fn logout(session_id: &str) -> Result<SessionModel, UserAuthServiceError> {
+    pub fn logout(_session_id: &str) -> Result<SessionModel, UserAuthServiceError> {
         todo!();
     }
 }

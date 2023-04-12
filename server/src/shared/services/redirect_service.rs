@@ -24,7 +24,7 @@ impl RedirectService {
 
         Ok(db_redirects
             .into_iter()
-            .map(|x| RedirectMapper::from_db(x))
+            .map(RedirectMapper::from_db)
             .collect::<Vec<RedirectModel>>())
     }
 

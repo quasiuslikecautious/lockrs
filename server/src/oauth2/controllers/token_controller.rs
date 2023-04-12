@@ -83,7 +83,7 @@ impl TokenController {
         client: ClientModel,
         scopes: ScopesModel,
     ) -> Result<TokenResponse, TokenControllerError> {
-        if client.secret == None {
+        if client.secret.is_none() {
             return Err(TokenControllerError::InvalidClient);
         }
 

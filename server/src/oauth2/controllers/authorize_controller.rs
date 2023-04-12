@@ -46,12 +46,12 @@ impl AuthorizeController {
             },
         )?;
 
-        let scopes = ScopeService::get_from_list(&params.scope).map_err(|err| match err {
+        let _scopes = ScopeService::get_from_list(&params.scope).map_err(|err| match err {
             ScopeServiceError::DbError => AuthorizeControllerError::InternalError,
             ScopeServiceError::InvalidScopes => AuthorizeControllerError::InvalidScopes,
         })?;
 
-        let is_plain = !params.code_challenge_method.eq("S256");
+        let _is_plain = !params.code_challenge_method.eq("S256");
 
         // stash data before redirect
 

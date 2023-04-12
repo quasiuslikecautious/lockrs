@@ -85,15 +85,12 @@ impl TokenService {
             .filter(access_tokens::created_at.lt(&now))
             .filter(access_tokens::expires_at.gt(&now))
             .first::<DbAccessToken>(connection)
-            .map_err(|err| TokenServiceError::from(err))?;
+            .map_err(TokenServiceError::from)?;
 
         let scopes = db_token
             .scopes
             .into_iter()
-            .filter_map(|s| match s {
-                Some(s) => Some(s),
-                None => None,
-            })
+            .filter_map(|s| s)
             .collect::<Vec<String>>();
 
         Ok(ScopesModel { scopes })
@@ -113,7 +110,7 @@ impl TokenService {
             .filter(refresh_tokens::expires_at.gt(&now))
             .filter(refresh_tokens::used.eq(false))
             .first::<DbRefreshToken>(connection)
-            .map_err(|err| TokenServiceError::from(err))?;
+            .map_err(TokenServiceError::from)?;
 
         Ok(RefreshTokenMapper::from_db(db_token))
     }
@@ -135,7 +132,7 @@ impl TokenService {
                     .set(refresh_tokens::used.eq(true))
                     .get_result::<DbRefreshToken>(conn)
             })
-            .map_err(|err| TokenServiceError::from(err))?;
+            .map_err(TokenServiceError::from)?;
 
         Ok(())
     }
@@ -144,7 +141,7 @@ impl TokenService {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
         rng.fill(&mut buffer).unwrap();
-        general_purpose::URL_SAFE_NO_PAD.encode(buffer).to_string()
+        general_purpose::URL_SAFE_NO_PAD.encode(buffer)
     }
 }
 

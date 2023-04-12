@@ -1,5 +1,5 @@
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
-use axum_macros::debug_handler;
+
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -33,7 +33,7 @@ impl SessionController {
     }
 
     pub async fn create(
-        Path(user_id): Path<Uuid>,
+        Path(_user_id): Path<Uuid>,
         Json(new_session): Json<SessionCreateRequest>,
     ) -> Result<Json<SessionResponse>, SessionControllerError> {
         let user_auth = UserAuthModel {
@@ -63,7 +63,7 @@ impl SessionController {
 
     pub async fn update(
         Path((user_id, session_id)): Path<(Uuid, String)>,
-        Json(session_update_request): Json<SessionUpdateRequest>,
+        Json(_session_update_request): Json<SessionUpdateRequest>,
     ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
@@ -72,7 +72,7 @@ impl SessionController {
     }
 
     pub async fn delete(
-        Path((user_id, session_id)): Path<(Uuid, String)>,
+        Path((_user_id, session_id)): Path<(Uuid, String)>,
     ) -> Result<Json<SessionResponse>, SessionControllerError> {
         let session = UserAuthService::logout(&session_id).map_err(|err| match err {
             UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,

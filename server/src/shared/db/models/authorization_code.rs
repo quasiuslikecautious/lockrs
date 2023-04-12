@@ -81,11 +81,11 @@ impl DbAuthorizationCode {
         expiry: &Duration,
         scopes: Vec<String>,
     ) -> Result<Self, DbError> {
-        let expires_at = (Utc::now() + expiry.clone()).naive_utc();
+        let expires_at = (Utc::now() + *expiry).naive_utc();
         let scopes = scopes
-            .clone()
+            
             .into_iter()
-            .map(|s| Some(s))
+            .map(Some)
             .collect::<Vec<Option<String>>>();
 
         let connection = &mut establish_connection();
@@ -106,9 +106,7 @@ impl DbAuthorizationCode {
                     ))
                     .get_result::<Self>(conn)
             })
-            .map_err(|err| match err {
-                _ => DbError::InternalError,
-            })
+            .map_err(|_err| DbError::InternalError)
     }
 
     pub fn use_token(&self) -> Result<Self, DbError> {
@@ -122,8 +120,6 @@ impl DbAuthorizationCode {
                     .set(authorization_codes::used.eq(false))
                     .get_result::<Self>(conn)
             })
-            .map_err(|err| match err {
-                _ => DbError::InternalError,
-            })
+            .map_err(|_err| DbError::InternalError)
     }
 }

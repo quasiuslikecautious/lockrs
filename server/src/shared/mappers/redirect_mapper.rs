@@ -10,7 +10,7 @@ impl RedirectMapper {
             id: db_redirect.id,
             client_id: db_redirect.client_id,
             uri: Url::parse(&db_redirect.uri)
-                .expect(format!("invalid url stored in database: {}", db_redirect.id).as_str()),
+                .unwrap_or_else(|_| panic!("invalid url stored in database: {}", db_redirect.id)),
         }
     }
 }

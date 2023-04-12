@@ -54,7 +54,7 @@ async fn main() {
 
     // run it with hyper on localhost:8080
     let addr = SocketAddr::from(([127, 0, 0, 1], 8081));
-    println!("listening at {}", addr.to_string());
+    println!("listening at {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
@@ -63,5 +63,5 @@ async fn main() {
 
 /// Fallback function - when a route is requested that doesn't exist this handler will be called.
 async fn fallback() -> impl IntoResponse {
-    return StatusCode::NOT_FOUND;
+    StatusCode::NOT_FOUND
 }

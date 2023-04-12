@@ -6,7 +6,7 @@ use ring::rand::{SecureRandom, SystemRandom};
 use crate::{
     db::{establish_connection, models::DbDeviceAuthorization, schema::device_authorizations},
     oauth2::{
-        mappers::{DeviceAuthorizationMapper, ScopeMapper},
+        mappers::{DeviceAuthorizationMapper},
         models::{DeviceAuthorizationModel, ScopesModel},
     },
 };
@@ -35,7 +35,7 @@ impl DeviceAuthorizationService {
                     ))
                     .get_result::<DbDeviceAuthorization>(conn)
             })
-            .map_err(|err| DeviceAuthorizationServiceError::from(err))?;
+            .map_err(DeviceAuthorizationServiceError::from)?;
 
         Ok(DeviceAuthorizationMapper::from_db(result))
     }
@@ -51,7 +51,7 @@ impl DeviceAuthorizationService {
             .filter(device_authorizations::created_at.lt(now))
             .filter(device_authorizations::expires_at.gt(now))
             .first::<DbDeviceAuthorization>(connection)
-            .map_err(|err| DeviceAuthorizationServiceError::from(err))?;
+            .map_err(DeviceAuthorizationServiceError::from)?;
 
         Ok(DeviceAuthorizationMapper::from_db(result))
     }
@@ -67,7 +67,7 @@ impl DeviceAuthorizationService {
             .filter(device_authorizations::created_at.lt(now))
             .filter(device_authorizations::expires_at.gt(now))
             .first::<DbDeviceAuthorization>(connection)
-            .map_err(|err| DeviceAuthorizationServiceError::from(err))?;
+            .map_err(DeviceAuthorizationServiceError::from)?;
 
         Ok(DeviceAuthorizationMapper::from_db(result))
     }
@@ -95,7 +95,7 @@ impl DeviceAuthorizationService {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
         rng.fill(&mut buffer).unwrap();
-        general_purpose::URL_SAFE_NO_PAD.encode(buffer).to_string()
+        general_purpose::URL_SAFE_NO_PAD.encode(buffer)
     }
 }
 
