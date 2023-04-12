@@ -1,30 +1,115 @@
-// use diesel::prelude::*;
-// use uuid::Uuid;
-// 
-// use crate::db::{
-//     establish_connection,
-//     models::DbClient,
-//     schema::clients,
-// };
+use base64::{Engine as _, engine::general_purpose};
+use diesel::prelude::*;
+use ring::rand::{SecureRandom, SystemRandom};
+use uuid::Uuid;
 
 use crate::{
-    models::Client,
-    auth::requests::NewClientRequest,
+    db::{
+        establish_connection,
+        models::{DbClient, DbRedirectUri},
+        schema::{clients, redirect_uris},
+    },
+    models::{Client, NewClient, UpdateClient}, mappers::ClientMapper,
 };
 
 pub struct ClientService;
 
 impl ClientService {
-    pub fn create_client(new_user: NewClientRequest) -> Result<Client, ClientServiceError> {
-        todo!();
+    pub fn create_client(new_client: NewClient, user_id: &Uuid) -> Result<Client, ClientServiceError> {
+        let id = Self::generate_random_string();
+        let secret = match new_client.is_public {
+            true => None,
+            false => Some(Self::generate_random_string()), 
+        };
+
+        let connection = &mut establish_connection();
+        let db_client = connection.build_transaction()
+            .read_write()
+            .run(|conn| {
+                let client = diesel::insert_into(clients::table)
+                    .values((
+                        clients::id.eq(&id),
+                        clients::secret.eq(&secret),
+                        clients::user_id.eq(user_id),
+                        clients::is_public.eq(new_client.is_public),
+                        clients::name.eq(new_client.name),
+                        clients::description.eq(new_client.description),
+                        clients::homepage_url.eq(new_client.homepage_url.to_string()),
+                    ))
+                    .get_result::<DbClient>(conn)?;
+
+                diesel::insert_into(redirect_uris::table)
+                    .values((
+                        redirect_uris::client_id.eq(&id),
+                        redirect_uris::uri.eq(new_client.redirect_url.to_string()),
+                    ))
+                    .get_result::<DbRedirectUri>(conn)?;
+
+        Ok(client)
+            })
+            .map_err(|err: diesel::result::Error| ClientServiceError::from(err))?;
+
+        Ok(ClientMapper::from_db(db_client))
     }
     
     pub fn get_client_by_id(id: &str) -> Result<Client, ClientServiceError> {
-        todo!();
+        let connection = &mut establish_connection();
+        let db_client = clients::table
+            .filter(clients::id.eq(id))
+            .first::<DbClient>(connection)
+            .map_err(|err| ClientServiceError::from(err))?;
+
+        Ok(ClientMapper::from_db(db_client))
     }
     
-    pub fn get_clients_by_user(email: &str) -> Result<Vec<Client>, ClientServiceError> {
-        todo!();
+    pub fn get_clients_by_user(user_id: &Uuid) -> Result<Vec<Client>, ClientServiceError> {
+        let connection = &mut establish_connection();
+        let clients = clients::table
+            .filter(clients::user_id.eq(user_id))
+            .load::<DbClient>(connection)
+            .map_err(|err| ClientServiceError::from(err))?;
+
+        Ok(clients
+           .into_iter()
+           .map(|c| ClientMapper::from_db(c))
+           .collect::<Vec<Client>>()
+        )
+    }
+
+    pub fn update_client_by_id(client_id: &str, update_client: UpdateClient) -> Result<Client, ClientServiceError> {
+        let connection = &mut establish_connection();
+        let db_client = connection.build_transaction()
+            .read_write()
+            .run(|conn| {
+                diesel::update(clients::table)
+                    .filter(clients::id.eq(client_id))
+                    .set(update_client)
+                    .get_result::<DbClient>(conn)
+            })
+            .map_err(|err| ClientServiceError::from(err))?;
+
+        Ok(ClientMapper::from_db(db_client))    
+    }
+
+    pub fn delete_client_by_id(client_id: &str) -> Result<Client, ClientServiceError> {
+        let connection = &mut establish_connection();
+        let db_client = connection.build_transaction()
+            .read_write()
+            .run(|conn| {
+                diesel::delete(clients::table)
+                    .filter(clients::id.eq(client_id))
+                    .get_result::<DbClient>(conn)
+            })
+            .map_err(|err| ClientServiceError::from(err))?;
+
+        Ok(ClientMapper::from_db(db_client))
+    }
+
+    pub fn generate_random_string() -> String {
+        let mut buffer = [0u8; 24];
+        let rng = SystemRandom::new();
+        rng.fill(&mut buffer).unwrap();
+        general_purpose::URL_SAFE_NO_PAD.encode(buffer).to_string()
     }
 }
 

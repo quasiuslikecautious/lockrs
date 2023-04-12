@@ -1,10 +1,12 @@
-use serde::Serialize;
+use serde::Deserialize;
 use url::Url;
 
-#[derive(Serialize)]
-pub struct NewClientRequest {
+#[derive(Deserialize)]
+pub struct NewClient {
+    pub is_public: bool,
     pub name: String,
     pub description: String,
     pub homepage_url: Url,
     pub redirect_url: Url,
 }
+

@@ -1,4 +1,3 @@
-use serde::Deserialize;
 use uuid::Uuid;
 
 pub struct User {
