@@ -30,11 +30,11 @@ pub struct ClientUpdateRequest {
 impl ClientController {
     pub async fn read_all(
         Path(user_id): Path<Uuid>,
-    ) -> Result<Json<ClientListResponse>, ClientControllerError> {
+    ) -> Result<ClientListResponse, ClientControllerError> {
         let clients = ClientService::get_clients_by_user(&user_id)
             .map_err(|_| ClientControllerError::InternalError)?;
 
-        Ok(Json(ClientListResponse {
+        Ok(ClientListResponse {
             clients: clients
                 .into_iter()
                 .map(|c| ClientResponse {
@@ -44,13 +44,13 @@ impl ClientController {
                     homepage_url: c.homepage_url,
                 })
                 .collect::<Vec<ClientResponse>>(),
-        }))
+        })
     }
 
     pub async fn create(
         Path(user_id): Path<Uuid>,
         Json(new_client_request): Json<ClientCreateRequest>,
-    ) -> Result<Json<ClientResponse>, ClientControllerError> {
+    ) -> Result<ClientResponse, ClientControllerError> {
         let new_client = ClientCreateModel {
             is_public: new_client_request.is_public,
             user_id,
@@ -63,34 +63,34 @@ impl ClientController {
         let client = ClientService::create_client(new_client)
             .map_err(|_| ClientControllerError::InternalError)?;
 
-        Ok(Json(ClientResponse {
+        Ok(ClientResponse {
             id: client.id,
             name: client.name,
             description: client.description,
             homepage_url: client.homepage_url,
-        }))
+        })
     }
 
     pub async fn read(
         Path((_user_id, client_id)): Path<(Uuid, String)>,
-    ) -> Result<Json<ClientResponse>, ClientControllerError> {
+    ) -> Result<ClientResponse, ClientControllerError> {
         let client = ClientService::get_client_by_id(&client_id).map_err(|err| match err {
             ClientServiceError::NotFoundError => ClientControllerError::InvalidClient,
             _ => ClientControllerError::InternalError,
         })?;
 
-        Ok(Json(ClientResponse {
+        Ok(ClientResponse {
             id: client.id,
             name: client.name,
             description: client.description,
             homepage_url: client.homepage_url,
-        }))
+        })
     }
 
     pub async fn update(
         Path((_user_id, client_id)): Path<(Uuid, String)>,
         Json(update_client_request): Json<ClientUpdateRequest>,
-    ) -> Result<Json<ClientResponse>, ClientControllerError> {
+    ) -> Result<ClientResponse, ClientControllerError> {
         let update_client = ClientUpdateModel {
             name: update_client_request.name,
             description: update_client_request.description,
@@ -104,26 +104,26 @@ impl ClientController {
             },
         )?;
 
-        Ok(Json(ClientResponse {
+        Ok(ClientResponse {
             id: client.id,
             name: client.name,
             description: client.description,
             homepage_url: client.homepage_url,
-        }))
+        })
     }
 
     pub async fn delete(
         Path((_user_id, client_id)): Path<(Uuid, String)>,
-    ) -> Result<Json<ClientResponse>, ClientControllerError> {
+    ) -> Result<ClientResponse, ClientControllerError> {
         let client = ClientService::delete_client_by_id(&client_id)
             .map_err(|_| ClientControllerError::InternalError)?;
 
-        Ok(Json(ClientResponse {
+        Ok(ClientResponse {
             id: client.id,
             name: client.name,
             description: client.description,
             homepage_url: client.homepage_url,
-        }))
+        })
     }
 }
 

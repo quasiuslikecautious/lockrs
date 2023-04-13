@@ -23,7 +23,7 @@ impl DeviceAuthorizationController {
     pub async fn handle(
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<DeviceAuthorizationRequest>,
-    ) -> Result<Json<DeviceAuthorizationResponse>, DeviceAuthorizationControllerError> {
+    ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationControllerError> {
         ClientAuthService::verify_credentials(&client_credentials.id, &client_credentials.secret)
             .map_err(|err| match err {
             ClientAuthServiceError::NotFoundError => {
@@ -41,10 +41,10 @@ impl DeviceAuthorizationController {
             DeviceAuthorizationService::create_device_authorization(&client_credentials.id, scopes)
                 .map_err(|_| DeviceAuthorizationControllerError::InternalError)?;
 
-        Ok(Json(DeviceAuthorizationResponse::new(
+        Ok(DeviceAuthorizationResponse::new(
             &device_authorization.user_code,
             &device_authorization.device_code,
-        )))
+        ))
     }
 }
 

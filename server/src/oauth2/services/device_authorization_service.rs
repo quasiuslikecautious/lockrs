@@ -6,7 +6,7 @@ use ring::rand::{SecureRandom, SystemRandom};
 use crate::{
     db::{establish_connection, models::DbDeviceAuthorization, schema::device_authorizations},
     oauth2::{
-        mappers::{DeviceAuthorizationMapper},
+        mappers::DeviceAuthorizationMapper,
         models::{DeviceAuthorizationModel, ScopesModel},
     },
 };

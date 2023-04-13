@@ -1,3 +1,4 @@
+use axum::{response::IntoResponse, Json};
 use serde::Serialize;
 use url::Url;
 
@@ -20,5 +21,11 @@ impl DeviceAuthorizationResponse {
             interval: 5000,
             expires_in: 30000,
         }
+    }
+}
+
+impl IntoResponse for DeviceAuthorizationResponse {
+    fn into_response(self) -> axum::response::Response {
+        Json(self).into_response()
     }
 }

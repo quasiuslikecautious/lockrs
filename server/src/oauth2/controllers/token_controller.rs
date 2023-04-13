@@ -37,7 +37,7 @@ impl TokenController {
     pub async fn handle(
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
-    ) -> Result<Json<TokenResponse>, TokenControllerError> {
+    ) -> Result<TokenResponse, TokenControllerError> {
         let client = ClientAuthService::verify_credentials(
             &client_credentials.id,
             &client_credentials.secret,
@@ -61,7 +61,7 @@ impl TokenController {
             _ => Err(TokenControllerError::InvalidGrantType),
         }?;
 
-        Ok(Json(token))
+        Ok(token)
     }
 
     pub fn authorization_code_token() -> Result<TokenResponse, TokenControllerError> {

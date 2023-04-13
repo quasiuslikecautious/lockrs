@@ -16,6 +16,12 @@
 
 ## Improvements
 
+- [ ] Documentation
+
+- [ ] README
+
+- [ ] Test Coverage
+
 - [ ] Authentication System
     - [x] Setup bcrypt for password salting
     - [ ] Use redis for session management
@@ -64,7 +70,7 @@
 - [x] better redirect/errors
   - [x] description handling
 
-- [ ] Refactor models
+- [x] Refactor models
     - [x] Add models to name of all models
     - [x] Move all requests (mostly from /auth) into models
     - [x] Create separatation of models
@@ -74,9 +80,9 @@
     - [x] Fix mappers to not use responses/move response to model
         - [x] device_authorization
 
-- [ ] determine how model -> response mapping should be handled
+- [x] determine how model -> response mapping should be handled
 
 - [x] client_auth_service is only used by /oauth2
 
-- [ ] Response "views" should impl IntoResponse and use that as the view
+- [x] Response "views" should impl IntoResponse and use that as the view
 

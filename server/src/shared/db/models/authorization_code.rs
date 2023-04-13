@@ -83,7 +83,6 @@ impl DbAuthorizationCode {
     ) -> Result<Self, DbError> {
         let expires_at = (Utc::now() + *expiry).naive_utc();
         let scopes = scopes
-            
             .into_iter()
             .map(Some)
             .collect::<Vec<Option<String>>>();

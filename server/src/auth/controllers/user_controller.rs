@@ -25,7 +25,7 @@ pub struct UserController;
 impl UserController {
     pub async fn create(
         Json(user_request): Json<UserCreateRequest>,
-    ) -> Result<Json<UserResponse>, UserControllerError> {
+    ) -> Result<UserResponse, UserControllerError> {
         let new_user = UserCreateModel {
             email: user_request.email,
             password: user_request.password,
@@ -41,21 +41,19 @@ impl UserController {
             email: user.email,
         };
 
-        Ok(Json(user_response))
+        Ok(user_response)
     }
 
-    pub async fn read(
-        Path(user_id): Path<Uuid>,
-    ) -> Result<Json<UserResponse>, UserControllerError> {
+    pub async fn read(Path(user_id): Path<Uuid>) -> Result<UserResponse, UserControllerError> {
         let user = UserService::get_user_by_id(&user_id).map_err(|err| match err {
             UserServiceError::NotFoundError => UserControllerError::NotFound,
             _ => UserControllerError::InternalError,
         })?;
 
-        Ok(Json(UserResponse {
+        Ok(UserResponse {
             id: user.id,
             email: user.email,
-        }))
+        })
     }
 
     pub async fn update(Path(user_id): Path<Uuid>) -> impl IntoResponse {

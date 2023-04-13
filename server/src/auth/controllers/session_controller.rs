@@ -35,7 +35,7 @@ impl SessionController {
     pub async fn create(
         Path(_user_id): Path<Uuid>,
         Json(new_session): Json<SessionCreateRequest>,
-    ) -> Result<Json<SessionResponse>, SessionControllerError> {
+    ) -> Result<SessionResponse, SessionControllerError> {
         let user_auth = UserAuthModel {
             email: new_session.email,
             password: new_session.password,
@@ -51,7 +51,7 @@ impl SessionController {
             token: session.token,
         };
 
-        Ok(Json(session_response))
+        Ok(session_response)
     }
 
     pub async fn read(Path((user_id, session_id)): Path<(Uuid, String)>) -> impl IntoResponse {
@@ -73,7 +73,7 @@ impl SessionController {
 
     pub async fn delete(
         Path((_user_id, session_id)): Path<(Uuid, String)>,
-    ) -> Result<Json<SessionResponse>, SessionControllerError> {
+    ) -> Result<SessionResponse, SessionControllerError> {
         let session = UserAuthService::logout(&session_id).map_err(|err| match err {
             UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,
             _ => SessionControllerError::InternalError,
@@ -84,7 +84,7 @@ impl SessionController {
             token: session.token,
         };
 
-        Ok(Json(session_response))
+        Ok(session_response)
     }
 }
 
