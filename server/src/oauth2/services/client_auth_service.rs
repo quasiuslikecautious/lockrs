@@ -2,6 +2,7 @@ use diesel::prelude::*;
 
 use crate::{
     db::{establish_connection, models::DbClient, schema::clients},
+    mappers::ClientMapper,
     models::ClientModel,
 };
 
@@ -19,18 +20,11 @@ impl ClientAuthService {
         }
 
         let connection = &mut establish_connection();
-        let db_client = query.first::<DbClient>(connection);
+        let db_client = query
+            .first::<DbClient>(connection)
+            .map_err(ClientAuthServiceError::from)?;
 
-        match db_client {
-            Ok(client) => Ok(ClientModel {
-                id: client.id,
-                secret: client.secret,
-                name: client.name,
-                description: client.description,
-                homepage_url: client.homepage_url,
-            }),
-            Err(err) => Err(ClientAuthServiceError::from(err)),
-        }
+        Ok(ClientMapper::from_db(db_client))
     }
 }
 

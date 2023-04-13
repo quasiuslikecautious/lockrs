@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use uuid::Uuid;
 
+#[derive(Debug, PartialEq)]
 pub struct RefreshTokenModel {
     pub token: String,
     pub client_id: String,

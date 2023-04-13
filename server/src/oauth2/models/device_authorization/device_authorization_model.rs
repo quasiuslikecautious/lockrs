@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 
+#[derive(Debug, PartialEq)]
 pub struct DeviceAuthorizationModel {
     pub client_id: String,
     pub user_code: String,
