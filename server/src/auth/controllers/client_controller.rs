@@ -14,7 +14,6 @@ pub struct ClientController;
 #[derive(Deserialize)]
 pub struct ClientCreateRequest {
     pub is_public: bool,
-    pub user_id: Uuid,
     pub name: String,
     pub description: String,
     pub homepage_url: Url,
@@ -49,12 +48,12 @@ impl ClientController {
     }
 
     pub async fn create(
-        Path(_user_id): Path<Uuid>,
+        Path(user_id): Path<Uuid>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<Json<ClientResponse>, ClientControllerError> {
         let new_client = ClientCreateModel {
             is_public: new_client_request.is_public,
-            user_id: new_client_request.user_id,
+            user_id,
             name: new_client_request.name,
             description: new_client_request.description,
             homepage_url: new_client_request.homepage_url,
