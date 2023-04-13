@@ -1,4 +1,4 @@
-use axum::{extract::Query, http::StatusCode, response::IntoResponse, Json};
+use axum::{extract::Query, http::StatusCode, response::IntoResponse};
 use serde::Deserialize;
 use url::Url;
 

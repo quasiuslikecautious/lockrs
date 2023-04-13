@@ -90,7 +90,7 @@ impl TokenService {
         let scopes = db_token
             .scopes
             .into_iter()
-            .filter_map(|s| s)
+            .flatten()
             .collect::<Vec<String>>();
 
         Ok(ScopesModel { scopes })
