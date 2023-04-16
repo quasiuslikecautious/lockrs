@@ -1,12 +1,16 @@
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use std::sync::Arc;
+
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
 use serde::Deserialize;
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
     auth::responses::{ClientListResponse, ClientResponse},
+    db::get_connection_from_pool,
     models::{ClientCreateModel, ClientUpdateModel},
     services::{ClientService, ClientServiceError},
+    AppState,
 };
 
 pub struct ClientController;
@@ -29,9 +33,15 @@ pub struct ClientUpdateRequest {
 
 impl ClientController {
     pub async fn read_all(
+        Extension(state): Extension<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
-        let clients = ClientService::get_clients_by_user(&user_id)
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| ClientControllerError::InternalError)?;
+
+        let clients = ClientService::get_clients_by_user(db_connection.as_mut(), &user_id)
+            .await
             .map_err(|_| ClientControllerError::InternalError)?;
 
         Ok(ClientListResponse {
@@ -48,6 +58,7 @@ impl ClientController {
     }
 
     pub async fn create(
+        Extension(state): Extension<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
@@ -60,7 +71,12 @@ impl ClientController {
             redirect_url: new_client_request.redirect_url,
         };
 
-        let client = ClientService::create_client(new_client)
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| ClientControllerError::InternalError)?;
+
+        let client = ClientService::create_client(db_connection.as_mut(), new_client)
+            .await
             .map_err(|_| ClientControllerError::InternalError)?;
 
         Ok(ClientResponse {
@@ -72,12 +88,21 @@ impl ClientController {
     }
 
     pub async fn read(
+        Extension(state): Extension<Arc<AppState>>,
         Path((_user_id, client_id)): Path<(Uuid, String)>,
     ) -> Result<ClientResponse, ClientControllerError> {
-        let client = ClientService::get_client_by_id(&client_id).map_err(|err| match err {
-            ClientServiceError::NotFoundError => ClientControllerError::InvalidClient,
-            _ => ClientControllerError::InternalError,
-        })?;
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| ClientControllerError::InternalError)?;
+
+        let client = ClientService::get_client_by_id(db_connection.as_mut(), &client_id)
+            .await
+            .map_err(|err| match err {
+                ClientServiceError::NotFoundError => ClientControllerError::InvalidClient,
+                _ => ClientControllerError::InternalError,
+            })?;
+
+        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
 
         Ok(ClientResponse {
             id: client.id,
@@ -88,6 +113,7 @@ impl ClientController {
     }
 
     pub async fn update(
+        Extension(state): Extension<Arc<AppState>>,
         Path((_user_id, client_id)): Path<(Uuid, String)>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
@@ -97,12 +123,17 @@ impl ClientController {
             homepage_url: update_client_request.homepage_url,
         };
 
-        let client = ClientService::update_client_by_id(&client_id, update_client).map_err(
-            |err| match err {
-                ClientServiceError::NotFoundError => ClientControllerError::InvalidClient,
-                _ => ClientControllerError::InternalError,
-            },
-        )?;
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| ClientControllerError::InternalError)?;
+
+        let client =
+            ClientService::update_client_by_id(db_connection.as_mut(), &client_id, update_client)
+                .await
+                .map_err(|err| match err {
+                    ClientServiceError::NotFoundError => ClientControllerError::InvalidClient,
+                    _ => ClientControllerError::InternalError,
+                })?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -113,9 +144,15 @@ impl ClientController {
     }
 
     pub async fn delete(
+        Extension(state): Extension<Arc<AppState>>,
         Path((_user_id, client_id)): Path<(Uuid, String)>,
     ) -> Result<ClientResponse, ClientControllerError> {
-        let client = ClientService::delete_client_by_id(&client_id)
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| ClientControllerError::InternalError)?;
+
+        let client = ClientService::delete_client_by_id(db_connection.as_mut(), &client_id)
+            .await
             .map_err(|_| ClientControllerError::InternalError)?;
 
         Ok(ClientResponse {

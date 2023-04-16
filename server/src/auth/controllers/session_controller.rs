@@ -1,4 +1,6 @@
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use std::sync::Arc;
+
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
 
 use serde::Deserialize;
 use uuid::Uuid;
@@ -8,7 +10,9 @@ use crate::{
         responses::SessionResponse,
         services::{UserAuthService, UserAuthServiceError},
     },
+    db::get_connection_from_pool,
     models::UserAuthModel,
+    AppState,
 };
 
 pub struct SessionController;
@@ -25,7 +29,10 @@ pub struct SessionUpdateRequest {
 }
 
 impl SessionController {
-    pub async fn read_all(Path(user_id): Path<Uuid>) -> impl IntoResponse {
+    pub async fn read_all(
+        Extension(_state): Extension<Arc<AppState>>,
+        Path(user_id): Path<Uuid>,
+    ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
             format!("/users/{}/sessions", user_id),
@@ -33,6 +40,7 @@ impl SessionController {
     }
 
     pub async fn create(
+        Extension(state): Extension<Arc<AppState>>,
         Path(_user_id): Path<Uuid>,
         Json(new_session): Json<SessionCreateRequest>,
     ) -> Result<SessionResponse, SessionControllerError> {
@@ -41,10 +49,16 @@ impl SessionController {
             password: new_session.password,
         };
 
-        let session = UserAuthService::login(&user_auth).map_err(|err| match err {
-            UserAuthServiceError::NotFoundError => SessionControllerError::InvalidCredentials,
-            _ => SessionControllerError::InternalError,
-        })?;
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| SessionControllerError::InternalError)?;
+
+        let session = UserAuthService::login(db_connection.as_mut(), &user_auth)
+            .await
+            .map_err(|err| match err {
+                UserAuthServiceError::NotFoundError => SessionControllerError::InvalidCredentials,
+                _ => SessionControllerError::InternalError,
+            })?;
 
         let session_response = SessionResponse {
             id: session.id,
@@ -54,7 +68,10 @@ impl SessionController {
         Ok(session_response)
     }
 
-    pub async fn read(Path((user_id, session_id)): Path<(Uuid, String)>) -> impl IntoResponse {
+    pub async fn read(
+        Extension(_state): Extension<Arc<AppState>>,
+        Path((user_id, session_id)): Path<(Uuid, String)>,
+    ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
             format!("/users/{}/sessions/{}", user_id, session_id),
@@ -62,6 +79,7 @@ impl SessionController {
     }
 
     pub async fn update(
+        Extension(_state): Extension<Arc<AppState>>,
         Path((user_id, session_id)): Path<(Uuid, String)>,
         Json(_session_update_request): Json<SessionUpdateRequest>,
     ) -> impl IntoResponse {
@@ -72,12 +90,19 @@ impl SessionController {
     }
 
     pub async fn delete(
+        Extension(state): Extension<Arc<AppState>>,
         Path((_user_id, session_id)): Path<(Uuid, String)>,
     ) -> Result<SessionResponse, SessionControllerError> {
-        let session = UserAuthService::logout(&session_id).map_err(|err| match err {
-            UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,
-            _ => SessionControllerError::InternalError,
-        })?;
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| SessionControllerError::InternalError)?;
+
+        let session = UserAuthService::logout(db_connection.as_mut(), &session_id)
+            .await
+            .map_err(|err| match err {
+                UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,
+                _ => SessionControllerError::InternalError,
+            })?;
 
         let session_response = SessionResponse {
             id: session.id,

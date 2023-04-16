@@ -1,8 +1,9 @@
 use bcrypt::{hash, DEFAULT_COST};
 use diesel::prelude::*;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use uuid::Uuid;
 
-use crate::db::{establish_connection, models::DbUser, schema::users};
+use crate::db::{models::DbUser, schema::users};
 
 use crate::mappers::UserMapper;
 use crate::models::{UserCreateModel, UserModel};
@@ -10,48 +11,49 @@ use crate::models::{UserCreateModel, UserModel};
 pub struct UserService;
 
 impl UserService {
-    pub fn create_user(new_user: UserCreateModel) -> Result<UserModel, UserServiceError> {
+    pub async fn create_user(
+        connection: &mut AsyncPgConnection,
+        new_user: UserCreateModel,
+    ) -> Result<UserModel, UserServiceError> {
         let password_hash =
             hash(new_user.password, DEFAULT_COST).map_err(|_| UserServiceError::HashError)?;
 
-        let connection = &mut establish_connection();
-        let result = connection.build_transaction().read_write().run(|conn| {
-            diesel::insert_into(users::table)
-                .values((
-                    users::email.eq(&new_user.email),
-                    users::password_hash.eq(password_hash),
-                ))
-                .get_result::<DbUser>(conn)
-        });
+        let db_user = diesel::insert_into(users::table)
+            .values((
+                users::email.eq(&new_user.email),
+                users::password_hash.eq(password_hash),
+            ))
+            .get_result::<DbUser>(connection)
+            .await
+            .map_err(UserServiceError::from)?;
 
-        match result {
-            Ok(db_user) => Ok(UserMapper::from_db(db_user)),
-            Err(err) => Err(UserServiceError::from(err)),
-        }
+        Ok(UserMapper::from_db(db_user))
     }
 
-    pub fn get_user_by_id(id: &Uuid) -> Result<UserModel, UserServiceError> {
-        let connection = &mut establish_connection();
-        let result = users::table
+    pub async fn get_user_by_id(
+        connection: &mut AsyncPgConnection,
+        id: &Uuid,
+    ) -> Result<UserModel, UserServiceError> {
+        let db_user = users::table
             .filter(users::id.eq(id))
-            .first::<DbUser>(connection);
+            .first::<DbUser>(connection)
+            .await
+            .map_err(UserServiceError::from)?;
 
-        match result {
-            Ok(db_user) => Ok(UserMapper::from_db(db_user)),
-            Err(err) => Err(UserServiceError::from(err)),
-        }
+        Ok(UserMapper::from_db(db_user))
     }
 
-    pub fn get_user_by_email(email: &str) -> Result<UserModel, UserServiceError> {
-        let connection = &mut establish_connection();
-        let result = users::table
+    pub async fn get_user_by_email(
+        connection: &mut AsyncPgConnection,
+        email: &str,
+    ) -> Result<UserModel, UserServiceError> {
+        let db_user = users::table
             .filter(users::email.eq(email))
-            .first::<DbUser>(connection);
+            .first::<DbUser>(connection)
+            .await
+            .map_err(UserServiceError::from)?;
 
-        match result {
-            Ok(db_user) => Ok(UserMapper::from_db(db_user)),
-            Err(err) => Err(UserServiceError::from(err)),
-        }
+        Ok(UserMapper::from_db(db_user))
     }
 }
 

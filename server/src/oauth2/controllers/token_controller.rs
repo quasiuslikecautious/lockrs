@@ -1,8 +1,11 @@
-use axum::{extract::Query, http::StatusCode, response::IntoResponse};
+use std::sync::Arc;
+
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension};
 use serde::Deserialize;
 use url::Url;
 
 use crate::{
+    db::get_connection_from_pool,
     models::ClientModel,
     oauth2::models::ScopesModel,
     oauth2::responses::TokenResponse,
@@ -11,6 +14,7 @@ use crate::{
         TokenServiceError,
     },
     utils::extractors::ExtractClientCredentials,
+    AppState,
 };
 
 #[derive(Deserialize)]
@@ -35,43 +39,57 @@ pub struct TokenController;
 
 impl TokenController {
     pub async fn handle(
+        Extension(state): Extension<Arc<AppState>>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| TokenControllerError::InternalError)?;
+
         let client = ClientAuthService::verify_credentials(
+            db_connection.as_mut(),
             &client_credentials.id,
             &client_credentials.secret,
         )
+        .await
         .map_err(|err| match err {
             ClientAuthServiceError::NotFoundError => TokenControllerError::InvalidClient,
             _ => TokenControllerError::InternalError,
         })?;
 
-        let scopes =
-            ScopeService::get_from_list(params.scope.as_str()).map_err(|err| match err {
+        let scopes = ScopeService::get_from_list(db_connection.as_mut(), params.scope.as_str())
+            .await
+            .map_err(|err| match err {
                 ScopeServiceError::InvalidScopes => TokenControllerError::InvalidScopes,
                 _ => TokenControllerError::InternalError,
             })?;
 
         let token: TokenResponse = match params.grant_type.as_str() {
-            "authorization_code" => Self::authorization_code_token(),
-            "urn:ietf:params:oauth:grant-type:device_code" => Self::device_authorization_token(),
-            "client_credentials" => Self::client_credentials_token(client, scopes),
-            "refresh_token" => Self::refresh_token(client, scopes, params),
+            "authorization_code" => Self::authorization_code_token(state).await,
+            "urn:ietf:params:oauth:grant-type:device_code" => {
+                Self::device_authorization_token(state).await
+            }
+            "client_credentials" => Self::client_credentials_token(state, client, scopes).await,
+            "refresh_token" => Self::refresh_token(state, client, scopes, params).await,
             _ => Err(TokenControllerError::InvalidGrantType),
         }?;
 
         Ok(token)
     }
 
-    pub fn authorization_code_token() -> Result<TokenResponse, TokenControllerError> {
+    pub async fn authorization_code_token(
+        _state: Arc<AppState>,
+    ) -> Result<TokenResponse, TokenControllerError> {
         // validate params
         // store/cache param info
         // redirect to frontend login with param info cache in params
         todo!();
     }
 
-    pub fn device_authorization_token() -> Result<TokenResponse, TokenControllerError> {
+    pub async fn device_authorization_token(
+        _state: Arc<AppState>,
+    ) -> Result<TokenResponse, TokenControllerError> {
         // validate params
         // handle polling
         //     exponential backoff
@@ -79,7 +97,8 @@ impl TokenController {
         todo!();
     }
 
-    pub fn client_credentials_token(
+    pub async fn client_credentials_token(
+        state: Arc<AppState>,
         client: ClientModel,
         scopes: ScopesModel,
     ) -> Result<TokenResponse, TokenControllerError> {
@@ -87,13 +106,19 @@ impl TokenController {
             return Err(TokenControllerError::InvalidClient);
         }
 
-        let token = TokenService::create_token(&client.id, &None, scopes)
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| TokenControllerError::InternalError)?;
+
+        let token = TokenService::create_token(db_connection.as_mut(), &client.id, &None, scopes)
+            .await
             .map_err(|_| TokenControllerError::InternalError)?;
 
         Ok(token)
     }
 
-    pub fn refresh_token(
+    pub async fn refresh_token(
+        state: Arc<AppState>,
         client: ClientModel,
         scopes: ScopesModel,
         params: TokenRequest,
@@ -103,17 +128,30 @@ impl TokenController {
             return Err(TokenControllerError::MissingRefreshToken);
         };
 
-        let refresh_token = TokenService::verify_refresh_token(&client.id, token.as_str())
-            .map_err(|err| match err {
-                TokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
-                _ => TokenControllerError::InternalError,
-            })?;
-
-        TokenService::use_refresh_token(&client.id, &refresh_token.token)
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
             .map_err(|_| TokenControllerError::InternalError)?;
 
-        TokenService::create_token(&client.id, &refresh_token.user_id, scopes)
-            .map_err(|_| TokenControllerError::InternalError)
+        let refresh_token =
+            TokenService::verify_refresh_token(db_connection.as_mut(), &client.id, token.as_str())
+                .await
+                .map_err(|err| match err {
+                    TokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
+                    _ => TokenControllerError::InternalError,
+                })?;
+
+        TokenService::use_refresh_token(db_connection.as_mut(), &client.id, &refresh_token.token)
+            .await
+            .map_err(|_| TokenControllerError::InternalError)?;
+
+        TokenService::create_token(
+            db_connection.as_mut(),
+            &client.id,
+            &refresh_token.user_id,
+            scopes,
+        )
+        .await
+        .map_err(|_| TokenControllerError::InternalError)
     }
 }
 

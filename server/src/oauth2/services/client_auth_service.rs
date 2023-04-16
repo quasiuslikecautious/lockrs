@@ -1,7 +1,8 @@
 use diesel::prelude::*;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
 use crate::{
-    db::{establish_connection, models::DbClient, schema::clients},
+    db::{models::DbClient, schema::clients},
     mappers::ClientMapper,
     models::ClientModel,
 };
@@ -9,7 +10,8 @@ use crate::{
 pub struct ClientAuthService;
 
 impl ClientAuthService {
-    pub fn verify_credentials(
+    pub async fn verify_credentials(
+        connection: &mut AsyncPgConnection,
         id: &str,
         secret: &Option<String>,
     ) -> Result<ClientModel, ClientAuthServiceError> {
@@ -19,9 +21,9 @@ impl ClientAuthService {
             query = query.filter(clients::secret.eq(secret));
         }
 
-        let connection = &mut establish_connection();
         let db_client = query
             .first::<DbClient>(connection)
+            .await
             .map_err(ClientAuthServiceError::from)?;
 
         Ok(ClientMapper::from_db(db_client))

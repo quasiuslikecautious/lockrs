@@ -1,33 +1,26 @@
 use diesel::prelude::*;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
-use crate::{
-    db::{establish_connection, schema::scopes},
-    oauth2::models::ScopesModel,
-};
+use crate::{db::schema::scopes, oauth2::models::ScopesModel};
 
 pub struct ScopeService;
 
 impl ScopeService {
-    pub fn get_from_list(scope: &str) -> Result<ScopesModel, ScopeServiceError> {
+    pub async fn get_from_list(
+        connection: &mut AsyncPgConnection,
+        scope: &str,
+    ) -> Result<ScopesModel, ScopeServiceError> {
         let scopes_list = scope
             .split(' ')
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
-        let connection = &mut establish_connection();
-        let validated_scopes = connection
-            .build_transaction()
-            .read_only()
-            .run(|conn| {
-                scopes::table
-                    .select(scopes::name)
-                    .filter(scopes::name.eq_any(&scopes_list))
-                    .load(conn)
-            })
-            .map_err(|err| match err {
-                diesel::result::Error::NotFound => ScopeServiceError::InvalidScopes,
-                _ => ScopeServiceError::DbError,
-            })?;
+        let validated_scopes = scopes::table
+            .select(scopes::name)
+            .filter(scopes::name.eq_any(&scopes_list))
+            .load(connection)
+            .await
+            .map_err(ScopeServiceError::from)?;
 
         Ok(ScopesModel {
             scopes: validated_scopes,

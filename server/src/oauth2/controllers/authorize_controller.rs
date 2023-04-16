@@ -1,15 +1,20 @@
+use std::sync::Arc;
+
 use axum::{
     extract::Query,
     http::StatusCode,
     response::{IntoResponse, Redirect},
+    Extension,
 };
 use serde::Deserialize;
 use url::Url;
 
 use crate::{
+    db::get_connection_from_pool,
     oauth2::services::{ClientAuthService, ScopeService, ScopeServiceError},
     services::{RedirectService, RedirectServiceError},
     utils::extractors::ExtractClientCredentials,
+    AppState,
 };
 
 #[derive(Deserialize)]
@@ -25,6 +30,7 @@ pub struct AuthorizeController;
 
 impl AuthorizeController {
     pub async fn handle(
+        Extension(state): Extension<Arc<AppState>>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<AuthorizeRequest>,
     ) -> impl IntoResponse {
@@ -32,24 +38,32 @@ impl AuthorizeController {
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| AuthorizeControllerError::InternalError)?;
+
         let client = ClientAuthService::verify_credentials(
+            db_connection.as_mut(),
             &client_credentials.id,
             &client_credentials.secret,
         )
+        .await
         .map_err(|_| AuthorizeControllerError::InvalidClient)?;
 
         // validate redirect uri, inform the user of the problem instead of redirecting
-        RedirectService::verify_redirect(&client.id, &params.redirect_uri).map_err(
-            |err| match err {
+        RedirectService::verify_redirect(db_connection.as_mut(), &client.id, &params.redirect_uri)
+            .await
+            .map_err(|err| match err {
                 RedirectServiceError::DbError => AuthorizeControllerError::InternalError,
                 RedirectServiceError::NotFound => AuthorizeControllerError::InvalidRedirectUri,
-            },
-        )?;
+            })?;
 
-        let _scopes = ScopeService::get_from_list(&params.scope).map_err(|err| match err {
-            ScopeServiceError::DbError => AuthorizeControllerError::InternalError,
-            ScopeServiceError::InvalidScopes => AuthorizeControllerError::InvalidScopes,
-        })?;
+        let _scopes = ScopeService::get_from_list(db_connection.as_mut(), &params.scope)
+            .await
+            .map_err(|err| match err {
+                ScopeServiceError::DbError => AuthorizeControllerError::InternalError,
+                ScopeServiceError::InvalidScopes => AuthorizeControllerError::InvalidScopes,
+            })?;
 
         let _is_plain = !params.code_challenge_method.eq("S256");
 

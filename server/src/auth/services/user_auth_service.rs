@@ -1,4 +1,5 @@
 use bcrypt::verify;
+use diesel_async::AsyncPgConnection;
 
 use crate::{
     auth::models::SessionModel,
@@ -9,8 +10,11 @@ use crate::{
 pub struct UserAuthService;
 
 impl UserAuthService {
-    pub fn login(user_auth: &UserAuthModel) -> Result<SessionModel, UserAuthServiceError> {
-        let user = match UserService::get_user_by_email(&user_auth.email) {
+    pub async fn login(
+        connection: &mut AsyncPgConnection,
+        user_auth: &UserAuthModel,
+    ) -> Result<SessionModel, UserAuthServiceError> {
+        let user = match UserService::get_user_by_email(connection, &user_auth.email).await {
             Ok(user) => user,
             Err(err) => match err {
                 UserServiceError::NotFoundError => {
@@ -33,7 +37,10 @@ impl UserAuthService {
         })
     }
 
-    pub fn logout(_session_id: &str) -> Result<SessionModel, UserAuthServiceError> {
+    pub async fn logout(
+        _connection: &mut AsyncPgConnection,
+        _session_id: &str,
+    ) -> Result<SessionModel, UserAuthServiceError> {
         todo!();
     }
 }

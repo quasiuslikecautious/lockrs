@@ -1,12 +1,12 @@
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
+use diesel_async::{scoped_futures::ScopedFutureExt, AsyncPgConnection, RunQueryDsl};
 use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
     db::{
-        establish_connection,
         models::{DbAccessToken, DbRefreshToken},
         schema::{access_tokens, refresh_tokens},
     },
@@ -21,7 +21,8 @@ pub struct TokenService;
 
 impl TokenService {
     #[allow(clippy::all)]
-    pub fn create_token(
+    pub async fn create_token(
+        connection: &mut AsyncPgConnection,
         client_id: &str,
         user_id: &Option<Uuid>,
         scopes: ScopesModel,
@@ -29,33 +30,39 @@ impl TokenService {
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
         let refresh_expiry = (Utc::now() + Duration::hours(24)).naive_utc();
 
-        let connection = &mut establish_connection();
         let (access_token, refresh_token) = connection
             .build_transaction()
             .read_write()
             .run(|conn| {
-                let access_token = diesel::insert_into(access_tokens::table)
-                    .values((
-                        access_tokens::token.eq(Self::generate_opaque_token()),
-                        access_tokens::client_id.eq(&client_id),
-                        access_tokens::user_id.eq(user_id),
-                        access_tokens::expires_at.eq(access_expiry),
-                        access_tokens::scopes.eq(&scopes.scopes),
-                    ))
-                    .get_result::<DbAccessToken>(conn)?;
+                let scopes = scopes.clone();
+                async move {
+                    let access_token = diesel::insert_into(access_tokens::table)
+                        .values((
+                            access_tokens::token.eq(Self::generate_opaque_token()),
+                            access_tokens::client_id.eq(&client_id),
+                            access_tokens::user_id.eq(user_id),
+                            access_tokens::expires_at.eq(access_expiry),
+                            access_tokens::scopes.eq(&scopes.scopes),
+                        ))
+                        .get_result::<DbAccessToken>(conn)
+                        .await?;
 
-                let refresh_token = diesel::insert_into(refresh_tokens::table)
-                    .values((
-                        refresh_tokens::token.eq(Self::generate_opaque_token()),
-                        refresh_tokens::client_id.eq(&client_id),
-                        refresh_tokens::user_id.eq(user_id),
-                        refresh_tokens::expires_at.eq(refresh_expiry),
-                        refresh_tokens::scopes.eq(&scopes.scopes),
-                    ))
-                    .get_result::<DbRefreshToken>(conn)?;
+                    let refresh_token = diesel::insert_into(refresh_tokens::table)
+                        .values((
+                            refresh_tokens::token.eq(Self::generate_opaque_token()),
+                            refresh_tokens::client_id.eq(&client_id),
+                            refresh_tokens::user_id.eq(user_id),
+                            refresh_tokens::expires_at.eq(refresh_expiry),
+                            refresh_tokens::scopes.eq(&scopes.scopes),
+                        ))
+                        .get_result::<DbRefreshToken>(conn)
+                        .await?;
 
-                Ok((access_token, refresh_token))
+                    Ok((access_token, refresh_token))
+                }
+                .scope_boxed()
             })
+            .await
             .map_err(|err: diesel::result::Error| TokenServiceError::from(err))?;
 
         Ok(TokenResponse {
@@ -70,13 +77,13 @@ impl TokenService {
         })
     }
 
-    pub fn verify_access_token(
+    pub async fn verify_access_token(
+        connection: &mut AsyncPgConnection,
         client_id: &str,
         user_id: &Option<Uuid>,
         token: &str,
     ) -> Result<ScopesModel, TokenServiceError> {
         let now = Utc::now().naive_utc();
-        let connection = &mut establish_connection();
 
         let db_token = access_tokens::table
             .filter(access_tokens::token.eq(token))
@@ -85,6 +92,7 @@ impl TokenService {
             .filter(access_tokens::created_at.lt(&now))
             .filter(access_tokens::expires_at.gt(&now))
             .first::<DbAccessToken>(connection)
+            .await
             .map_err(TokenServiceError::from)?;
 
         let scopes = db_token
@@ -96,13 +104,13 @@ impl TokenService {
         Ok(ScopesModel { scopes })
     }
 
-    pub fn verify_refresh_token(
+    pub async fn verify_refresh_token(
+        connection: &mut AsyncPgConnection,
         client_id: &str,
         token: &str,
     ) -> Result<RefreshTokenModel, TokenServiceError> {
         let now = Utc::now().naive_utc();
 
-        let connection = &mut establish_connection();
         let db_token = refresh_tokens::table
             .filter(refresh_tokens::token.eq(token))
             .filter(refresh_tokens::client_id.eq(client_id))
@@ -110,28 +118,28 @@ impl TokenService {
             .filter(refresh_tokens::expires_at.gt(&now))
             .filter(refresh_tokens::used.eq(false))
             .first::<DbRefreshToken>(connection)
+            .await
             .map_err(TokenServiceError::from)?;
 
         Ok(RefreshTokenMapper::from_db(db_token))
     }
 
-    pub fn use_refresh_token(client_id: &str, token: &str) -> Result<(), TokenServiceError> {
+    pub async fn use_refresh_token(
+        connection: &mut AsyncPgConnection,
+        client_id: &str,
+        token: &str,
+    ) -> Result<(), TokenServiceError> {
         let now = Utc::now().naive_utc();
 
-        let connection = &mut establish_connection();
-        connection
-            .build_transaction()
-            .read_write()
-            .run(|conn| {
-                diesel::update(refresh_tokens::table)
-                    .filter(refresh_tokens::token.eq(token))
-                    .filter(refresh_tokens::client_id.eq(client_id))
-                    .filter(refresh_tokens::created_at.lt(&now))
-                    .filter(refresh_tokens::expires_at.gt(&now))
-                    .filter(refresh_tokens::used.eq(false))
-                    .set(refresh_tokens::used.eq(true))
-                    .get_result::<DbRefreshToken>(conn)
-            })
+        diesel::update(refresh_tokens::table)
+            .filter(refresh_tokens::token.eq(token))
+            .filter(refresh_tokens::client_id.eq(client_id))
+            .filter(refresh_tokens::created_at.lt(&now))
+            .filter(refresh_tokens::expires_at.gt(&now))
+            .filter(refresh_tokens::used.eq(false))
+            .set(refresh_tokens::used.eq(true))
+            .get_result::<DbRefreshToken>(connection)
+            .await
             .map_err(TokenServiceError::from)?;
 
         Ok(())

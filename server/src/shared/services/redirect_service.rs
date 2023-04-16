@@ -1,8 +1,9 @@
 use diesel::prelude::*;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use url::Url;
 
 use crate::{
-    db::{establish_connection, models::DbRedirectUri, schema::redirect_uris},
+    db::{models::DbRedirectUri, schema::redirect_uris},
     mappers::RedirectMapper,
     models::RedirectModel,
 };
@@ -10,17 +11,15 @@ use crate::{
 pub struct RedirectService;
 
 impl RedirectService {
-    pub fn get_redirects_from_client(
+    pub async fn get_redirects_from_client(
+        connection: &mut AsyncPgConnection,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RedirectServiceError> {
-        let connection = &mut establish_connection();
         let db_redirects = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .load::<DbRedirectUri>(connection)
-            .map_err(|err| match err {
-                diesel::result::Error::NotFound => RedirectServiceError::NotFound,
-                _ => RedirectServiceError::DbError,
-            })?;
+            .await
+            .map_err(RedirectServiceError::from)?;
 
         Ok(db_redirects
             .into_iter()
@@ -28,39 +27,33 @@ impl RedirectService {
             .collect::<Vec<RedirectModel>>())
     }
 
-    pub fn verify_redirect(
+    pub async fn verify_redirect(
+        connection: &mut AsyncPgConnection,
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectServiceError> {
-        let connection = &mut establish_connection();
         let db_redirect = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .filter(redirect_uris::uri.eq(uri.to_string()))
             .first::<DbRedirectUri>(connection)
-            .map_err(|err| match err {
-                diesel::result::Error::NotFound => RedirectServiceError::NotFound,
-                _ => RedirectServiceError::DbError,
-            })?;
+            .await
+            .map_err(RedirectServiceError::from)?;
 
         Ok(RedirectMapper::from_db(db_redirect))
     }
 
-    pub fn create_redirect(
+    pub async fn create_redirect(
+        connection: &mut AsyncPgConnection,
         client_id: &String,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectServiceError> {
-        let connection = &mut establish_connection();
-        let db_redirect = connection
-            .build_transaction()
-            .read_write()
-            .run(|conn| {
-                diesel::insert_into(redirect_uris::table)
-                    .values((
-                        redirect_uris::client_id.eq(client_id),
-                        redirect_uris::uri.eq(uri.to_string()),
-                    ))
-                    .get_result::<DbRedirectUri>(conn)
-            })
+        let db_redirect = diesel::insert_into(redirect_uris::table)
+            .values((
+                redirect_uris::client_id.eq(client_id),
+                redirect_uris::uri.eq(uri.to_string()),
+            ))
+            .get_result::<DbRedirectUri>(connection)
+            .await
             .map_err(|_| RedirectServiceError::DbError)?;
 
         Ok(RedirectMapper::from_db(db_redirect))

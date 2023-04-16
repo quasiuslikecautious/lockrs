@@ -20,7 +20,12 @@
 
 - [ ] README
 
-- [ ] Test Coverage
+- [ ] Unit Test Coverage
+    - [x] Mappers
+    - [ ] Controllers
+    - [ ] Services
+
+- [ ] Integration Test coverage
 
 - [ ] Authentication System
     - [x] Setup bcrypt for password salting
@@ -32,6 +37,8 @@
   - [ ] Redirect Tokens
 
 - [ ] Add caching
+
+- [x] Use async diesel to handle requests better
 
 - [ ] Add filtering to verify JWT before accessing DB
 

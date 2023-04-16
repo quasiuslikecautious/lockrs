@@ -2,20 +2,20 @@ mod auth;
 mod oauth2;
 mod shared;
 
-use std::net::SocketAddr;
+pub use self::shared::*;
+
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
     body::{boxed, Body},
     http::{Response, StatusCode},
     response::IntoResponse,
     routing::get,
-    Router,
+    Extension, Router,
 };
 use tower::ServiceExt;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
-
-pub use self::shared::*;
 
 /// rfc: https://www.rfc-editor.org/rfc/rfc6749#section-4
 #[tokio::main]
@@ -49,8 +49,8 @@ async fn main() {
                     .expect("error response"),
             }
         }))
-        .layer(TraceLayer::new_for_http())
-        .with_state(());
+        .layer(Extension::<Arc<AppState>>(Arc::new(AppState::new())))
+        .layer(TraceLayer::new_for_http());
 
     // run it with hyper on localhost:8080
     let addr = SocketAddr::from(([127, 0, 0, 1], 8081));

@@ -1,7 +1,10 @@
-use axum::{extract::Query, http::StatusCode, response::IntoResponse};
+use std::sync::Arc;
+
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension};
 use serde::Deserialize;
 
 use crate::{
+    db::get_connection_from_pool,
     oauth2::{
         responses::DeviceAuthorizationResponse,
         services::{
@@ -10,6 +13,7 @@ use crate::{
         },
     },
     utils::extractors::ExtractClientCredentials,
+    AppState,
 };
 
 #[derive(Deserialize)]
@@ -21,25 +25,43 @@ pub struct DeviceAuthorizationController;
 
 impl DeviceAuthorizationController {
     pub async fn handle(
+        Extension(state): Extension<Arc<AppState>>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<DeviceAuthorizationRequest>,
     ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationControllerError> {
-        ClientAuthService::verify_credentials(&client_credentials.id, &client_credentials.secret)
-            .map_err(|err| match err {
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| DeviceAuthorizationControllerError::InternalError)?;
+
+        ClientAuthService::verify_credentials(
+            db_connection.as_mut(),
+            &client_credentials.id,
+            &client_credentials.secret,
+        )
+        .await
+        .map_err(|err| match err {
             ClientAuthServiceError::NotFoundError => {
                 DeviceAuthorizationControllerError::InvalidClient
             }
             _ => DeviceAuthorizationControllerError::InternalError,
         })?;
 
-        let scopes = ScopeService::get_from_list(&params.scope).map_err(|err| match err {
-            ScopeServiceError::InvalidScopes => DeviceAuthorizationControllerError::InvalidScopes,
-            _ => DeviceAuthorizationControllerError::InternalError,
-        })?;
+        let scopes = ScopeService::get_from_list(db_connection.as_mut(), &params.scope)
+            .await
+            .map_err(|err| match err {
+                ScopeServiceError::InvalidScopes => {
+                    DeviceAuthorizationControllerError::InvalidScopes
+                }
+                _ => DeviceAuthorizationControllerError::InternalError,
+            })?;
 
-        let device_authorization =
-            DeviceAuthorizationService::create_device_authorization(&client_credentials.id, scopes)
-                .map_err(|_| DeviceAuthorizationControllerError::InternalError)?;
+        let device_authorization = DeviceAuthorizationService::create_device_authorization(
+            db_connection.as_mut(),
+            &client_credentials.id,
+            scopes,
+        )
+        .await
+        .map_err(|_| DeviceAuthorizationControllerError::InternalError)?;
 
         Ok(DeviceAuthorizationResponse::new(
             &device_authorization.user_code,

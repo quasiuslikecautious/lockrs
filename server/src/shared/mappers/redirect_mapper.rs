@@ -39,11 +39,7 @@ mod tests {
 
         let actual_redirect = RedirectMapper::from_db(db_redirect);
 
-        let expected_redirect = RedirectModel {
-            id,
-            client_id,
-            uri,
-        };
+        let expected_redirect = RedirectModel { id, client_id, uri };
 
         assert_eq!(actual_redirect, expected_redirect);
     }
