@@ -1,0 +1,12 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize)]
+pub struct Claims {
+    pub sub: Uuid,
+    pub iss: String,
+    pub aud: Option<String>,
+
+    pub iat: i64,
+    pub nbf: Option<i64>,
+    pub exp: i64,
+}
