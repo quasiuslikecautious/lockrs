@@ -8,10 +8,9 @@ use uuid::Uuid;
 use crate::{
     auth::{
         responses::SessionResponse,
-        services::{UserAuthService, UserAuthServiceError},
+        services::{SessionService, SessionServiceError},
     },
     db::get_connection_from_pool,
-    models::UserAuthModel,
     AppState,
 };
 
@@ -40,67 +39,46 @@ impl SessionController {
     }
 
     pub async fn create(
-        Extension(state): Extension<Arc<AppState>>,
-        Path(_user_id): Path<Uuid>,
-        Json(new_session): Json<SessionCreateRequest>,
-    ) -> Result<SessionResponse, SessionControllerError> {
-        let user_auth = UserAuthModel {
-            email: new_session.email,
-            password: new_session.password,
-        };
-
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| SessionControllerError::InternalError)?;
-
-        let session = UserAuthService::login(db_connection.as_mut(), &user_auth)
-            .await
-            .map_err(|err| match err {
-                UserAuthServiceError::NotFoundError => SessionControllerError::InvalidCredentials,
-                _ => SessionControllerError::InternalError,
-            })?;
-
-        let session_response = SessionResponse {
-            id: session.id,
-            token: session.token,
-        };
-
-        Ok(session_response)
+        Extension(_state): Extension<Arc<AppState>>,
+        // Path(_user_id): Path<Uuid>,
+        Json(_new_session): Json<SessionCreateRequest>,
+    ) -> impl IntoResponse {
+        (StatusCode::NOT_IMPLEMENTED, "/sessions".to_string())
     }
 
     pub async fn read(
         Extension(_state): Extension<Arc<AppState>>,
-        Path((user_id, session_id)): Path<(Uuid, String)>,
+        Path(session_id): Path<String>,
     ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
-            format!("/users/{}/sessions/{}", user_id, session_id),
+            format!("/sessions/{}", session_id),
         )
     }
 
     pub async fn update(
         Extension(_state): Extension<Arc<AppState>>,
-        Path((user_id, session_id)): Path<(Uuid, String)>,
+        Path(session_id): Path<String>,
         Json(_session_update_request): Json<SessionUpdateRequest>,
     ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
-            format!("/users/{}/sessions/{}", user_id, session_id),
+            format!("/sessions/{}", session_id),
         )
     }
 
     pub async fn delete(
         Extension(state): Extension<Arc<AppState>>,
-        Path((_user_id, session_id)): Path<(Uuid, String)>,
+        Path(session_id): Path<String>,
     ) -> Result<SessionResponse, SessionControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)
             .await
             .map_err(|_| SessionControllerError::InternalError)?;
 
-        let session = UserAuthService::logout(db_connection.as_mut(), &session_id)
+        let session = SessionService::delete_session(db_connection.as_mut(), &session_id)
             .await
             .map_err(|err| match err {
-                UserAuthServiceError::NotFoundError => SessionControllerError::SessionNotFound,
+                SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
                 _ => SessionControllerError::InternalError,
             })?;
 

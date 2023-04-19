@@ -1,5 +1,5 @@
 use arc_swap::{ArcSwap, ArcSwapOption};
-use chrono::{DateTime, Duration, Local, Utc};
+use chrono::{DateTime, Duration, Utc};
 use rand::RngCore;
 use std::sync::Arc;
 use uuid::Uuid;

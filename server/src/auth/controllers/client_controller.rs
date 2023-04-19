@@ -17,6 +17,7 @@ pub struct ClientController;
 
 #[derive(Deserialize)]
 pub struct ClientCreateRequest {
+    pub user_id: Uuid,
     pub is_public: bool,
     pub name: String,
     pub description: String,
@@ -59,12 +60,11 @@ impl ClientController {
 
     pub async fn create(
         Extension(state): Extension<Arc<AppState>>,
-        Path(user_id): Path<Uuid>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
         let new_client = ClientCreateModel {
+            user_id: new_client_request.user_id,
             is_public: new_client_request.is_public,
-            user_id,
             name: new_client_request.name,
             description: new_client_request.description,
             homepage_url: new_client_request.homepage_url,
@@ -89,7 +89,7 @@ impl ClientController {
 
     pub async fn read(
         Extension(state): Extension<Arc<AppState>>,
-        Path((_user_id, client_id)): Path<(Uuid, String)>,
+        Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)
             .await
@@ -114,7 +114,7 @@ impl ClientController {
 
     pub async fn update(
         Extension(state): Extension<Arc<AppState>>,
-        Path((_user_id, client_id)): Path<(Uuid, String)>,
+        Path(client_id): Path<String>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
         let update_client = ClientUpdateModel {
@@ -145,7 +145,7 @@ impl ClientController {
 
     pub async fn delete(
         Extension(state): Extension<Arc<AppState>>,
-        Path((_user_id, client_id)): Path<(Uuid, String)>,
+        Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)
             .await

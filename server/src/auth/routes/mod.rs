@@ -7,6 +7,8 @@ mod user_routes;
 
 pub fn routes() -> Router {
     Router::new()
-        .nest("/users", user_routes::routes())
+        .nest("/clients", client_routes::routes())
+        .nest("/redirect", redirect_routes::routes())
         .nest("/sessions", session_routes::routes())
+        .nest("/users", user_routes::routes())
 }

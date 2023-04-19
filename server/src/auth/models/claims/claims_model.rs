@@ -8,6 +8,6 @@ pub struct Claims {
     pub aud: Option<String>,
 
     pub iat: i64,
-    pub nbf: Option<i64>,
+    pub nbf: i64,
     pub exp: i64,
 }

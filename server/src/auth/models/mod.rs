@@ -1,4 +1,5 @@
+mod auth;
 mod claims;
 mod session;
 
-pub use self::{claims::*, session::*};
+pub use self::{auth::*, claims::*, session::*};
