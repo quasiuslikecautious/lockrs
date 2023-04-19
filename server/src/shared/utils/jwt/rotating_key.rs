@@ -1,5 +1,5 @@
 use arc_swap::{ArcSwap, ArcSwapOption};
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, Local, Utc};
 use rand::RngCore;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -17,9 +17,11 @@ impl Key {
         let mut key = [0u8; 32];
         rand::thread_rng().fill_bytes(&mut key);
 
+        let version = Uuid::new_v4();
+
         Self {
             value: key.to_vec(),
-            version: Uuid::new_v4(),
+            version,
             inactive_at,
             expires_at,
         }
@@ -85,6 +87,7 @@ impl RotatingKey {
 
     pub fn get_signing_key(&self) -> Arc<Key> {
         self.verify_keys();
+
         Arc::clone(&self.active_key.load())
     }
 
