@@ -13,7 +13,7 @@ pub struct JwtUtil {
 }
 
 impl JwtUtil {
-    pub fn sign_jwt<T>(&self, claims: T) -> Result<String, jsonwebtoken::errors::Error>
+    pub fn sign_jwt<T>(&self, claims: T) -> Result<String, JwtError>
     where
         T: Serialize,
     {
@@ -30,21 +30,35 @@ impl JwtUtil {
             &jwt_claims,
             &EncodingKey::from_secret(&secret_key.as_ref().value[..]),
         )
+        .map_err(|_| JwtError::CreateToken)
     }
 
-    pub fn verify_jwt<T>(&self, token: &str) -> Result<JwtClaims<T>, jsonwebtoken::errors::Error>
+    pub fn verify_jwt<T>(&self, token: &str) -> Result<JwtClaims<T>, JwtError>
     where
         T: for<'de> Deserialize<'de>,
     {
-        let key_version = extract_key_version_from_token(token).unwrap();
-        let secret_key = &self.secret.get_verification_key(key_version).unwrap();
+        let key_version =
+            extract_key_version_from_token(token).ok_or(JwtError::MissingKeyVersion)?;
+        let secret_key = &self
+            .secret
+            .get_verification_key(key_version)
+            .ok_or(JwtError::Secret)?;
 
         let token = decode::<JwtClaims<T>>(
             token,
             &DecodingKey::from_secret(&secret_key.as_ref().value[..]),
             &Validation::new(Algorithm::HS256),
-        )?;
+        )
+        .map_err(|_| JwtError::InvalidToken)?;
 
         Ok(token.claims)
     }
+}
+
+#[derive(Debug)]
+pub enum JwtError {
+    InvalidToken,
+    Secret,
+    CreateToken,
+    MissingKeyVersion,
 }
