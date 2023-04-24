@@ -40,7 +40,6 @@ impl SessionController {
 
     pub async fn create(
         Extension(_state): Extension<Arc<AppState>>,
-        // Path(_user_id): Path<Uuid>,
         Json(_new_session): Json<SessionCreateRequest>,
     ) -> impl IntoResponse {
         (StatusCode::NOT_IMPLEMENTED, "/sessions".to_string())
@@ -70,24 +69,19 @@ impl SessionController {
     pub async fn delete(
         Extension(state): Extension<Arc<AppState>>,
         Path(session_id): Path<String>,
-    ) -> Result<SessionResponse, SessionControllerError> {
+    ) -> Result<StatusCode, SessionControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)
             .await
             .map_err(|_| SessionControllerError::InternalError)?;
 
-        let session = SessionService::delete_session(db_connection.as_mut(), &session_id)
+        SessionService::delete_session(db_connection.as_mut(), &session_id)
             .await
             .map_err(|err| match err {
                 SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
                 _ => SessionControllerError::InternalError,
             })?;
 
-        let session_response = SessionResponse {
-            id: session.id,
-            token: session.token,
-        };
-
-        Ok(session_response)
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 

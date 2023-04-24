@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
+use serde::Deserialize;
 
 use crate::{
     auth::{
@@ -14,19 +15,20 @@ use crate::{
 
 pub struct AuthController;
 
-pub struct AuthCreateRequest {
+#[derive(Deserialize)]
+pub struct AuthRequest {
     pub email: String,
     pub password: String,
 }
 
 impl AuthController {
-    pub async fn create(
+    pub async fn auth(
         Extension(state): Extension<Arc<AppState>>,
-        Json(new_session): Json<AuthCreateRequest>,
+        Json(credentials): Json<AuthRequest>,
     ) -> Result<AuthResponse, AuthControllerError> {
         let auth = AuthModel {
-            email: new_session.email,
-            password: new_session.password,
+            email: credentials.email,
+            password: credentials.password,
         };
 
         let mut db_connection = get_connection_from_pool(&state.db_pool)

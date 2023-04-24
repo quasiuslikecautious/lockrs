@@ -37,7 +37,7 @@ async fn main() {
         .nest(
             "/api/v1",
             Router::new()
-                .nest("/auth", auth::routes::routes())
+                .merge(auth::routes::routes())
                 .nest("/oauth2", oauth2::routes::routes()),
         )
         .fallback_service(get(|req| async move {
