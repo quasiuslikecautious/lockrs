@@ -25,7 +25,7 @@ pub fn database_url_for_env() -> String {
     env::var("DATABASE_URL").expect("DATABASE_URL must be set")
 }
 
-pub fn build_connection_pool() -> Pool<AsyncPgConnection> {
+pub fn build_connection_pool() -> AsyncPgPool {
     let url = database_url_for_env();
     let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(url);
 
@@ -34,22 +34,22 @@ pub fn build_connection_pool() -> Pool<AsyncPgConnection> {
         .runtime(Runtime::Tokio1)
         .timeouts(Timeouts::wait_millis(5000))
         .build()
-        .expect("Could not build connection pool")
+        .expect("Could not build db connection pool")
 }
 
 pub async fn get_connection_from_pool(
     db_pool: &Arc<AsyncPgPool>,
-) -> Result<ManagedAsyncPgConnection, AsyncPoolError> {
+) -> Result<ManagedAsyncPgConnection, AsyncPgPoolError> {
     let managed_conn = db_pool
         .clone()
         .as_ref()
         .get()
         .await
-        .map_err(|_| AsyncPoolError::Timeout)?;
+        .map_err(|_| AsyncPgPoolError::Timeout)?;
 
     Ok(managed_conn)
 }
 
-pub enum AsyncPoolError {
+pub enum AsyncPgPoolError {
     Timeout,
 }

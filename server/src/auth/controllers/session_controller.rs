@@ -7,7 +7,6 @@ use uuid::Uuid;
 
 use crate::{
     auth::{
-        responses::SessionResponse,
         services::{SessionService, SessionServiceError},
     },
     db::get_connection_from_pool,

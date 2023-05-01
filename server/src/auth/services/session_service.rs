@@ -1,7 +1,7 @@
 use diesel_async::AsyncPgConnection;
 use uuid::Uuid;
 
-use crate::auth::models::{SessionModel, SessionCreateModel};
+use crate::auth::models::{SessionCreateModel, SessionModel};
 
 pub struct SessionService;
 
@@ -15,28 +15,28 @@ impl SessionService {
 
     pub async fn get_session_by_id(
         // redis connection
-        id: &str,
+        _id: &str,
     ) -> Result<SessionModel, SessionServiceError> {
         todo!();
     }
 
     pub async fn get_sessions_by_user_id(
         // redis connection?
-        user_id: &Uuid,
+        _user_id: &Uuid,
     ) -> Result<SessionModel, SessionServiceError> {
         todo!();
     }
 
     pub async fn update_session_by_id(
         // redis connection
-        id: &str,
+        _id: &str,
     ) -> Result<SessionModel, SessionServiceError> {
         todo!();
     }
 
     pub async fn refresh_session_by_id(
-        // redis connection 
-        id: &str,
+        // redis connection
+        _id: &str,
     ) -> Result<SessionModel, SessionServiceError> {
         todo!();
     }
