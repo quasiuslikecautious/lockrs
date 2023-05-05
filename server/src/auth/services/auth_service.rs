@@ -1,22 +1,25 @@
+use base64::{engine::general_purpose, Engine as _};
 use bcrypt::verify;
 use chrono::{Duration, Utc};
+use deadpool_redis::redis::cmd;
 use diesel_async::AsyncPgConnection;
+use rand::Rng;
 
 use crate::{
-    auth::models::{AuthModel, Claims, SessionModel},
+    auth::models::{AuthModel, Claims, SessionTokenModel},
+    redis::AsyncRedisConnection,
     services::{UserService, UserServiceError},
-    utils::jwt::JwtUtil,
 };
 
 pub struct AuthService;
 
 impl AuthService {
     pub async fn login(
-        connection: &mut AsyncPgConnection,
-        jwt_util: &JwtUtil,
+        pg_connection: &mut AsyncPgConnection,
+        redis_connection: &mut AsyncRedisConnection,
         user_auth: &AuthModel,
-    ) -> Result<SessionModel, AuthServiceError> {
-        let user = match UserService::get_user_by_email(connection, &user_auth.email).await {
+    ) -> Result<SessionTokenModel, AuthServiceError> {
+        let user = match UserService::get_user_by_email(pg_connection, &user_auth.email).await {
             Ok(user) => user,
             Err(err) => match err {
                 UserServiceError::NotFoundError => return Err(AuthServiceError::InvalidEmail),
@@ -43,15 +46,23 @@ impl AuthService {
             exp: (now + Duration::minutes(5)).timestamp(),
         };
 
-        let token = jwt_util
-            .sign_jwt::<Claims>(claims)
-            .map_err(|_| AuthServiceError::TokenError)?;
+        let token = Self::generate_session_token();
 
-        // TODO add session id generation
-        Ok(SessionModel {
-            id: user.id.to_string(),
-            token,
-        })
+        cmd("SET")
+            .arg(format!("session_token:{}", token).as_str())
+            .arg(serde_json::to_string(&claims).unwrap().as_str())
+            .query_async::<_, ()>(redis_connection)
+            .await
+            .unwrap();
+
+        Ok(SessionTokenModel { token })
+    }
+
+    fn generate_session_token() -> String {
+        let mut rng = rand::thread_rng();
+        let bytes = (0..32).map(|_| rng.gen::<u8>()).collect::<Vec<u8>>();
+
+        general_purpose::URL_SAFE_NO_PAD.encode(bytes)
     }
 }
 

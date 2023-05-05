@@ -1,13 +1,11 @@
 use std::{env, sync::Arc};
 
-use deadpool_redis::{
-    Config, Runtime,
-};
+use deadpool_redis::{Config, Runtime};
 use dotenvy::dotenv;
 
-pub type AsyncRedisConnection = deadpool_redis::Connection;
+pub type AsyncRedisConnection = deadpool_redis::redis::aio::Connection;
 pub type AsyncRedisPool = deadpool_redis::Pool;
-pub type ManagedAsyncRedisConnection = deadpool::managed::Object<AsyncRedisConnection>;
+pub type ManagedAsyncRedisConnection = deadpool_redis::Connection;
 
 pub fn redis_url_for_env() -> String {
     dotenv().ok();
@@ -24,7 +22,7 @@ pub fn build_connection_pool() -> AsyncRedisPool {
 
 pub async fn get_connection_from_pool(
     pool: &Arc<AsyncRedisPool>,
-) -> Result<AsyncRedisConnection, AsyncRedisPoolError> {
+) -> Result<ManagedAsyncRedisConnection, AsyncRedisPoolError> {
     let managed_conn = pool
         .clone()
         .as_ref()

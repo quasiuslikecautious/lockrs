@@ -6,11 +6,10 @@ use serde::Deserialize;
 use crate::{
     auth::{
         models::AuthModel,
-        responses::AuthResponse,
+        responses::SessionTokenResponse,
         services::{AuthService, AuthServiceError},
     },
-    db::get_connection_from_pool,
-    AppState,
+    db, redis, AppState,
 };
 
 pub struct AuthController;
@@ -25,25 +24,29 @@ impl AuthController {
     pub async fn auth(
         Extension(state): Extension<Arc<AppState>>,
         Json(credentials): Json<AuthRequest>,
-    ) -> Result<AuthResponse, AuthControllerError> {
+    ) -> Result<SessionTokenResponse, AuthControllerError> {
         let auth = AuthModel {
             email: credentials.email,
             password: credentials.password,
         };
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
+        let mut db_connection = db::get_connection_from_pool(&state.db_pool)
             .await
             .map_err(|_| AuthControllerError::Internal)?;
 
-        let session = AuthService::login(db_connection.as_mut(), state.jwt_util.as_ref(), &auth)
+        let mut redis_connection = redis::get_connection_from_pool(&state.redis_pool)
+            .await
+            .map_err(|_| AuthControllerError::Internal)?;
+
+        let session = AuthService::login(db_connection.as_mut(), redis_connection.as_mut(), &auth)
             .await
             .map_err(|err| match err {
                 AuthServiceError::NotFound => AuthControllerError::InvalidCredentials,
                 _ => AuthControllerError::Internal,
             })?;
 
-        let session_response = AuthResponse {
-            session_token: session.token,
+        let session_response = SessionTokenResponse {
+            token: session.token,
         };
 
         Ok(session_response)

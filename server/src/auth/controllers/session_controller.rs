@@ -6,9 +6,7 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    auth::{
-        services::{SessionService, SessionServiceError},
-    },
+    auth::services::{SessionService, SessionServiceError},
     db::get_connection_from_pool,
     AppState,
 };
