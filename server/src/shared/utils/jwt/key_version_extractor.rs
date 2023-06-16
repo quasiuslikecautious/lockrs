@@ -12,7 +12,7 @@ pub fn extract_key_version_from_token(token: &str) -> Option<Uuid> {
     let payload = parts[1];
     // let _signature = parts[2];
 
-    let version_str = extract_field_from_payload(payload, "version")?;
+    let version_str = extract_field_from_payload(payload, "rev")?;
     Uuid::parse_str(&version_str).ok()
 }
 

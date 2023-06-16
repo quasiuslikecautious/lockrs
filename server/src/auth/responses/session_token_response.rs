@@ -3,7 +3,8 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct SessionTokenResponse {
-    pub token: String,
+    pub session_token: String,
+    pub expires_at: i64,
 }
 
 impl IntoResponse for SessionTokenResponse {

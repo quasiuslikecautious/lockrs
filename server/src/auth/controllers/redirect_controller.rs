@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
 
 use crate::AppState;
 
@@ -8,7 +12,7 @@ pub struct RedirectController;
 
 impl RedirectController {
     pub async fn read_all(
-        Extension(_state): Extension<Arc<AppState>>,
+        State(_state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> impl IntoResponse {
         (
@@ -17,12 +21,12 @@ impl RedirectController {
         )
     }
 
-    pub async fn create(Extension(_state): Extension<Arc<AppState>>) -> impl IntoResponse {
+    pub async fn create(State(_state): State<Arc<AppState>>) -> impl IntoResponse {
         (StatusCode::NOT_IMPLEMENTED, "/redirects".to_string())
     }
 
     pub async fn read(
-        Extension(_state): Extension<Arc<AppState>>,
+        State(_state): State<Arc<AppState>>,
         Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
         (
@@ -32,7 +36,7 @@ impl RedirectController {
     }
 
     pub async fn update(
-        Extension(_state): Extension<Arc<AppState>>,
+        State(_state): State<Arc<AppState>>,
         Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
         (
@@ -42,7 +46,7 @@ impl RedirectController {
     }
 
     pub async fn delete(
-        Extension(_state): Extension<Arc<AppState>>,
+        State(_state): State<Arc<AppState>>,
         Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
         (

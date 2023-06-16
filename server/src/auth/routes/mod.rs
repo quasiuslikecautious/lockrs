@@ -1,4 +1,8 @@
+use std::sync::Arc;
+
 use axum::Router;
+
+use crate::shared::AppState;
 
 mod auth_routes;
 mod client_routes;
@@ -6,7 +10,7 @@ mod redirect_routes;
 mod session_routes;
 mod user_routes;
 
-pub fn routes() -> Router {
+pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .nest("/auth", auth_routes::routes())
         .nest("/clients", client_routes::routes())

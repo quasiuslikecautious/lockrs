@@ -32,27 +32,27 @@ impl Key {
 pub struct RotatingKey {
     active_key: ArcSwap<Key>,
     inactive_key: ArcSwapOption<Key>,
-    rotation_duration: Duration,
-    transition_duration: Duration,
+    pub rotation_duration: Duration,
+    pub transition_duration: Duration,
 }
 
 impl RotatingKey {
-    pub fn new(rotation_duration: Duration, transition_duration: Duration) -> Self {
+    pub fn new(rotation_duration: &Duration, transition_duration: &Duration) -> Self {
         assert!(
             rotation_duration > transition_duration,
             "Transition period cannot last longer than rotation period!"
         );
 
-        let key_inactive_at = Utc::now() + rotation_duration;
-        let key_expires_at = key_inactive_at + transition_duration;
+        let key_inactive_at = Utc::now() + *rotation_duration;
+        let key_expires_at = key_inactive_at + *transition_duration;
 
         let key = Key::new(key_inactive_at, key_expires_at);
 
         Self {
             active_key: ArcSwap::new(Arc::new(key)),
             inactive_key: ArcSwapOption::from(None),
-            rotation_duration,
-            transition_duration,
+            rotation_duration: *rotation_duration,
+            transition_duration: *transition_duration,
         }
     }
 

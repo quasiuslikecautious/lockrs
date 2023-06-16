@@ -69,7 +69,7 @@ impl AuthorizeController {
 
         // stash data before redirect
 
-        Ok(Redirect::to("/login"))
+        Ok(Redirect::to(params.redirect_uri.as_str()))
     }
 }
 

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 
 use crate::{
@@ -22,7 +22,7 @@ pub struct AuthRequest {
 
 impl AuthController {
     pub async fn auth(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Json(credentials): Json<AuthRequest>,
     ) -> Result<SessionTokenResponse, AuthControllerError> {
         let auth = AuthModel {
@@ -38,18 +38,20 @@ impl AuthController {
             .await
             .map_err(|_| AuthControllerError::Internal)?;
 
-        let session = AuthService::login(db_connection.as_mut(), redis_connection.as_mut(), &auth)
-            .await
-            .map_err(|err| match err {
-                AuthServiceError::NotFound => AuthControllerError::InvalidCredentials,
-                _ => AuthControllerError::Internal,
-            })?;
+        let session_token =
+            AuthService::login(db_connection.as_mut(), redis_connection.as_mut(), &auth)
+                .await
+                .map_err(|err| match err {
+                    AuthServiceError::Credentials => AuthControllerError::InvalidCredentials,
+                    _ => AuthControllerError::Internal,
+                })?;
 
-        let session_response = SessionTokenResponse {
-            token: session.token,
+        let token_response = SessionTokenResponse {
+            session_token: session_token.token,
+            expires_at: session_token.expires_at,
         };
 
-        Ok(session_response)
+        Ok(token_response)
     }
 }
 

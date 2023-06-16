@@ -1,21 +1,21 @@
-use std::{env, sync::Arc};
+use std::{sync::Arc, time::Duration};
 
-use deadpool_redis::{Config, Runtime};
-use dotenvy::dotenv;
+use deadpool_redis::{Config, PoolConfig, Runtime, Timeouts};
 
 pub type AsyncRedisConnection = deadpool_redis::redis::aio::Connection;
 pub type AsyncRedisPool = deadpool_redis::Pool;
 pub type ManagedAsyncRedisConnection = deadpool_redis::Connection;
 
-pub fn redis_url_for_env() -> String {
-    dotenv().ok();
+pub fn build_connection_pool(url: &str) -> AsyncRedisPool {
+    let max_size = 5;
+    let timeouts = Timeouts {
+        wait: Some(Duration::from_millis(5000)),
+        create: Some(Duration::from_millis(5000)),
+        recycle: Some(Duration::from_millis(5000)),
+    };
 
-    env::var("REDIS_URL").expect("REDIS_URL must be set!")
-}
-
-pub fn build_connection_pool() -> AsyncRedisPool {
-    let _url = redis_url_for_env();
-    let cfg = Config::from_url(redis_url_for_env().as_str());
+    let mut cfg = Config::from_url(url);
+    cfg.pool = Some(PoolConfig { max_size, timeouts });
 
     cfg.create_pool(Some(Runtime::Tokio1)).unwrap()
 }

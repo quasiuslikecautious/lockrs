@@ -1,12 +1,14 @@
+use std::sync::Arc;
+
 use axum::{
     routing::{delete, get, post, put},
     Router,
 };
 
 use super::redirect_routes;
-use crate::auth::controllers::ClientController;
+use crate::{auth::controllers::ClientController, shared::AppState};
 
-pub fn routes() -> Router {
+pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", post(ClientController::create))
         .route("/:client_id", get(ClientController::read))
@@ -15,6 +17,6 @@ pub fn routes() -> Router {
         .nest("/:client_id/redirects", redirect_routes::client_routes())
 }
 
-pub fn user_routes() -> Router {
+pub fn user_routes() -> Router<Arc<AppState>> {
     Router::new().route("/", get(ClientController::read_all))
 }

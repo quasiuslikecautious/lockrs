@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use serde::Deserialize;
 use url::Url;
 use uuid::Uuid;
@@ -34,7 +39,7 @@ pub struct ClientUpdateRequest {
 
 impl ClientController {
     pub async fn read_all(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)
@@ -59,7 +64,7 @@ impl ClientController {
     }
 
     pub async fn create(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
         let new_client = ClientCreateModel {
@@ -88,7 +93,7 @@ impl ClientController {
     }
 
     pub async fn read(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)
@@ -113,7 +118,7 @@ impl ClientController {
     }
 
     pub async fn update(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
@@ -144,7 +149,7 @@ impl ClientController {
     }
 
     pub async fn delete(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)

@@ -4,6 +4,8 @@ pub mod schema;
 mod db_error;
 pub use self::db_error::*;
 
+use std::sync::Arc;
+
 use deadpool::managed::Timeouts;
 use deadpool_runtime::Runtime;
 use diesel_async::{
@@ -13,24 +15,15 @@ use diesel_async::{
     },
     AsyncPgConnection,
 };
-use dotenvy::dotenv;
-use std::{env, sync::Arc};
 
 pub type AsyncPgPool = Pool<AsyncPgConnection>;
 pub type ManagedAsyncPgConnection = Object<AsyncPgConnection>;
 
-pub fn database_url_for_env() -> String {
-    dotenv().ok();
-
-    env::var("DATABASE_URL").expect("DATABASE_URL must be set")
-}
-
-pub fn build_connection_pool() -> AsyncPgPool {
-    let url = database_url_for_env();
+pub fn build_connection_pool(url: &str) -> AsyncPgPool {
     let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(url);
 
     Pool::builder(manager)
-        .max_size(10)
+        .max_size(5)
         .runtime(Runtime::Tokio1)
         .timeouts(Timeouts::wait_millis(5000))
         .build()

@@ -5,5 +5,8 @@ use uuid::Uuid;
 pub struct JwtClaims<T> {
     #[serde(flatten)]
     pub claims: T,
-    pub version: Uuid,
+    pub iat: i64,
+    pub nbf: i64,
+    pub exp: i64,
+    pub rev: Uuid,
 }

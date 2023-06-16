@@ -1,5 +1,4 @@
 #[derive(Debug)]
 pub struct SessionCreateModel {
-    pub email: String,
-    pub password: String,
+    pub session_token: String,
 }

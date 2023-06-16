@@ -2,12 +2,14 @@ mod jwt_claims;
 mod key_version_extractor;
 mod rotating_key;
 
+use chrono::Utc;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
 use self::key_version_extractor::extract_key_version_from_token;
 pub use self::{jwt_claims::*, rotating_key::*};
 
+#[derive(Debug)]
 pub struct JwtUtil {
     pub secret: RotatingKey,
 }
@@ -19,10 +21,17 @@ impl JwtUtil {
     {
         let secret_key = &self.secret.get_signing_key();
 
+        let now = Utc::now().timestamp_millis();
+        let duration = self.secret.transition_duration;
+        let exp = (Utc::now() + duration).timestamp_millis();
+
         let header = Header::new(Algorithm::HS256);
         let jwt_claims = JwtClaims {
             claims,
-            version: secret_key.as_ref().version,
+            iat: now,
+            nbf: now,
+            exp,
+            rev: secret_key.as_ref().version,
         };
 
         encode(
