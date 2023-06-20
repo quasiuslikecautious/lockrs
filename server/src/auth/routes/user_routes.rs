@@ -1,12 +1,14 @@
+use std::sync::Arc;
+
 use axum::{
     routing::{delete, get, post, put},
     Router,
 };
 
 use super::{client_routes, session_routes};
-use crate::auth::controllers::UserController;
+use crate::{auth::controllers::UserController, shared::AppState};
 
-pub fn routes() -> Router {
+pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", post(UserController::create))
         .route("/:user_id", get(UserController::read))

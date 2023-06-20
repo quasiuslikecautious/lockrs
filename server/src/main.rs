@@ -9,9 +9,8 @@ use std::{net::SocketAddr, sync::Arc};
 use axum::{
     body::{boxed, Body},
     http::{Response, StatusCode},
-    response::IntoResponse,
     routing::get,
-    Extension, Router,
+    Router,
 };
 use tower::ServiceExt;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -33,12 +32,15 @@ async fn main() {
         .with(filter)
         .init();
 
+    let auth_routes = auth::routes::routes().with_state(Arc::new(AppState::new()));
+    let oauth2_routes = oauth2::routes::routes();
+
     let app = Router::new()
         .nest(
             "/api/v1",
             Router::new()
-                .nest("/auth", auth::routes::routes())
-                .nest("/oauth2", oauth2::routes::routes()),
+                .merge(auth_routes)
+                .nest("/oauth2", oauth2_routes),
         )
         .fallback_service(get(|req| async move {
             match ServeDir::new(String::from("./dist")).oneshot(req).await {
@@ -49,7 +51,6 @@ async fn main() {
                     .expect("error response"),
             }
         }))
-        .layer(Extension::<Arc<AppState>>(Arc::new(AppState::new())))
         .layer(TraceLayer::new_for_http());
 
     // run it with hyper on localhost:8080
@@ -59,9 +60,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-/// Fallback function - when a route is requested that doesn't exist this handler will be called.
-async fn fallback() -> impl IntoResponse {
-    StatusCode::NOT_FOUND
 }

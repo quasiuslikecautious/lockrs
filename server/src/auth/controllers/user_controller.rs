@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -28,7 +33,7 @@ pub struct UserController;
 
 impl UserController {
     pub async fn create(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Json(user_request): Json<UserCreateRequest>,
     ) -> Result<UserResponse, UserControllerError> {
         let new_user = UserCreateModel {
@@ -56,7 +61,7 @@ impl UserController {
     }
 
     pub async fn read(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<UserResponse, UserControllerError> {
         let mut db_connection = get_connection_from_pool(&state.db_pool)
@@ -79,14 +84,14 @@ impl UserController {
     }
 
     pub async fn update(
-        Extension(_state): Extension<Arc<AppState>>,
+        State(_state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> impl IntoResponse {
         (StatusCode::NOT_IMPLEMENTED, format!("/users/{}", user_id))
     }
 
     pub async fn delete(
-        Extension(_state): Extension<Arc<AppState>>,
+        State(_state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> impl IntoResponse {
         (StatusCode::NOT_IMPLEMENTED, format!("/users/{}", user_id))

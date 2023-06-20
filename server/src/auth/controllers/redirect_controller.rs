@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension};
-use uuid::Uuid;
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
 
 use crate::AppState;
 
@@ -9,61 +12,46 @@ pub struct RedirectController;
 
 impl RedirectController {
     pub async fn read_all(
-        Extension(_state): Extension<Arc<AppState>>,
-        Path((user_id, client_id)): Path<(Uuid, String)>,
+        State(_state): State<Arc<AppState>>,
+        Path(client_id): Path<String>,
     ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
-            format!("/users/{}/clients/{}/redirects", user_id, client_id),
+            format!("/clients/{}/redirects", client_id),
         )
     }
 
-    pub async fn create(
-        Extension(_state): Extension<Arc<AppState>>,
-        Path((user_id, client_id)): Path<(Uuid, String)>,
-    ) -> impl IntoResponse {
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            format!("/users/{}/clients/{}/redirects", user_id, client_id),
-        )
+    pub async fn create(State(_state): State<Arc<AppState>>) -> impl IntoResponse {
+        (StatusCode::NOT_IMPLEMENTED, "/redirects".to_string())
     }
 
     pub async fn read(
-        Extension(_state): Extension<Arc<AppState>>,
-        Path((user_id, client_id, redirect_id)): Path<(Uuid, String, String)>,
+        State(_state): State<Arc<AppState>>,
+        Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
-            format!(
-                "/users/{}/clients/{}/redirects/{}",
-                user_id, client_id, redirect_id
-            ),
+            format!("/redirects/{}", redirect_id),
         )
     }
 
     pub async fn update(
-        Extension(_state): Extension<Arc<AppState>>,
-        Path((user_id, client_id, redirect_id)): Path<(Uuid, String, String)>,
+        State(_state): State<Arc<AppState>>,
+        Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
-            format!(
-                "/users/{}/clients/{}/redirects/{}",
-                user_id, client_id, redirect_id
-            ),
+            format!("/redirects/{}", redirect_id),
         )
     }
 
     pub async fn delete(
-        Extension(_state): Extension<Arc<AppState>>,
-        Path((user_id, client_id, redirect_id)): Path<(Uuid, String, String)>,
+        State(_state): State<Arc<AppState>>,
+        Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
         (
             StatusCode::NOT_IMPLEMENTED,
-            format!(
-                "/users/{}/clients/{}/redirects/{}",
-                user_id, client_id, redirect_id
-            ),
+            format!("/redirects/{}", redirect_id),
         )
     }
 }

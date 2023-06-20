@@ -1,5 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
 use reqwasm::http::Request;
+use serde::Deserialize;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -95,6 +96,11 @@ impl Component for LoginController {
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct AuthResponse {
+    session_token: String,
+}
+
 impl LoginController {
     fn submit_form(&self) {
         spawn_local({
@@ -103,11 +109,22 @@ impl LoginController {
             let basic_auth = format!("Basic {}", encoded);
 
             async move {
-                Request::post("/api/v1/user/login")
-                    .header("Authorization", &basic_auth)
+                let response = Request::post("/api/v1/auth")
+                    .header("Authorization", basic_auth.as_str())
                     .send()
                     .await
-                    .expect("login request failed");
+                    .expect("auth request failed")
+                    .json::<AuthResponse>()
+                    .await
+                    .expect("invalid auth response");
+
+                let bearer_token = format!("Bearer {}", response.session_token);
+
+                Request::post("/api/v1/sessions")
+                    .header("Authorization", bearer_token.as_str())
+                    .send()
+                    .await
+                    .expect("create session request failed");
             }
         })
     }

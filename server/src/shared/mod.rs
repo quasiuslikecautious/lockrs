@@ -1,21 +1,11 @@
 pub mod db;
 pub mod mappers;
 pub mod models;
+pub mod redis;
 pub mod services;
 pub mod utils;
 
-use std::sync::Arc;
+mod app_config;
+mod app_state;
 
-use self::db::{build_connection_pool, AsyncPgPool};
-
-pub struct AppState {
-    pub db_pool: Arc<AsyncPgPool>,
-}
-
-impl AppState {
-    pub fn new() -> Self {
-        Self {
-            db_pool: Arc::new(build_connection_pool()),
-        }
-    }
-}
+pub use self::{app_config::*, app_state::*};

@@ -1,15 +1,13 @@
 use axum::{response::IntoResponse, Json};
 use serde::Serialize;
-use uuid::Uuid;
 
 #[derive(Debug, Serialize)]
-pub struct SessionResponse {
-    pub id: String,
-    pub user_id: Uuid,
+pub struct SessionTokenResponse {
+    pub session_token: String,
     pub expires_at: i64,
 }
 
-impl IntoResponse for SessionResponse {
+impl IntoResponse for SessionTokenResponse {
     fn into_response(self) -> axum::response::Response {
         Json(self).into_response()
     }
