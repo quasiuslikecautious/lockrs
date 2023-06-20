@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
 use rand::Rng;
-use redis::AsyncCommands;
+
 use uuid::Uuid;
 
 use crate::{
@@ -26,16 +26,20 @@ impl SessionService {
         .await
         .map_err(|_| SessionServiceError::Token)?;
 
+        let user_id = token.user_id;
+        let user_key = Self::into_user_key(&user_id);
+
         let session_id = Self::generate_session_id();
-        let key = Self::into_session_key(session_id.as_str());
+        let session_key = Self::into_session_key(session_id.as_str());
 
         let expires_at = (Utc::now() + *session_duration).timestamp_millis();
 
         let session_data = SessionModel::new(&session_id, &token.user_id, &expires_at);
         let value = serde_json::to_string(&session_data).unwrap();
 
-        redis::cmd("SET")
-            .arg(key.as_str())
+        redis::cmd("HSET")
+            .arg(user_key.as_str())
+            .arg(session_key.as_str())
             .arg(value.as_str())
             .arg("PXAT")
             .arg(expires_at)
@@ -46,13 +50,18 @@ impl SessionService {
         Ok(session_data)
     }
 
-    pub async fn get_session_by_id(
+    pub async fn get_session(
         redis_connection: &mut AsyncRedisConnection,
-        id: &str,
+        user_id: &Uuid,
+        session_id: &str,
     ) -> Result<SessionModel, SessionServiceError> {
-        let key = Self::into_session_key(id);
-        let value: String = redis_connection
-            .get(key.as_str())
+        let user_key = Self::into_user_key(user_id);
+        let session_key = Self::into_session_key(session_id);
+
+        let value: String = redis::cmd("HGET")
+            .arg(user_key.as_str())
+            .arg(session_key.as_str())
+            .query_async(redis_connection)
             .await
             .map_err(|_| SessionServiceError::NotFound)?;
 
@@ -62,34 +71,30 @@ impl SessionService {
         Ok(session_data)
     }
 
-    pub async fn get_sessions_by_user_id(
-        _redis_connection: &mut AsyncRedisConnection,
-        _user_id: &Uuid,
-    ) -> Result<SessionModel, SessionServiceError> {
-        todo!();
-    }
-
-    pub async fn update_session_by_id(
+    pub async fn update_session(
         redis_connection: &mut AsyncRedisConnection,
-        id: &str,
+        user_id: &Uuid,
+        session_id: &str,
         update_model: &SessionUpdateModel,
         session_duration: &Duration,
     ) -> Result<SessionModel, SessionServiceError> {
-        let mut session = Self::get_session_by_id(redis_connection, id).await?;
+        let mut session = Self::get_session(redis_connection, user_id, session_id).await?;
 
         if !update_model.refresh {
             return Ok(session);
         }
 
-        let key = Self::into_session_key(id);
+        let user_key = Self::into_user_key(user_id);
+        let session_key = Self::into_session_key(session_id);
 
         let expires_at = (Utc::now() + *session_duration).timestamp_millis();
         session.expires_at = expires_at;
 
         let value = serde_json::to_string(&session).unwrap();
 
-        redis::cmd("SET")
-            .arg(key.as_str())
+        redis::cmd("HSET")
+            .arg(user_key)
+            .arg(session_key.as_str())
             .arg(value.as_str())
             .arg("PXAT")
             .arg(expires_at)
@@ -102,11 +107,13 @@ impl SessionService {
 
     pub async fn delete_session(
         redis_connection: &mut AsyncRedisConnection,
-        id: &str,
+        user_id: &Uuid,
     ) -> Result<(), SessionServiceError> {
-        let key = Self::into_session_key(id);
-        redis_connection
-            .del(key.as_str())
+        let key = Self::into_user_key(user_id);
+
+        redis::cmd("DEL")
+            .arg(key.as_str())
+            .query_async(redis_connection)
             .await
             .map_err(|_| SessionServiceError::NotDeleted)?;
 
@@ -114,7 +121,11 @@ impl SessionService {
     }
 
     fn into_session_key(session_id: &str) -> String {
-        format!("session:{}", session_id)
+        format!("active_session:{}", session_id)
+    }
+
+    fn into_user_key(user_id: &Uuid) -> String {
+        format!("user:{}", user_id)
     }
 
     fn generate_session_id() -> String {

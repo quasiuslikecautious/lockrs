@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use serde::Deserialize;
+use axum::{extract::State, http::StatusCode, response::IntoResponse};
 
 use crate::{
     auth::{
@@ -9,25 +8,21 @@ use crate::{
         responses::SessionTokenResponse,
         services::{AuthService, AuthServiceError},
     },
-    db, redis, AppState,
+    db, redis,
+    shared::utils::extractors::BasicAuth,
+    AppState,
 };
 
 pub struct AuthController;
 
-#[derive(Deserialize)]
-pub struct AuthRequest {
-    pub email: String,
-    pub password: String,
-}
-
 impl AuthController {
     pub async fn auth(
         State(state): State<Arc<AppState>>,
-        Json(credentials): Json<AuthRequest>,
+        BasicAuth(credentials): BasicAuth,
     ) -> Result<SessionTokenResponse, AuthControllerError> {
         let auth = AuthModel {
-            email: credentials.email,
-            password: credentials.password,
+            email: credentials.public,
+            password: credentials.private,
         };
 
         let mut db_connection = db::get_connection_from_pool(&state.db_pool)

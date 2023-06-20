@@ -13,20 +13,15 @@ use uuid::Uuid;
 use crate::{
     auth::{
         models::{SessionCreateModel, SessionUpdateModel},
-        responses::{NewSessionResponse, SessionResponse},
+        responses::{EndSessionResponse, NewSessionResponse, SessionResponse},
         services::{SessionService, SessionServiceError},
     },
     redis::get_connection_from_pool,
-    utils::extractors::SessionJwt,
+    utils::extractors::{BearerAuth, SessionJwt},
     AppState,
 };
 
 pub struct SessionController;
-
-#[derive(Deserialize)]
-pub struct SessionCreateRequest {
-    session_token: String,
-}
 
 #[derive(Deserialize)]
 pub struct SessionUpdateRequest {
@@ -46,15 +41,13 @@ impl SessionController {
 
     pub async fn create(
         State(state): State<Arc<AppState>>,
-        Json(new_session): Json<SessionCreateRequest>,
+        BearerAuth(session_token): BearerAuth,
     ) -> Result<NewSessionResponse, SessionControllerError> {
         let mut redis_connection = get_connection_from_pool(&state.redis_pool)
             .await
             .map_err(|_| SessionControllerError::InternalError)?;
 
-        let session_create = SessionCreateModel {
-            session_token: new_session.session_token,
-        };
+        let session_create = SessionCreateModel { session_token };
 
         let session = SessionService::create_session(
             redis_connection.as_mut(),
@@ -88,12 +81,13 @@ impl SessionController {
             .await
             .map_err(|_| SessionControllerError::InternalError)?;
 
-        let session = SessionService::get_session_by_id(redis_connection.as_mut(), &session_id)
-            .await
-            .map_err(|err| match err {
-                SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
-                _ => SessionControllerError::InternalError,
-            })?;
+        let session =
+            SessionService::get_session(redis_connection.as_mut(), &jwt.user_id, &session_id)
+                .await
+                .map_err(|err| match err {
+                    SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
+                    _ => SessionControllerError::InternalError,
+                })?;
 
         Ok(SessionResponse {
             id: session.id,
@@ -120,8 +114,9 @@ impl SessionController {
             refresh: session_update_request.refresh,
         };
 
-        let session = SessionService::update_session_by_id(
+        let session = SessionService::update_session(
             redis_connection.as_mut(),
+            &jwt.user_id,
             &session_id,
             &session_update,
             &state.config.auth_interval,
@@ -138,20 +133,25 @@ impl SessionController {
 
     pub async fn delete(
         State(state): State<Arc<AppState>>,
+        SessionJwt(jwt): SessionJwt,
         Path(session_id): Path<String>,
-    ) -> Result<StatusCode, SessionControllerError> {
-        let mut db_connection = get_connection_from_pool(&state.redis_pool)
+    ) -> Result<EndSessionResponse, SessionControllerError> {
+        if jwt.id != session_id {
+            return Err(SessionControllerError::Jwt);
+        }
+
+        let mut redis_connection = get_connection_from_pool(&state.redis_pool)
             .await
             .map_err(|_| SessionControllerError::InternalError)?;
 
-        SessionService::delete_session(db_connection.as_mut(), &session_id)
+        SessionService::delete_session(redis_connection.as_mut(), &jwt.user_id)
             .await
             .map_err(|err| match err {
                 SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
                 _ => SessionControllerError::InternalError,
             })?;
 
-        Ok(StatusCode::NO_CONTENT)
+        Ok(EndSessionResponse {})
     }
 }
 
@@ -177,6 +177,7 @@ impl SessionControllerError {
 
 impl IntoResponse for SessionControllerError {
     fn into_response(self) -> axum::response::Response {
+        println!("response error: {}", self.error_code());
         (StatusCode::BAD_REQUEST, self.error_code()).into_response()
     }
 }

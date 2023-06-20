@@ -28,7 +28,7 @@ where
             return Err(SessionJwtError::CookieParsing);
         };
 
-        let Some(jwt) = cookies.get(&String::from("sid"))
+        let Some(jwt) = cookies.get(&String::from("s_jwt"))
         else {
             return Err(SessionJwtError::NotPresent);
         };

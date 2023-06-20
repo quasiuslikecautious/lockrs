@@ -12,6 +12,7 @@ axum-macros = "0.3.7"
 base64 = "0.21.0"
 bcrypt = "0.14.0"
 chrono = { version = "0.4.24", features = ["serde"] }
+cookie = "0.17.0"
 deadpool = "0.9.5"
 deadpool-redis = "0.12.0"
 deadpool-runtime = { version = "0.1.2", features = ["tokio_1"] }

@@ -6,12 +6,7 @@ use axum::{
 };
 
 #[derive(Debug)]
-pub struct BearerAuthCredentials {
-    pub token: String,
-}
-
-#[derive(Debug)]
-pub struct BearerAuth(pub BearerAuthCredentials);
+pub struct BearerAuth(pub String);
 
 #[async_trait()]
 impl<S> FromRequestParts<S> for BearerAuth
@@ -42,9 +37,7 @@ where
             return Err(Self::Rejection::InvalidAuthenticationType);
         }
 
-        Ok(BearerAuth(BearerAuthCredentials {
-            token: String::from(token),
-        }))
+        Ok(BearerAuth(String::from(token)))
     }
 }
 

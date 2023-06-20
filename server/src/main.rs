@@ -9,7 +9,6 @@ use std::{net::SocketAddr, sync::Arc};
 use axum::{
     body::{boxed, Body},
     http::{Response, StatusCode},
-    response::IntoResponse,
     routing::get,
     Router,
 };

@@ -3,6 +3,7 @@ use axum::{
     response::{AppendHeaders, IntoResponse},
     Json,
 };
+use cookie::{Cookie, SameSite};
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -20,6 +21,25 @@ pub struct NewSessionResponse {
     pub expires_at: i64,
 }
 
+impl NewSessionResponse {
+    pub fn create_http_cookie<'c>(name: &'c str, value: &'c String) -> String {
+        Cookie::build(name, value.as_str())
+            .path("/")
+            .http_only(true)
+            .same_site(SameSite::Strict)
+            .finish()
+            .to_string()
+    }
+
+    pub fn create_cookie<'c>(name: &'c str, value: &'c String) -> String {
+        Cookie::build(name, value.as_str())
+            .path("/")
+            .same_site(SameSite::Strict)
+            .finish()
+            .to_string()
+    }
+}
+
 impl IntoResponse for NewSessionResponse {
     fn into_response(self) -> axum::response::Response {
         let response = Arc::as_ref(&self.jwt_util).sign_jwt(&self);
@@ -30,7 +50,14 @@ impl IntoResponse for NewSessionResponse {
         let jwt = response.unwrap();
 
         (
-            AppendHeaders([(SET_COOKIE, format!("sid={}", jwt).as_str())]),
+            AppendHeaders([
+                (SET_COOKIE, Self::create_http_cookie("s_jwt", &jwt).as_str()),
+                (SET_COOKIE, Self::create_cookie("s_id", &self.id).as_str()),
+                (
+                    SET_COOKIE,
+                    Self::create_cookie("u_id", &self.user_id.to_string()).as_str(),
+                ),
+            ]),
             Json(self),
         )
             .into_response()
