@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::db::{models::DbUser, schema::users};
 
 use crate::mappers::UserMapper;
-use crate::models::{UserCreateModel, UserModel};
+use crate::models::{UserCreateModel, UserModel, UserUpdateModel};
 
 pub struct UserService;
 
@@ -15,8 +15,7 @@ impl UserService {
         connection: &mut AsyncPgConnection,
         new_user: UserCreateModel,
     ) -> Result<UserModel, UserServiceError> {
-        let password_hash =
-            hash(new_user.password, DEFAULT_COST).map_err(|_| UserServiceError::HashError)?;
+        let password_hash = Self::hash_password(new_user.password.as_str()).await?;
 
         let db_user = diesel::insert_into(users::table)
             .values((
@@ -37,8 +36,7 @@ impl UserService {
         let db_user = users::table
             .filter(users::id.eq(id))
             .first::<DbUser>(connection)
-            .await
-            .map_err(UserServiceError::from)?;
+            .await?;
 
         Ok(UserMapper::from_db(db_user))
     }
@@ -50,29 +48,68 @@ impl UserService {
         let db_user = users::table
             .filter(users::email.eq(email))
             .first::<DbUser>(connection)
-            .await
-            .map_err(UserServiceError::from)?;
+            .await?;
 
         Ok(UserMapper::from_db(db_user))
+    }
+
+    pub async fn update_user_by_id(
+        connection: &mut AsyncPgConnection,
+        id: &Uuid,
+        update_user: &UserUpdateModel,
+    ) -> Result<UserModel, UserServiceError> {
+        let mut orig_user = Self::get_user_by_id(connection, id).await?;
+
+        if let Some(email) = &update_user.email {
+            orig_user.email = email.to_string();
+        }
+
+        if let Some(password) = &update_user.password {
+            orig_user.password_hash = Self::hash_password(password.as_str()).await?;
+        }
+
+        let db_user = diesel::update(users::table)
+            .filter(users::id.eq(id))
+            .set(&UserMapper::into_db(orig_user))
+            .get_result::<DbUser>(connection)
+            .await?;
+
+        Ok(UserMapper::from_db(db_user))
+    }
+
+    pub async fn delete_user_by_id(
+        connection: &mut AsyncPgConnection,
+        id: &Uuid,
+    ) -> Result<bool, UserServiceError> {
+        let rows_affected = diesel::delete(users::table.filter(users::id.eq(id)))
+            .execute(connection)
+            .await?;
+
+        Ok(rows_affected > 0)
+    }
+
+    pub async fn hash_password(password: &str) -> Result<String, UserServiceError> {
+        let hash = hash(password, DEFAULT_COST).map_err(|_| UserServiceError::Hash)?;
+        Ok(hash)
     }
 }
 
 pub enum UserServiceError {
-    AlreadyExistsError,
-    DbError,
-    HashError,
-    NotFoundError,
+    AlreadyExists,
+    Db,
+    Hash,
+    NotFound,
 }
 
 impl From<diesel::result::Error> for UserServiceError {
     fn from(diesel_error: diesel::result::Error) -> Self {
         match diesel_error {
-            diesel::result::Error::NotFound => Self::NotFoundError,
+            diesel::result::Error::NotFound => Self::NotFound,
             diesel::result::Error::DatabaseError(error_kind, _) => match error_kind {
-                diesel::result::DatabaseErrorKind::UniqueViolation => Self::AlreadyExistsError,
-                _ => Self::DbError,
+                diesel::result::DatabaseErrorKind::UniqueViolation => Self::AlreadyExists,
+                _ => Self::Db,
             },
-            _ => Self::DbError,
+            _ => Self::Db,
         }
     }
 }

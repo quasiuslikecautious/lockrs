@@ -12,8 +12,9 @@ use uuid::Uuid;
 use crate::{
     auth::responses::UserResponse,
     db::get_connection_from_pool,
-    models::UserCreateModel,
+    models::{UserCreateModel, UserUpdateModel},
     services::{UserService, UserServiceError},
+    utils::extractors::SessionJwt,
     AppState,
 };
 
@@ -43,13 +44,13 @@ impl UserController {
 
         let mut db_connection = get_connection_from_pool(&state.db_pool)
             .await
-            .map_err(|_| UserControllerError::InternalError)?;
+            .map_err(|_| UserControllerError::Internal)?;
 
         let user = UserService::create_user(db_connection.as_mut(), new_user)
             .await
             .map_err(|err| match err {
-                UserServiceError::AlreadyExistsError => UserControllerError::CreateConflict,
-                _ => UserControllerError::InternalError,
+                UserServiceError::AlreadyExists => UserControllerError::CreateConflict,
+                _ => UserControllerError::Internal,
             })?;
 
         let user_response = UserResponse {
@@ -62,20 +63,23 @@ impl UserController {
 
     pub async fn read(
         State(state): State<Arc<AppState>>,
+        SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<UserResponse, UserControllerError> {
+        if jwt.user_id != user_id {
+            return Err(UserControllerError::Jwt);
+        }
+
         let mut db_connection = get_connection_from_pool(&state.db_pool)
             .await
-            .map_err(|_| UserControllerError::InternalError)?;
+            .map_err(|_| UserControllerError::Internal)?;
 
         let user = UserService::get_user_by_id(db_connection.as_mut(), &user_id)
             .await
             .map_err(|err| match err {
-                UserServiceError::NotFoundError => UserControllerError::NotFound,
-                _ => UserControllerError::InternalError,
+                UserServiceError::NotFound => UserControllerError::NotFound,
+                _ => UserControllerError::Internal,
             })?;
-
-        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
 
         Ok(UserResponse {
             id: user.id,
@@ -84,31 +88,78 @@ impl UserController {
     }
 
     pub async fn update(
-        State(_state): State<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
+        SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
-    ) -> impl IntoResponse {
-        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}", user_id))
+        Json(update_user_request): Json<UserUpdateRequest>,
+    ) -> Result<UserResponse, UserControllerError> {
+        if jwt.user_id != user_id {
+            return Err(UserControllerError::Jwt);
+        }
+
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| UserControllerError::Internal)?;
+
+        let update_user = UserUpdateModel {
+            email: update_user_request.email,
+            password: update_user_request.password,
+        };
+
+        let user = UserService::update_user_by_id(db_connection.as_mut(), &user_id, &update_user)
+            .await
+            .map_err(|err| match err {
+                UserServiceError::NotFound => UserControllerError::NotFound,
+                _ => UserControllerError::Internal,
+            })?;
+
+        Ok(UserResponse {
+            id: user.id,
+            email: user.email,
+        })
     }
 
     pub async fn delete(
-        State(_state): State<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
+        SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
-    ) -> impl IntoResponse {
-        (StatusCode::NOT_IMPLEMENTED, format!("/users/{}", user_id))
+    ) -> Result<StatusCode, UserControllerError> {
+        if jwt.user_id != user_id {
+            return Err(UserControllerError::Jwt);
+        }
+
+        let mut db_connection = get_connection_from_pool(&state.db_pool)
+            .await
+            .map_err(|_| UserControllerError::Internal)?;
+
+        let is_deleted = UserService::delete_user_by_id(db_connection.as_mut(), &user_id)
+            .await
+            .map_err(|err| match err {
+                UserServiceError::NotFound => UserControllerError::NotFound,
+                _ => UserControllerError::Internal,
+            })?;
+
+        if !is_deleted {
+            return Err(UserControllerError::Internal);
+        }
+
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 
 pub enum UserControllerError {
-    InternalError,
+    Internal,
     NotFound,
+    Jwt,
     CreateConflict,
 }
 
 impl UserControllerError {
     pub fn error_message(&self) -> &'static str {
         match self {
-            Self::InternalError => "An error occurred while processing your request. Please try again later.",
+            Self::Internal => "An error occurred while processing your request. Please try again later.",
             Self::NotFound => "The requested user was not found.",
+            Self::Jwt => "You do not have permission to view the requested resource.",
             Self::CreateConflict => "An account is already associated with that email. Please login or use a different email.",
         }
     }

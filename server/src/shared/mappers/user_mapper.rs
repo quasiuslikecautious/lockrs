@@ -10,6 +10,14 @@ impl UserMapper {
             password_hash: db_user.password_hash,
         }
     }
+
+    pub fn into_db(user: UserModel) -> DbUser {
+        DbUser {
+            id: user.id,
+            email: user.email,
+            password_hash: user.password_hash,
+        }
+    }
 }
 
 #[cfg(test)]
