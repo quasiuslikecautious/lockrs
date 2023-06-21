@@ -4,7 +4,7 @@ use crate::{components::FormFieldContainer, models::UserModel, styles};
 
 #[derive(Clone, PartialEq)]
 pub struct LoginFormCallbacks {
-    pub on_submit: Callback<MouseEvent>,
+    pub on_submit: Callback<SubmitEvent>,
     pub on_email_change: Callback<Event>,
     pub on_password_change: Callback<Event>,
 }
@@ -37,7 +37,10 @@ impl Component for LoginView {
                 <h2>{ "Login to your account" }</h2>
                 <h4>{ "Enter your email and password" }</h4>
 
-                <form id="login-form">
+                <form
+                    id="login-form"
+                    onsubmit={ctx.props().form_callbacks.on_submit.clone()}
+                >
                     <FormFieldContainer
                         name="email"
                         prompt="Enter email"
@@ -70,15 +73,19 @@ impl Component for LoginView {
                 <br/>
                 <div class={ styles::button_pair() }>
                     <button
+                        type="submit"
+                        form="login-form"
+                    >
+                        <p>{ "Continue" }</p>
+                    </button>
+
+                    <button
                         class="secondary"
                         onclick={ctx.props().redirect_callbacks.on_signup_click.clone()}
                     >
-                        <p>{ "Create account" }</p>
+                        <p>{ "Create account instead" }</p>
                     </button>
 
-                    <button onclick={ctx.props().form_callbacks.on_submit.clone()}>
-                        <p>{ "Continue" }</p>
-                    </button>
                 </div>
             </>
         }

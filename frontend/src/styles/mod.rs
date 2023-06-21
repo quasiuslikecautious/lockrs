@@ -291,14 +291,14 @@ pub fn button_pair() -> Style {
             gap: 10px;
 
             button.secondary {
-                border: 1px solid #F15025;
+                border: none;
                 border-radius: 5px;
 
                 background-color: #FFFFFF;
             }
 
             button.secondary:hover {
-                background-color: #E0E0E0;
+                color: #FDE0D9;
             }
 
             button.secondary:active {

@@ -5,11 +5,6 @@ use axum::{
 use cookie::{Cookie, SameSite};
 use serde::Serialize;
 
-
-
-
-
-
 #[derive(Debug, Serialize)]
 pub struct EndSessionResponse {}
 

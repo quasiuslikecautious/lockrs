@@ -18,7 +18,8 @@ pub enum LoginMessage {
     PasswordUpdated(Event),
 
     SignupButtonClicked,
-    SubmitButtonClicked,
+
+    SubmitForm(SubmitEvent),
 }
 
 pub struct LoginController {
@@ -35,7 +36,7 @@ impl Component for LoginController {
         Self {
             model: UserModel::new(),
             form_callbacks: LoginFormCallbacks {
-                on_submit: ctx.link().callback(|_| Self::Message::SubmitButtonClicked),
+                on_submit: ctx.link().callback(Self::Message::SubmitForm),
                 on_email_change: ctx.link().callback(Self::Message::EmailUpdated),
                 on_password_change: ctx.link().callback(Self::Message::PasswordUpdated),
             },
@@ -83,7 +84,9 @@ impl Component for LoginController {
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.push(&Route::SignupRoute);
             }
-            Self::Message::SubmitButtonClicked => {
+            Self::Message::SubmitForm(submit_event) => {
+                submit_event.prevent_default();
+
                 if !self.model.validate() {
                     return false;
                 }
