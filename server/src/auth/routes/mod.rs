@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::Router;
 
-use crate::shared::AppState;
+use crate::AppState;
 
 mod auth_routes;
 mod client_routes;

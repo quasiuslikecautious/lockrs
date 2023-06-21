@@ -5,7 +5,7 @@ use axum::{
     Router,
 };
 
-use crate::{auth::controllers::SessionController, shared::AppState};
+use crate::{auth::controllers::SessionController, AppState};
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()

@@ -1,8 +1,8 @@
 mod auth;
 mod oauth2;
-mod shared;
+mod common;
 
-pub use self::shared::*;
+pub use self::common::*;
 
 use std::{net::SocketAddr, sync::Arc};
 

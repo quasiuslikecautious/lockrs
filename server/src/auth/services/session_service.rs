@@ -100,7 +100,7 @@ impl SessionService {
             .arg(expires_at)
             .query_async(redis_connection)
             .await
-            .map_err(|_| SessionServiceError::NotCreated)?;
+            .map_err(|_| SessionServiceError::NotUpdated)?;
 
         Ok(session)
     }

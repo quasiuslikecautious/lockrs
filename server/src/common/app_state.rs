@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::shared::{
+use crate::{
     db, redis,
     utils::jwt::{JwtUtil, RotatingKey},
     AppConfig,

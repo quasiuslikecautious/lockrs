@@ -6,7 +6,7 @@ use axum::{
 };
 
 use super::{client_routes, session_routes};
-use crate::{auth::controllers::UserController, shared::AppState};
+use crate::{auth::controllers::UserController, AppState};
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()

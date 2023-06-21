@@ -1,9 +1,6 @@
 pub mod models;
 pub mod schema;
 
-mod db_error;
-pub use self::db_error::*;
-
 use std::sync::Arc;
 
 use deadpool::managed::Timeouts;

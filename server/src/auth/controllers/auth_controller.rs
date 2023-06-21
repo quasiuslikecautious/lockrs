@@ -9,7 +9,7 @@ use crate::{
         services::{AuthService, AuthServiceError},
     },
     db, redis,
-    shared::utils::extractors::BasicAuth,
+    utils::extractors::BasicAuth,
     AppState,
 };
 

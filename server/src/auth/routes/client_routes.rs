@@ -6,7 +6,7 @@ use axum::{
 };
 
 use super::redirect_routes;
-use crate::{auth::controllers::ClientController, shared::AppState};
+use crate::{auth::controllers::ClientController, AppState};
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
