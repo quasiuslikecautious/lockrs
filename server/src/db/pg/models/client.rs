@@ -1,11 +1,11 @@
 use diesel::prelude::*;
 use uuid::Uuid;
 
-use crate::db::schema::clients;
+use crate::pg::schema::clients;
 
 #[derive(Debug, Queryable, Insertable, Identifiable)]
 #[diesel(primary_key(id), table_name = clients)]
-pub struct DbClient {
+pub struct PgClient {
     pub id: String,
     pub secret: Option<String>,
     pub user_id: Uuid,

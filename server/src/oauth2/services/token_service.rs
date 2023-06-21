@@ -6,14 +6,14 @@ use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
-    db::{
-        models::{DbAccessToken, DbRefreshToken},
-        schema::{access_tokens, refresh_tokens},
-    },
     oauth2::{
         mappers::RefreshTokenMapper,
         models::{RefreshTokenModel, ScopesModel},
         responses::TokenResponse,
+    },
+    pg::{
+        models::{PgAccessToken, PgRefreshToken},
+        schema::{access_tokens, refresh_tokens},
     },
 };
 
@@ -44,7 +44,7 @@ impl TokenService {
                             access_tokens::expires_at.eq(access_expiry),
                             access_tokens::scopes.eq(&scopes.scopes),
                         ))
-                        .get_result::<DbAccessToken>(conn)
+                        .get_result::<PgAccessToken>(conn)
                         .await?;
 
                     let refresh_token = diesel::insert_into(refresh_tokens::table)
@@ -55,7 +55,7 @@ impl TokenService {
                             refresh_tokens::expires_at.eq(refresh_expiry),
                             refresh_tokens::scopes.eq(&scopes.scopes),
                         ))
-                        .get_result::<DbRefreshToken>(conn)
+                        .get_result::<PgRefreshToken>(conn)
                         .await?;
 
                     Ok((access_token, refresh_token))
@@ -91,7 +91,7 @@ impl TokenService {
             .filter(access_tokens::user_id.eq(user_id))
             .filter(access_tokens::created_at.lt(&now))
             .filter(access_tokens::expires_at.gt(&now))
-            .first::<DbAccessToken>(connection)
+            .first::<PgAccessToken>(connection)
             .await
             .map_err(TokenServiceError::from)?;
 
@@ -117,7 +117,7 @@ impl TokenService {
             .filter(refresh_tokens::created_at.lt(&now))
             .filter(refresh_tokens::expires_at.gt(&now))
             .filter(refresh_tokens::used.eq(false))
-            .first::<DbRefreshToken>(connection)
+            .first::<PgRefreshToken>(connection)
             .await
             .map_err(TokenServiceError::from)?;
 
@@ -138,7 +138,7 @@ impl TokenService {
             .filter(refresh_tokens::expires_at.gt(&now))
             .filter(refresh_tokens::used.eq(false))
             .set(refresh_tokens::used.eq(true))
-            .get_result::<DbRefreshToken>(connection)
+            .get_result::<PgRefreshToken>(connection)
             .await
             .map_err(TokenServiceError::from)?;
 

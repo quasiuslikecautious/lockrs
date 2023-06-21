@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use uuid::Uuid;
 
-use crate::db::{models::DbUser, schema::users};
+use crate::pg::{models::PgUser, schema::users};
 
 use crate::mappers::UserMapper;
 use crate::models::{UserCreateModel, UserModel, UserUpdateModel};
@@ -22,7 +22,7 @@ impl UserService {
                 users::email.eq(&new_user.email),
                 users::password_hash.eq(password_hash),
             ))
-            .get_result::<DbUser>(connection)
+            .get_result::<PgUser>(connection)
             .await
             .map_err(UserServiceError::from)?;
 
@@ -35,7 +35,7 @@ impl UserService {
     ) -> Result<UserModel, UserServiceError> {
         let db_user = users::table
             .filter(users::id.eq(id))
-            .first::<DbUser>(connection)
+            .first::<PgUser>(connection)
             .await?;
 
         Ok(UserMapper::from_db(db_user))
@@ -47,7 +47,7 @@ impl UserService {
     ) -> Result<UserModel, UserServiceError> {
         let db_user = users::table
             .filter(users::email.eq(email))
-            .first::<DbUser>(connection)
+            .first::<PgUser>(connection)
             .await?;
 
         Ok(UserMapper::from_db(db_user))
@@ -71,7 +71,7 @@ impl UserService {
         let db_user = diesel::update(users::table)
             .filter(users::id.eq(id))
             .set(&UserMapper::into_db(orig_user))
-            .get_result::<DbUser>(connection)
+            .get_result::<PgUser>(connection)
             .await?;
 
         Ok(UserMapper::from_db(db_user))

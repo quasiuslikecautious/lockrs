@@ -4,7 +4,6 @@ use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension};
 use serde::Deserialize;
 
 use crate::{
-    db::get_connection_from_pool,
     oauth2::{
         responses::DeviceAuthorizationResponse,
         services::{
@@ -12,6 +11,7 @@ use crate::{
             ScopeServiceError,
         },
     },
+    pg::get_connection_from_pool,
     utils::extractors::ExtractClientCredentials,
     AppState,
 };

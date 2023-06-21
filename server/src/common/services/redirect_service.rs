@@ -3,9 +3,9 @@ use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use url::Url;
 
 use crate::{
-    db::{models::DbRedirectUri, schema::redirect_uris},
     mappers::RedirectMapper,
     models::RedirectModel,
+    pg::{models::PgRedirectUri, schema::redirect_uris},
 };
 
 pub struct RedirectService;
@@ -17,7 +17,7 @@ impl RedirectService {
     ) -> Result<Vec<RedirectModel>, RedirectServiceError> {
         let db_redirects = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
-            .load::<DbRedirectUri>(connection)
+            .load::<PgRedirectUri>(connection)
             .await
             .map_err(RedirectServiceError::from)?;
 
@@ -35,7 +35,7 @@ impl RedirectService {
         let db_redirect = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .filter(redirect_uris::uri.eq(uri.to_string()))
-            .first::<DbRedirectUri>(connection)
+            .first::<PgRedirectUri>(connection)
             .await
             .map_err(RedirectServiceError::from)?;
 
@@ -52,7 +52,7 @@ impl RedirectService {
                 redirect_uris::client_id.eq(client_id),
                 redirect_uris::uri.eq(uri.to_string()),
             ))
-            .get_result::<DbRedirectUri>(connection)
+            .get_result::<PgRedirectUri>(connection)
             .await
             .map_err(|_| RedirectServiceError::DbError)?;
 

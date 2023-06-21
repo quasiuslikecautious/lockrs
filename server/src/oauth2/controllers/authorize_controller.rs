@@ -10,8 +10,8 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    db::get_connection_from_pool,
     oauth2::services::{ClientAuthService, ScopeService, ScopeServiceError},
+    pg::get_connection_from_pool,
     services::{RedirectService, RedirectServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,

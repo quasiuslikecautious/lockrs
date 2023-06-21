@@ -1,11 +1,11 @@
-use crate::{db::models::DbAccessToken, oauth2::models::AccessTokenModel};
+use crate::{oauth2::models::AccessTokenModel, pg::models::PgAccessToken};
 
 use super::ScopeMapper;
 
 pub struct AccessTokenMapper;
 
 impl AccessTokenMapper {
-    pub fn from_db(db_token: DbAccessToken) -> AccessTokenModel {
+    pub fn from_db(db_token: PgAccessToken) -> AccessTokenModel {
         AccessTokenModel {
             token: db_token.token,
             client_id: db_token.client_id,

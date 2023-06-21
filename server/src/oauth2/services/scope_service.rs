@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
-use crate::{db::schema::scopes, oauth2::models::ScopesModel};
+use crate::{oauth2::models::ScopesModel, pg::schema::scopes};
 
 pub struct ScopeService;
 

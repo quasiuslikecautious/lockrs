@@ -8,7 +8,7 @@ use crate::{
         responses::SessionTokenResponse,
         services::{AuthService, AuthServiceError},
     },
-    db, redis,
+    pg, redis,
     utils::extractors::BasicAuth,
     AppState,
 };
@@ -27,7 +27,7 @@ impl AuthController {
 
         println!("password: {}", auth.password);
 
-        let mut db_connection = db::get_connection_from_pool(&state.db_pool)
+        let mut db_connection = pg::get_connection_from_pool(&state.db_pool)
             .await
             .map_err(|_| AuthControllerError::Internal)?;
 

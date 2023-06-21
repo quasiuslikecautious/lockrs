@@ -5,11 +5,11 @@ use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use ring::rand::{SecureRandom, SystemRandom};
 
 use crate::{
-    db::{models::DbDeviceAuthorization, schema::device_authorizations},
     oauth2::{
         mappers::DeviceAuthorizationMapper,
         models::{DeviceAuthorizationModel, ScopesModel},
     },
+    pg::{models::PgDeviceAuthorization, schema::device_authorizations},
 };
 
 pub struct DeviceAuthorizationService;
@@ -30,7 +30,7 @@ impl DeviceAuthorizationService {
                 device_authorizations::expires_at.eq(expires_at),
                 device_authorizations::scopes.eq(scopes_model.scopes),
             ))
-            .get_result::<DbDeviceAuthorization>(connection)
+            .get_result::<PgDeviceAuthorization>(connection)
             .await
             .map_err(DeviceAuthorizationServiceError::from)?;
 
@@ -47,7 +47,7 @@ impl DeviceAuthorizationService {
             .filter(device_authorizations::device_code.eq(device_code))
             .filter(device_authorizations::created_at.lt(now))
             .filter(device_authorizations::expires_at.gt(now))
-            .first::<DbDeviceAuthorization>(connection)
+            .first::<PgDeviceAuthorization>(connection)
             .await
             .map_err(DeviceAuthorizationServiceError::from)?;
 
@@ -64,7 +64,7 @@ impl DeviceAuthorizationService {
             .filter(device_authorizations::user_code.eq(user_code))
             .filter(device_authorizations::created_at.lt(now))
             .filter(device_authorizations::expires_at.gt(now))
-            .first::<DbDeviceAuthorization>(connection)
+            .first::<PgDeviceAuthorization>(connection)
             .await
             .map_err(DeviceAuthorizationServiceError::from)?;
 

@@ -1,9 +1,9 @@
-use crate::{db::models::DbClient, models::ClientModel};
+use crate::{models::ClientModel, pg::models::PgClient};
 
 pub struct ClientMapper;
 
 impl ClientMapper {
-    pub fn from_db(db_client: DbClient) -> ClientModel {
+    pub fn from_db(db_client: PgClient) -> ClientModel {
         ClientModel {
             user_id: db_client.user_id,
             id: db_client.id,
@@ -30,7 +30,7 @@ mod tests {
         let description = String::from("CLIENT_DESCRIPTION");
         let homepage_url = String::from("https://127.0.0.1/");
 
-        let db_client = DbClient {
+        let db_client = PgClient {
             id: id.clone(),
             secret: secret.clone(),
             user_id,

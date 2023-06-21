@@ -5,7 +5,6 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    db::get_connection_from_pool,
     models::ClientModel,
     oauth2::models::ScopesModel,
     oauth2::responses::TokenResponse,
@@ -13,6 +12,7 @@ use crate::{
         ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError, TokenService,
         TokenServiceError,
     },
+    pg::get_connection_from_pool,
     utils::extractors::ExtractClientCredentials,
     AppState,
 };

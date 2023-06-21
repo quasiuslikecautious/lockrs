@@ -1,11 +1,11 @@
-use crate::{db::models::DbDeviceAuthorization, oauth2::models::DeviceAuthorizationModel};
+use crate::{oauth2::models::DeviceAuthorizationModel, pg::models::PgDeviceAuthorization};
 
 use super::ScopeMapper;
 
 pub struct DeviceAuthorizationMapper;
 
 impl DeviceAuthorizationMapper {
-    pub fn from_db(db_model: DbDeviceAuthorization) -> DeviceAuthorizationModel {
+    pub fn from_db(db_model: PgDeviceAuthorization) -> DeviceAuthorizationModel {
         DeviceAuthorizationModel {
             client_id: db_model.client_id,
             user_code: db_model.user_code,

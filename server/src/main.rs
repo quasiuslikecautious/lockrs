@@ -1,8 +1,9 @@
 mod auth;
-mod oauth2;
 mod common;
+mod db;
+mod oauth2;
 
-pub use self::common::*;
+pub use self::{common::*, db::*};
 
 use std::{net::SocketAddr, sync::Arc};
 

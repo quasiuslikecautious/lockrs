@@ -5,12 +5,12 @@ use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
-    db::{
-        models::{DbClient, DbRedirectUri},
-        schema::{clients, redirect_uris},
-    },
     mappers::ClientMapper,
     models::{ClientCreateModel, ClientModel, ClientUpdateModel},
+    pg::{
+        models::{PgClient, PgRedirectUri},
+        schema::{clients, redirect_uris},
+    },
 };
 
 pub struct ClientService;
@@ -42,7 +42,7 @@ impl ClientService {
                             clients::description.eq(new_client.description),
                             clients::homepage_url.eq(new_client.homepage_url.to_string()),
                         ))
-                        .get_result::<DbClient>(conn)
+                        .get_result::<PgClient>(conn)
                         .await?;
 
                     diesel::insert_into(redirect_uris::table)
@@ -50,7 +50,7 @@ impl ClientService {
                             redirect_uris::client_id.eq(&id),
                             redirect_uris::uri.eq(new_client.redirect_url.to_string()),
                         ))
-                        .get_result::<DbRedirectUri>(conn)
+                        .get_result::<PgRedirectUri>(conn)
                         .await?;
 
                     Ok(client)
@@ -69,7 +69,7 @@ impl ClientService {
     ) -> Result<ClientModel, ClientServiceError> {
         let db_client = clients::table
             .filter(clients::id.eq(id))
-            .first::<DbClient>(connection)
+            .first::<PgClient>(connection)
             .await
             .map_err(ClientServiceError::from)?;
 
@@ -82,7 +82,7 @@ impl ClientService {
     ) -> Result<Vec<ClientModel>, ClientServiceError> {
         let clients = clients::table
             .filter(clients::user_id.eq(user_id))
-            .load::<DbClient>(connection)
+            .load::<PgClient>(connection)
             .await
             .map_err(ClientServiceError::from)?;
 
@@ -100,7 +100,7 @@ impl ClientService {
         let db_client = diesel::update(clients::table)
             .filter(clients::id.eq(client_id))
             .set(update_client)
-            .get_result::<DbClient>(connection)
+            .get_result::<PgClient>(connection)
             .await
             .map_err(ClientServiceError::from)?;
 
@@ -113,7 +113,7 @@ impl ClientService {
     ) -> Result<ClientModel, ClientServiceError> {
         let db_client = diesel::delete(clients::table)
             .filter(clients::id.eq(client_id))
-            .get_result::<DbClient>(connection)
+            .get_result::<PgClient>(connection)
             .await
             .map_err(ClientServiceError::from)?;
 

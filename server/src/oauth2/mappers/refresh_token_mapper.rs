@@ -1,11 +1,11 @@
-use crate::{db::models::DbRefreshToken, oauth2::models::RefreshTokenModel};
+use crate::{oauth2::models::RefreshTokenModel, pg::models::PgRefreshToken};
 
 use super::ScopeMapper;
 
 pub struct RefreshTokenMapper;
 
 impl RefreshTokenMapper {
-    pub fn from_db(db_token: DbRefreshToken) -> RefreshTokenModel {
+    pub fn from_db(db_token: PgRefreshToken) -> RefreshTokenModel {
         RefreshTokenModel {
             token: db_token.token,
             user_id: db_token.user_id,

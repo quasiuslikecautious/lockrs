@@ -1,11 +1,11 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
-use crate::db::schema::device_authorizations;
+use crate::pg::schema::device_authorizations;
 
 #[derive(Debug, Queryable, Insertable, Identifiable)]
 #[diesel(primary_key(id), table_name = device_authorizations)]
-pub struct DbDeviceAuthorization {
+pub struct PgDeviceAuthorization {
     pub id: i32,
     pub client_id: String,
     pub user_code: String,

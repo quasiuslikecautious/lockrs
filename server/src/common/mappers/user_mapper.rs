@@ -1,9 +1,9 @@
-use crate::{db::models::DbUser, models::UserModel};
+use crate::{models::UserModel, pg::models::PgUser};
 
 pub struct UserMapper;
 
 impl UserMapper {
-    pub fn from_db(db_user: DbUser) -> UserModel {
+    pub fn from_db(db_user: PgUser) -> UserModel {
         UserModel {
             id: db_user.id,
             email: db_user.email,
@@ -11,8 +11,8 @@ impl UserMapper {
         }
     }
 
-    pub fn into_db(user: UserModel) -> DbUser {
-        DbUser {
+    pub fn into_db(user: UserModel) -> PgUser {
+        PgUser {
             id: user.id,
             email: user.email,
             password_hash: user.password_hash,
@@ -32,7 +32,7 @@ mod tests {
         let email = String::from("user@localhost.com");
         let password_hash = String::from("PASSWORD_HASH");
 
-        let db_user = DbUser {
+        let db_user = PgUser {
             id,
             email: email.clone(),
             password_hash: password_hash.clone(),

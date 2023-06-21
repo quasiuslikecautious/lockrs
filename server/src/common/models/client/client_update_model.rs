@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::db::schema::clients;
+use crate::pg::schema::clients;
 
 #[derive(AsChangeset)]
 #[diesel(table_name = clients)]

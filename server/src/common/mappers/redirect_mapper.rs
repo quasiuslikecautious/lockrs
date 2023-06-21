@@ -1,11 +1,11 @@
 use url::Url;
 
-use crate::{db::models::DbRedirectUri, models::RedirectModel};
+use crate::{models::RedirectModel, pg::models::PgRedirectUri};
 
 pub struct RedirectMapper;
 
 impl RedirectMapper {
-    pub fn from_db(db_redirect: DbRedirectUri) -> RedirectModel {
+    pub fn from_db(db_redirect: PgRedirectUri) -> RedirectModel {
         RedirectModel {
             id: db_redirect.id,
             client_id: db_redirect.client_id,
@@ -29,7 +29,7 @@ mod tests {
         let created_at = Utc::now();
         let updated_at = Utc::now();
 
-        let db_redirect = DbRedirectUri {
+        let db_redirect = PgRedirectUri {
             id,
             client_id: client_id.clone(),
             uri: uri.to_string(),

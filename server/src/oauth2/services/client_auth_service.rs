@@ -2,9 +2,9 @@ use diesel::prelude::*;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
 use crate::{
-    db::{models::DbClient, schema::clients},
     mappers::ClientMapper,
     models::ClientModel,
+    pg::{models::PgClient, schema::clients},
 };
 
 pub struct ClientAuthService;
@@ -22,7 +22,7 @@ impl ClientAuthService {
         }
 
         let db_client = query
-            .first::<DbClient>(connection)
+            .first::<PgClient>(connection)
             .await
             .map_err(ClientAuthServiceError::from)?;
 

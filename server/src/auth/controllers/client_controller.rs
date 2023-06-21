@@ -12,8 +12,8 @@ use uuid::Uuid;
 
 use crate::{
     auth::responses::{ClientListResponse, ClientResponse},
-    db::get_connection_from_pool,
     models::{ClientCreateModel, ClientUpdateModel},
+    pg::get_connection_from_pool,
     services::{ClientService, ClientServiceError},
     AppState,
 };

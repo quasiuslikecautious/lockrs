@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    db, redis,
+    pg, redis,
     utils::jwt::{JwtUtil, RotatingKey},
     AppConfig,
 };
@@ -10,7 +10,7 @@ use crate::{
 pub struct AppState {
     pub config: Arc<AppConfig>,
     pub jwt_util: Arc<JwtUtil>,
-    pub db_pool: Arc<db::AsyncPgPool>,
+    pub db_pool: Arc<pg::AsyncPgPool>,
     pub redis_pool: Arc<redis::AsyncRedisPool>,
 }
 
@@ -28,7 +28,7 @@ impl AppState {
             jwt_util: Arc::new(JwtUtil {
                 secret: RotatingKey::new(&key_duration, &overlap_duration),
             }),
-            db_pool: Arc::new(db::build_connection_pool(postgres_url.as_str())),
+            db_pool: Arc::new(pg::build_connection_pool(postgres_url.as_str())),
             redis_pool: Arc::new(redis::build_connection_pool(redis_url.as_str())),
         }
     }
