@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::db::schema::users;
 
-#[derive(Debug, Queryable, Insertable)]
+#[derive(Debug, Queryable, Insertable, AsChangeset)]
 #[diesel(primary_key(id), table_name = users)]
 pub struct DbUser {
     pub id: Uuid,

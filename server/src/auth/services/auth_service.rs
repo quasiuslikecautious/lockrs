@@ -21,7 +21,7 @@ impl AuthService {
             .await
             .map_err(|_| AuthServiceError::Credentials)?;
 
-        let valid_password = verify(&user_auth.password, &user.password_hash)
+        let valid_password = verify(user_auth.password.as_str(), user.password_hash.as_str())
             .map_err(|_| AuthServiceError::Credentials)?;
 
         if !valid_password {

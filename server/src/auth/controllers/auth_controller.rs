@@ -25,6 +25,8 @@ impl AuthController {
             password: credentials.private,
         };
 
+        println!("password: {}", auth.password);
+
         let mut db_connection = db::get_connection_from_pool(&state.db_pool)
             .await
             .map_err(|_| AuthControllerError::Internal)?;
