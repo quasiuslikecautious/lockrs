@@ -33,8 +33,8 @@ async fn main() {
         .with(filter)
         .init();
 
-    let auth_routes = auth::routes::routes().with_state(Arc::new(AppState::new()));
-    let oauth2_routes = oauth2::routes::routes();
+    let auth_routes = auth::routes().with_state(Arc::new(AppState::new().await));
+    let oauth2_routes = oauth2::routes();
 
     let app = Router::new()
         .nest(

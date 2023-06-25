@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::pg::schema::users;
 
-#[derive(Debug, Queryable, Insertable, AsChangeset)]
+#[derive(Debug, Queryable, Insertable)]
 #[diesel(primary_key(id), table_name = users)]
 pub struct PgUser {
     pub id: Uuid,

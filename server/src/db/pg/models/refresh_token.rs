@@ -8,6 +8,7 @@ use crate::pg::schema::refresh_tokens;
 #[diesel(primary_key(id), table_name = refresh_tokens)]
 pub struct PgRefreshToken {
     pub id: i32,
+    pub access_token_id: i32,
     pub token: String,
     pub client_id: String,
     pub user_id: Option<Uuid>,

@@ -1,4 +1,4 @@
 #[derive(Clone, Debug)]
-pub struct ScopesModel {
+pub struct ScopeModel {
     pub scopes: Vec<String>,
 }

@@ -3,6 +3,8 @@ use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
 pub struct RefreshTokenModel {
+    pub id: i32,
+    pub access_token_id: i32,
     pub token: String,
     pub client_id: String,
     pub user_id: Option<Uuid>,

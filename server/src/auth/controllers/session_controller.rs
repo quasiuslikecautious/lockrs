@@ -16,7 +16,6 @@ use crate::{
         responses::{EndSessionResponse, NewSessionResponse, SessionResponse},
         services::{SessionService, SessionServiceError},
     },
-    redis::get_connection_from_pool,
     utils::extractors::{BearerAuth, SessionJwt},
     AppState,
 };
@@ -43,14 +42,15 @@ impl SessionController {
         State(state): State<Arc<AppState>>,
         BearerAuth(session_token): BearerAuth,
     ) -> Result<NewSessionResponse, SessionControllerError> {
-        let mut redis_connection = get_connection_from_pool(&state.redis_pool)
-            .await
-            .map_err(|_| SessionControllerError::InternalError)?;
+        let session_repository = &state.repository_container.as_ref().session_repository;
+        let session_token_repository =
+            &state.repository_container.as_ref().session_token_repository;
 
         let session_create = SessionCreateModel { session_token };
 
         let session = SessionService::create_session(
-            redis_connection.as_mut(),
+            session_repository,
+            session_token_repository,
             &session_create,
             &state.config.auth_interval,
         )
@@ -77,17 +77,14 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        let mut redis_connection = get_connection_from_pool(&state.redis_pool)
-            .await
-            .map_err(|_| SessionControllerError::InternalError)?;
+        let session_repository = &state.repository_container.as_ref().session_repository;
 
-        let session =
-            SessionService::get_session(redis_connection.as_mut(), &jwt.user_id, &session_id)
-                .await
-                .map_err(|err| match err {
-                    SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
-                    _ => SessionControllerError::InternalError,
-                })?;
+        let session = SessionService::get_session(session_repository, &jwt.user_id, &session_id)
+            .await
+            .map_err(|err| match err {
+                SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
+                _ => SessionControllerError::InternalError,
+            })?;
 
         Ok(SessionResponse {
             id: session.id,
@@ -106,16 +103,14 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        let mut redis_connection = get_connection_from_pool(&state.redis_pool)
-            .await
-            .map_err(|_| SessionControllerError::InternalError)?;
+        let session_repository = &state.repository_container.as_ref().session_repository;
 
         let session_update = SessionUpdateModel {
             refresh: session_update_request.refresh,
         };
 
         let session = SessionService::update_session(
-            redis_connection.as_mut(),
+            session_repository,
             &jwt.user_id,
             &session_id,
             &session_update,
@@ -140,11 +135,9 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        let mut redis_connection = get_connection_from_pool(&state.redis_pool)
-            .await
-            .map_err(|_| SessionControllerError::InternalError)?;
+        let session_repository = &state.repository_container.as_ref().session_repository;
 
-        SessionService::delete_session(redis_connection.as_mut(), &jwt.user_id)
+        SessionService::delete_session(session_repository, &jwt.user_id)
             .await
             .map_err(|err| match err {
                 SessionServiceError::NotFound => SessionControllerError::SessionNotFound,

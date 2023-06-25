@@ -77,6 +77,7 @@ diesel::table! {
 diesel::table! {
     refresh_tokens (id) {
         id -> Int4,
+        access_token_id -> Int4,
         token -> Varchar,
         client_id -> Varchar,
         user_id -> Nullable<Uuid>,
@@ -111,6 +112,7 @@ diesel::joinable!(authorization_codes -> users (user_id));
 diesel::joinable!(clients -> users (user_id));
 diesel::joinable!(device_authorizations -> clients (client_id));
 diesel::joinable!(redirect_uris -> clients (client_id));
+diesel::joinable!(refresh_tokens -> access_tokens (access_token_id));
 diesel::joinable!(refresh_tokens -> clients (client_id));
 diesel::joinable!(refresh_tokens -> users (user_id));
 diesel::joinable!(scopes -> clients (client_id));

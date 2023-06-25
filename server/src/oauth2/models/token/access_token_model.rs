@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
 pub struct AccessTokenModel {
+    pub id: i32,
     pub token: String,
     pub client_id: String,
     pub user_id: Option<Uuid>,

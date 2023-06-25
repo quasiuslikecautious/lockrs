@@ -1,4 +1,4 @@
 pub struct UserCreateModel {
     pub email: String,
-    pub password: String,
+    pub password_hash: String,
 }

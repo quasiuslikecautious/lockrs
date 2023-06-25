@@ -3,15 +3,15 @@ use crate::{models::UserModel, pg::models::PgUser};
 pub struct UserMapper;
 
 impl UserMapper {
-    pub fn from_db(db_user: PgUser) -> UserModel {
+    pub fn from_pg(pg_user: PgUser) -> UserModel {
         UserModel {
-            id: db_user.id,
-            email: db_user.email,
-            password_hash: db_user.password_hash,
+            id: pg_user.id,
+            email: pg_user.email,
+            password_hash: pg_user.password_hash,
         }
     }
 
-    pub fn into_db(user: UserModel) -> PgUser {
+    pub fn into_pg(user: UserModel) -> PgUser {
         PgUser {
             id: user.id,
             email: user.email,
@@ -27,18 +27,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_should_map_db() {
+    fn it_should_map_pg() {
         let id = Uuid::new_v4();
         let email = String::from("user@localhost.com");
         let password_hash = String::from("PASSWORD_HASH");
 
-        let db_user = PgUser {
+        let pg_user = PgUser {
             id,
             email: email.clone(),
             password_hash: password_hash.clone(),
         };
 
-        let actual_user = UserMapper::from_db(db_user);
+        let actual_user = UserMapper::from_pg(pg_user);
 
         let expected_user = UserModel {
             id,

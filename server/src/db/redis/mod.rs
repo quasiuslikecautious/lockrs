@@ -1,3 +1,5 @@
+pub mod repositories;
+
 use std::{sync::Arc, time::Duration};
 
 use deadpool_redis::{Config, PoolConfig, Runtime, Timeouts};

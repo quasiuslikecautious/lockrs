@@ -10,9 +10,8 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    oauth2::services::{ClientAuthService, ScopeService, ScopeServiceError},
-    pg::get_connection_from_pool,
-    services::{RedirectService, RedirectServiceError},
+    oauth2::services::{ClientAuthService, ScopeService},
+    services::RedirectService,
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
@@ -38,12 +37,9 @@ impl AuthorizeController {
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| AuthorizeControllerError::InternalError)?;
-
+        let client_repository = &state.repository_container.as_ref().client_repository;
         let client = ClientAuthService::verify_credentials(
-            db_connection.as_mut(),
+            client_repository,
             &client_credentials.id,
             &client_credentials.secret,
         )
@@ -51,19 +47,15 @@ impl AuthorizeController {
         .map_err(|_| AuthorizeControllerError::InvalidClient)?;
 
         // validate redirect uri, inform the user of the problem instead of redirecting
-        RedirectService::verify_redirect(db_connection.as_mut(), &client.id, &params.redirect_uri)
+        let redirect_repository = &state.repository_container.as_ref().redirect_repository;
+        RedirectService::verify_redirect(redirect_repository, &client.id, &params.redirect_uri)
             .await
-            .map_err(|err| match err {
-                RedirectServiceError::DbError => AuthorizeControllerError::InternalError,
-                RedirectServiceError::NotFound => AuthorizeControllerError::InvalidRedirectUri,
-            })?;
+            .map_err(|_| AuthorizeControllerError::InvalidRedirectUri)?;
 
-        let _scopes = ScopeService::get_from_list(db_connection.as_mut(), &params.scope)
+        let scope_repository = &state.repository_container.as_ref().scope_repository;
+        let _scopes = ScopeService::get_from_list(scope_repository, &params.scope)
             .await
-            .map_err(|err| match err {
-                ScopeServiceError::DbError => AuthorizeControllerError::InternalError,
-                ScopeServiceError::InvalidScopes => AuthorizeControllerError::InvalidScopes,
-            })?;
+            .map_err(|_| AuthorizeControllerError::InvalidScopes)?;
 
         let _is_plain = !params.code_challenge_method.eq("S256");
 

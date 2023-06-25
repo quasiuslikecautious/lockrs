@@ -1,24 +1,18 @@
 use base64::{engine::general_purpose, Engine as _};
-use diesel::prelude::*;
-use diesel_async::{scoped_futures::ScopedFutureExt, AsyncPgConnection, RunQueryDsl};
 use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
-    mappers::ClientMapper,
-    models::{ClientCreateModel, ClientModel, ClientUpdateModel},
-    pg::{
-        models::{PgClient, PgRedirectUri},
-        schema::{clients, redirect_uris},
-    },
+    models::{ClientCreateModel, ClientModel, ClientUpdateModel, RedirectCreateModel},
+    repositories::{ClientRepository, RedirectUriRepository},
 };
 
 pub struct ClientService;
 
 impl ClientService {
-    #[allow(clippy::all)]
     pub async fn create_client(
-        connection: &mut AsyncPgConnection,
+        client_repository: &Box<dyn ClientRepository>,
+        redirect_repository: &Box<dyn RedirectUriRepository>,
         new_client: ClientCreateModel,
     ) -> Result<ClientModel, ClientServiceError> {
         let id = Self::generate_random_string();
@@ -27,97 +21,65 @@ impl ClientService {
             false => Some(Self::generate_random_string()),
         };
 
-        let db_client = connection
-            .build_transaction()
-            .read_write()
-            .run(|conn| {
-                async move {
-                    let client = diesel::insert_into(clients::table)
-                        .values((
-                            clients::id.eq(&id),
-                            clients::secret.eq(&secret),
-                            clients::user_id.eq(new_client.user_id),
-                            clients::is_public.eq(new_client.is_public),
-                            clients::name.eq(new_client.name),
-                            clients::description.eq(new_client.description),
-                            clients::homepage_url.eq(new_client.homepage_url.to_string()),
-                        ))
-                        .get_result::<PgClient>(conn)
-                        .await?;
+        let client_create = ClientModel {
+            user_id: new_client.user_id,
+            id: id.clone(),
+            secret,
+            name: new_client.name,
+            description: new_client.description,
+            homepage_url: new_client.homepage_url.to_string(),
+        };
 
-                    diesel::insert_into(redirect_uris::table)
-                        .values((
-                            redirect_uris::client_id.eq(&id),
-                            redirect_uris::uri.eq(new_client.redirect_url.to_string()),
-                        ))
-                        .get_result::<PgRedirectUri>(conn)
-                        .await?;
+        let redirect_create = RedirectCreateModel {
+            client_id: id,
+            uri: new_client.redirect_url,
+        };
 
-                    Ok(client)
-                }
-                .scope_boxed()
-            })
+        client_repository
+            .create(redirect_repository, &client_create, &redirect_create)
             .await
-            .map_err(|err: diesel::result::Error| ClientServiceError::from(err))?;
-
-        Ok(ClientMapper::from_db(db_client))
+            .map_err(|_| ClientServiceError::NotCreated)
     }
 
     pub async fn get_client_by_id(
-        connection: &mut AsyncPgConnection,
+        client_repository: &Box<dyn ClientRepository>,
         id: &str,
     ) -> Result<ClientModel, ClientServiceError> {
-        let db_client = clients::table
-            .filter(clients::id.eq(id))
-            .first::<PgClient>(connection)
+        client_repository
+            .get_by_id(id)
             .await
-            .map_err(ClientServiceError::from)?;
-
-        Ok(ClientMapper::from_db(db_client))
+            .map_err(|_| ClientServiceError::NotFound)
     }
 
     pub async fn get_clients_by_user(
-        connection: &mut AsyncPgConnection,
+        client_repository: &Box<dyn ClientRepository>,
         user_id: &Uuid,
     ) -> Result<Vec<ClientModel>, ClientServiceError> {
-        let clients = clients::table
-            .filter(clients::user_id.eq(user_id))
-            .load::<PgClient>(connection)
+        client_repository
+            .get_all_by_user_id(user_id)
             .await
-            .map_err(ClientServiceError::from)?;
-
-        Ok(clients
-            .into_iter()
-            .map(ClientMapper::from_db)
-            .collect::<Vec<ClientModel>>())
+            .map_err(|_| ClientServiceError::NotFound)
     }
 
     pub async fn update_client_by_id(
-        connection: &mut AsyncPgConnection,
+        client_repository: &Box<dyn ClientRepository>,
         client_id: &str,
-        update_client: ClientUpdateModel,
+        update_client: &ClientUpdateModel,
     ) -> Result<ClientModel, ClientServiceError> {
-        let db_client = diesel::update(clients::table)
-            .filter(clients::id.eq(client_id))
-            .set(update_client)
-            .get_result::<PgClient>(connection)
+        client_repository
+            .update_by_id(client_id, update_client)
             .await
-            .map_err(ClientServiceError::from)?;
-
-        Ok(ClientMapper::from_db(db_client))
+            .map_err(|_| ClientServiceError::NotUpdated)
     }
 
     pub async fn delete_client_by_id(
-        connection: &mut AsyncPgConnection,
+        client_repository: &Box<dyn ClientRepository>,
         client_id: &str,
-    ) -> Result<ClientModel, ClientServiceError> {
-        let db_client = diesel::delete(clients::table)
-            .filter(clients::id.eq(client_id))
-            .get_result::<PgClient>(connection)
+    ) -> Result<(), ClientServiceError> {
+        client_repository
+            .delete_by_id(client_id)
             .await
-            .map_err(ClientServiceError::from)?;
-
-        Ok(ClientMapper::from_db(db_client))
+            .map_err(|_| ClientServiceError::BadDelete)
     }
 
     pub fn generate_random_string() -> String {
@@ -129,20 +91,9 @@ impl ClientService {
 }
 
 pub enum ClientServiceError {
-    AlreadyExistsError,
-    DbError,
-    NotFoundError,
-}
-
-impl From<diesel::result::Error> for ClientServiceError {
-    fn from(diesel_error: diesel::result::Error) -> Self {
-        match diesel_error {
-            diesel::result::Error::NotFound => Self::NotFoundError,
-            diesel::result::Error::DatabaseError(error_kind, _) => match error_kind {
-                diesel::result::DatabaseErrorKind::UniqueViolation => Self::AlreadyExistsError,
-                _ => Self::DbError,
-            },
-            _ => Self::DbError,
-        }
-    }
+    AlreadyExists,
+    NotCreated,
+    NotFound,
+    NotUpdated,
+    BadDelete,
 }
