@@ -23,7 +23,7 @@ impl TokenService {
         let access_token_create = AccessTokenCreateModel {
             token: Self::generate_opaque_token(),
             client_id: client_id.to_string(),
-            user_id: user_id.clone(),
+            user_id: *user_id,
             expires_at: access_expiry,
             scopes: scopes.scopes.clone(),
         };
@@ -39,7 +39,7 @@ impl TokenService {
             access_token_id: access_token.id,
             token: Self::generate_opaque_token(),
             client_id: client_id.to_string(),
-            user_id: user_id.clone(),
+            user_id: *user_id,
             expires_at: refresh_expiry,
             scopes: scopes.scopes.clone(),
         };

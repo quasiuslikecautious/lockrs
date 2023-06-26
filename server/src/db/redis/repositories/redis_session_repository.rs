@@ -53,7 +53,7 @@ impl SessionRepository for RedisSessionRepository {
             .arg(session_key.as_str())
             .arg(value.as_str())
             .arg("PXAT")
-            .arg(&expires_at)
+            .arg(expires_at)
             .query_async(conn)
             .await
             .map_err(|_| SessionRepositoryError::NotCreated)?;

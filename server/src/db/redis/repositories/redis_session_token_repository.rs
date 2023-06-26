@@ -44,7 +44,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .arg(key.as_str())
             .arg(value.as_str())
             .arg("PXAT")
-            .arg(&token.expires_at)
+            .arg(token.expires_at)
             .query_async(conn)
             .await
             .map_err(|_| SessionTokenRepositoryError::NotCreated)?;

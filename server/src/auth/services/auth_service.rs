@@ -1,5 +1,4 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
-use uuid::Uuid;
 
 use crate::{
     auth::models::{AuthModel, RegisterModel, SessionTokenModel},

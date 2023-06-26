@@ -77,7 +77,7 @@ impl ClientController {
         let redirect_repository = &state.repository_container.as_ref().redirect_repository;
 
         let client =
-            ClientService::create_client(client_repository, &redirect_repository, new_client)
+            ClientService::create_client(client_repository, redirect_repository, new_client)
                 .await
                 .map_err(|_| ClientControllerError::Internal)?;
 

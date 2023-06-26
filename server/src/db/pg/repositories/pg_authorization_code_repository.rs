@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use chrono::offset::Utc;
-use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
+
+
+
 
 use crate::{
     oauth2::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel},
-    pg::{models::PgAuthorizationCode, schema::authorization_codes},
     repositories::{AuthorizationCodeRepository, AuthorizationCodeRepositoryError},
     DbContext,
 };
