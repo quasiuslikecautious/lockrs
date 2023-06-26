@@ -2,6 +2,15 @@ use chrono::NaiveDateTime;
 use url::Url;
 use uuid::Uuid;
 
+pub struct AuthorizationCodeCreateModel {
+    client_id: String,
+    user_id: Uuid,
+    challenge: String,
+    is_challenge_plain: bool,
+    redirect_uri: Url,
+    scopes: Vec<String>,
+}
+
 pub struct AuthorizationCodeModel {
     pub client_id: String,
     pub user_id: Uuid,

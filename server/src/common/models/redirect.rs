@@ -6,3 +6,10 @@ pub struct RedirectModel {
     pub client_id: String,
     pub uri: Url,
 }
+
+pub struct RedirectCreateModel {
+    pub client_id: String,
+    pub uri: Url,
+}
+
+pub struct RedirectUpdateModel {}
