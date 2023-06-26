@@ -4,13 +4,9 @@ use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension};
 use serde::Deserialize;
 
 use crate::{
-    db::get_connection_from_pool,
     oauth2::{
         responses::DeviceAuthorizationResponse,
-        services::{
-            ClientAuthService, ClientAuthServiceError, DeviceAuthorizationService, ScopeService,
-            ScopeServiceError,
-        },
+        services::{ClientAuthService, DeviceAuthorizationService, ScopeService},
     },
     utils::extractors::ExtractClientCredentials,
     AppState,
@@ -29,34 +25,27 @@ impl DeviceAuthorizationController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<DeviceAuthorizationRequest>,
     ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationControllerError> {
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| DeviceAuthorizationControllerError::InternalError)?;
-
+        let client_repository = &state.repository_container.as_ref().client_repository;
         ClientAuthService::verify_credentials(
-            db_connection.as_mut(),
+            client_repository,
             &client_credentials.id,
             &client_credentials.secret,
         )
         .await
-        .map_err(|err| match err {
-            ClientAuthServiceError::NotFoundError => {
-                DeviceAuthorizationControllerError::InvalidClient
-            }
-            _ => DeviceAuthorizationControllerError::InternalError,
-        })?;
+        .map_err(|_| DeviceAuthorizationControllerError::InvalidClient)?;
 
-        let scopes = ScopeService::get_from_list(db_connection.as_mut(), &params.scope)
+        let scope_repository = &state.repository_container.as_ref().scope_repository;
+        let scopes = ScopeService::get_from_list(scope_repository, &params.scope)
             .await
-            .map_err(|err| match err {
-                ScopeServiceError::InvalidScopes => {
-                    DeviceAuthorizationControllerError::InvalidScopes
-                }
-                _ => DeviceAuthorizationControllerError::InternalError,
-            })?;
+            .map_err(|_| DeviceAuthorizationControllerError::InvalidScopes)?;
+
+        let device_authorization_repository = &state
+            .repository_container
+            .as_ref()
+            .device_authorization_repository;
 
         let device_authorization = DeviceAuthorizationService::create_device_authorization(
-            db_connection.as_mut(),
+            device_authorization_repository,
             &client_credentials.id,
             scopes,
         )

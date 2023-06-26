@@ -1,6 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE IF NOT EXISTS refresh_tokens (
 	id SERIAL PRIMARY KEY,
+  access_token_id INTEGER NOT NULL UNIQUE,
 	token VARCHAR(44) NOT NULL UNIQUE,
 	client_id VARCHAR(32) NOT NULL,
   user_id UUID,
@@ -8,6 +9,10 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 	expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 	used BOOLEAN NOT NULL DEFAULT false,
 	scopes TEXT[] NOT NULL,
+  CONSTRAINT refresh_tokens_access_token_id_fkey
+    FOREIGN KEY (access_token_id)
+    REFERENCES access_tokens (id)
+    ON DELETE CASCADE,
 	CONSTRAINT refresh_tokens_client_id_fkey
 		FOREIGN KEY (client_id)
 		REFERENCES clients (id)

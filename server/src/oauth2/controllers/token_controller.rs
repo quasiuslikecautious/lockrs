@@ -5,13 +5,12 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    db::get_connection_from_pool,
     models::ClientModel,
-    oauth2::models::ScopesModel,
+    oauth2::models::ScopeModel,
     oauth2::responses::TokenResponse,
     oauth2::services::{
-        ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError, TokenService,
-        TokenServiceError,
+        ClientAuthService, RefreshTokenService, RefreshTokenServiceError, ScopeService,
+        TokenService,
     },
     utils::extractors::ExtractClientCredentials,
     AppState,
@@ -43,27 +42,21 @@ impl TokenController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| TokenControllerError::InternalError)?;
+        let client_repository = &state.repository_container.as_ref().client_repository;
 
         let client = ClientAuthService::verify_credentials(
-            db_connection.as_mut(),
+            client_repository,
             &client_credentials.id,
             &client_credentials.secret,
         )
         .await
-        .map_err(|err| match err {
-            ClientAuthServiceError::NotFoundError => TokenControllerError::InvalidClient,
-            _ => TokenControllerError::InternalError,
-        })?;
+        .map_err(|_| TokenControllerError::InvalidClient)?;
 
-        let scopes = ScopeService::get_from_list(db_connection.as_mut(), params.scope.as_str())
+        let scope_repository = &state.repository_container.as_ref().scope_repository;
+
+        let scopes = ScopeService::get_from_list(scope_repository, params.scope.as_str())
             .await
-            .map_err(|err| match err {
-                ScopeServiceError::InvalidScopes => TokenControllerError::InvalidScopes,
-                _ => TokenControllerError::InternalError,
-            })?;
+            .map_err(|_| TokenControllerError::InvalidScopes)?;
 
         let token: TokenResponse = match params.grant_type.as_str() {
             "authorization_code" => Self::authorization_code_token(state).await,
@@ -100,27 +93,40 @@ impl TokenController {
     pub async fn client_credentials_token(
         state: Arc<AppState>,
         client: ClientModel,
-        scopes: ScopesModel,
+        scopes: ScopeModel,
     ) -> Result<TokenResponse, TokenControllerError> {
         if client.secret.is_none() {
             return Err(TokenControllerError::InvalidClient);
         }
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| TokenControllerError::InternalError)?;
+        let access_token_repository = &state.repository_container.as_ref().access_token_repository;
 
-        let token = TokenService::create_token(db_connection.as_mut(), &client.id, &None, scopes)
-            .await
-            .map_err(|_| TokenControllerError::InternalError)?;
+        let refresh_token_repository =
+            &state.repository_container.as_ref().refresh_token_repository;
 
-        Ok(token)
+        let token = TokenService::create_token(
+            access_token_repository,
+            refresh_token_repository,
+            &client.id,
+            &None,
+            scopes,
+        )
+        .await
+        .map_err(|_| TokenControllerError::InternalError)?;
+
+        Ok(TokenResponse {
+            token_type: token.token_type,
+            expires_in: token.expires_in,
+            access_token: token.access_token,
+            refresh_token: token.refresh_token,
+            scopes: token.scopes,
+        })
     }
 
     pub async fn refresh_token(
         state: Arc<AppState>,
         client: ClientModel,
-        scopes: ScopesModel,
+        scopes: ScopeModel,
         params: TokenRequest,
     ) -> Result<TokenResponse, TokenControllerError> {
         let Some(token) = params.refresh_token
@@ -128,30 +134,36 @@ impl TokenController {
             return Err(TokenControllerError::MissingRefreshToken);
         };
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| TokenControllerError::InternalError)?;
+        let refresh_token_repository =
+            &state.repository_container.as_ref().refresh_token_repository;
 
         let refresh_token =
-            TokenService::verify_refresh_token(db_connection.as_mut(), &client.id, token.as_str())
+            RefreshTokenService::use_token(refresh_token_repository, token.as_str())
                 .await
                 .map_err(|err| match err {
-                    TokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
+                    RefreshTokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
                     _ => TokenControllerError::InternalError,
                 })?;
 
-        TokenService::use_refresh_token(db_connection.as_mut(), &client.id, &refresh_token.token)
-            .await
-            .map_err(|_| TokenControllerError::InternalError)?;
+        let access_token_repository = &state.repository_container.as_ref().access_token_repository;
 
-        TokenService::create_token(
-            db_connection.as_mut(),
+        let token = TokenService::create_token(
+            access_token_repository,
+            refresh_token_repository,
             &client.id,
             &refresh_token.user_id,
             scopes,
         )
         .await
-        .map_err(|_| TokenControllerError::InternalError)
+        .map_err(|_| TokenControllerError::InternalError)?;
+
+        Ok(TokenResponse {
+            token_type: token.token_type,
+            expires_in: token.expires_in,
+            access_token: token.access_token,
+            refresh_token: token.refresh_token,
+            scopes: token.scopes,
+        })
     }
 }
 

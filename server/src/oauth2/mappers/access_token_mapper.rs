@@ -1,17 +1,18 @@
-use crate::{db::models::DbAccessToken, oauth2::models::AccessTokenModel};
+use crate::{oauth2::models::AccessTokenModel, pg::models::PgAccessToken};
 
 use super::ScopeMapper;
 
 pub struct AccessTokenMapper;
 
 impl AccessTokenMapper {
-    pub fn from_db(db_token: DbAccessToken) -> AccessTokenModel {
+    pub fn from_pg(pg_token: PgAccessToken) -> AccessTokenModel {
         AccessTokenModel {
-            token: db_token.token,
-            client_id: db_token.client_id,
-            user_id: db_token.user_id,
-            scopes: ScopeMapper::db_list_to_vec(&db_token.scopes),
-            expires_at: db_token.expires_at,
+            id: pg_token.id,
+            token: pg_token.token,
+            client_id: pg_token.client_id,
+            user_id: pg_token.user_id,
+            scopes: ScopeMapper::pg_list_to_vec(&pg_token.scopes),
+            expires_at: pg_token.expires_at,
         }
     }
 }
@@ -24,7 +25,8 @@ mod tests {
     use uuid::Uuid;
 
     #[test]
-    fn it_should_map_db_with_user() {
+    fn it_should_map_pg_with_user() {
+        let id = 1;
         let token = String::from("TOKEN");
         let client_id = String::from("CLIENT_ID");
         let user_id = Some(Uuid::new_v4());
@@ -32,8 +34,8 @@ mod tests {
         let expires_at = created_at + Duration::minutes(1);
         let scopes = vec![Some(String::from("read")), Some(String::from("write"))];
 
-        let db_token = DbAccessToken {
-            id: 1,
+        let pg_token = PgAccessToken {
+            id,
             token: token.clone(),
             client_id: client_id.clone(),
             user_id,
@@ -42,9 +44,10 @@ mod tests {
             scopes,
         };
 
-        let actual_token = AccessTokenMapper::from_db(db_token);
+        let actual_token = AccessTokenMapper::from_pg(pg_token);
 
         let expected_token = AccessTokenModel {
+            id,
             token,
             client_id,
             user_id,
@@ -56,7 +59,8 @@ mod tests {
     }
 
     #[test]
-    fn it_should_map_db_with_no_user() {
+    fn it_should_map_pg_with_no_user() {
+        let id = 1;
         let token = String::from("TOKEN");
         let client_id = String::from("CLIENT_ID");
         let user_id = None;
@@ -64,8 +68,8 @@ mod tests {
         let expires_at = created_at + Duration::minutes(1);
         let scopes = vec![Some(String::from("read")), Some(String::from("write"))];
 
-        let db_token = DbAccessToken {
-            id: 1,
+        let pg_token = PgAccessToken {
+            id,
             token: token.clone(),
             client_id: client_id.clone(),
             user_id,
@@ -74,9 +78,10 @@ mod tests {
             scopes,
         };
 
-        let actual_token = AccessTokenMapper::from_db(db_token);
+        let actual_token = AccessTokenMapper::from_pg(pg_token);
 
         let expected_token = AccessTokenModel {
+            id,
             token,
             client_id,
             user_id,

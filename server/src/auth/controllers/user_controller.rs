@@ -10,16 +10,19 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    auth::responses::UserResponse,
-    db::get_connection_from_pool,
-    models::{UserCreateModel, UserUpdateModel},
+    auth::{
+        models::RegisterModel,
+        responses::UserResponse,
+        services::{AuthService, AuthServiceError},
+    },
+    models::UserUpdateModel,
     services::{UserService, UserServiceError},
     utils::extractors::SessionJwt,
     AppState,
 };
 
 #[derive(Deserialize)]
-pub struct UserCreateRequest {
+pub struct RegisterRequest {
     pub email: String,
     pub password: String,
 }
@@ -35,21 +38,19 @@ pub struct UserController;
 impl UserController {
     pub async fn create(
         State(state): State<Arc<AppState>>,
-        Json(user_request): Json<UserCreateRequest>,
+        Json(register_request): Json<RegisterRequest>,
     ) -> Result<UserResponse, UserControllerError> {
-        let new_user = UserCreateModel {
-            email: user_request.email,
-            password: user_request.password,
+        let registration = RegisterModel {
+            email: register_request.email,
+            password: register_request.password,
         };
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| UserControllerError::Internal)?;
+        let user_repository = &state.repository_container.as_ref().user_repository;
 
-        let user = UserService::create_user(db_connection.as_mut(), new_user)
+        let user = AuthService::register_user(user_repository, &registration)
             .await
             .map_err(|err| match err {
-                UserServiceError::AlreadyExists => UserControllerError::CreateConflict,
+                AuthServiceError::AlreadyExists => UserControllerError::CreateConflict,
                 _ => UserControllerError::Internal,
             })?;
 
@@ -70,11 +71,9 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| UserControllerError::Internal)?;
+        let user_repository = &state.repository_container.as_ref().user_repository;
 
-        let user = UserService::get_user_by_id(db_connection.as_mut(), &user_id)
+        let user = UserService::get_user_by_id(user_repository, &user_id)
             .await
             .map_err(|err| match err {
                 UserServiceError::NotFound => UserControllerError::NotFound,
@@ -97,16 +96,12 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| UserControllerError::Internal)?;
-
         let update_user = UserUpdateModel {
             email: update_user_request.email,
-            password: update_user_request.password,
         };
 
-        let user = UserService::update_user_by_id(db_connection.as_mut(), &user_id, &update_user)
+        let user_repository = &state.repository_container.as_ref().user_repository;
+        let user = UserService::update_user_by_id(user_repository, &user_id, &update_user)
             .await
             .map_err(|err| match err {
                 UserServiceError::NotFound => UserControllerError::NotFound,
@@ -128,20 +123,13 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| UserControllerError::Internal)?;
-
-        let is_deleted = UserService::delete_user_by_id(db_connection.as_mut(), &user_id)
+        let user_repository = &state.repository_container.as_ref().user_repository;
+        UserService::delete_user_by_id(user_repository, &user_id)
             .await
             .map_err(|err| match err {
                 UserServiceError::NotFound => UserControllerError::NotFound,
                 _ => UserControllerError::Internal,
             })?;
-
-        if !is_deleted {
-            return Err(UserControllerError::Internal);
-        }
 
         Ok(StatusCode::NO_CONTENT)
     }

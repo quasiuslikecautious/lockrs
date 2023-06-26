@@ -1,12 +1,13 @@
-use diesel_async::AsyncPgConnection;
-
-use crate::oauth2::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel};
+use crate::{
+    oauth2::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel},
+    repositories::AuthorizationCodeRepository,
+};
 
 pub struct AuthorizationCodeService;
 
 impl AuthorizationCodeService {
     pub async fn create(
-        _connection: &mut AsyncPgConnection,
+        _authorization_code_repository: Box<dyn AuthorizationCodeRepository>,
         _new_code: AuthorizationCodeCreateModel,
     ) -> AuthorizationCodeModel {
         todo!();
@@ -14,11 +15,5 @@ impl AuthorizationCodeService {
 }
 
 pub enum AuthorizationCodeServiceError {
-    DbError,
-}
-
-impl From<diesel::result::Error> for AuthorizationCodeServiceError {
-    fn from(_diesel_error: diesel::result::Error) -> Self {
-        Self::DbError
-    }
+    NotCreated,
 }

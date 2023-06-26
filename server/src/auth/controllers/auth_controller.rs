@@ -8,8 +8,7 @@ use crate::{
         responses::SessionTokenResponse,
         services::{AuthService, AuthServiceError},
     },
-    db, redis,
-    shared::utils::extractors::BasicAuth,
+    utils::extractors::BasicAuth,
     AppState,
 };
 
@@ -25,23 +24,16 @@ impl AuthController {
             password: credentials.private,
         };
 
-        println!("password: {}", auth.password);
+        let user_repository = &state.repository_container.as_ref().user_repository;
+        let session_token_repository =
+            &state.repository_container.as_ref().session_token_repository;
 
-        let mut db_connection = db::get_connection_from_pool(&state.db_pool)
+        let session_token = AuthService::login(user_repository, session_token_repository, &auth)
             .await
-            .map_err(|_| AuthControllerError::Internal)?;
-
-        let mut redis_connection = redis::get_connection_from_pool(&state.redis_pool)
-            .await
-            .map_err(|_| AuthControllerError::Internal)?;
-
-        let session_token =
-            AuthService::login(db_connection.as_mut(), redis_connection.as_mut(), &auth)
-                .await
-                .map_err(|err| match err {
-                    AuthServiceError::Credentials => AuthControllerError::InvalidCredentials,
-                    _ => AuthControllerError::Internal,
-                })?;
+            .map_err(|err| match err {
+                AuthServiceError::Credentials => AuthControllerError::InvalidCredentials,
+                _ => AuthControllerError::Internal,
+            })?;
 
         let token_response = SessionTokenResponse {
             session_token: session_token.token,

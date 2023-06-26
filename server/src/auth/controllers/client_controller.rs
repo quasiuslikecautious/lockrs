@@ -12,7 +12,6 @@ use uuid::Uuid;
 
 use crate::{
     auth::responses::{ClientListResponse, ClientResponse},
-    db::get_connection_from_pool,
     models::{ClientCreateModel, ClientUpdateModel},
     services::{ClientService, ClientServiceError},
     AppState,
@@ -42,13 +41,11 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+        let client_repository = &state.repository_container.as_ref().client_repository;
 
-        let clients = ClientService::get_clients_by_user(db_connection.as_mut(), &user_id)
+        let clients = ClientService::get_clients_by_user(client_repository, &user_id)
             .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+            .map_err(|_| ClientControllerError::Internal)?;
 
         Ok(ClientListResponse {
             clients: clients
@@ -76,13 +73,13 @@ impl ClientController {
             redirect_url: new_client_request.redirect_url,
         };
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+        let client_repository = &state.repository_container.as_ref().client_repository;
+        let redirect_repository = &state.repository_container.as_ref().redirect_repository;
 
-        let client = ClientService::create_client(db_connection.as_mut(), new_client)
-            .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+        let client =
+            ClientService::create_client(client_repository, redirect_repository, new_client)
+                .await
+                .map_err(|_| ClientControllerError::Internal)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -96,18 +93,14 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+        let client_repository = &state.repository_container.as_ref().client_repository;
 
-        let client = ClientService::get_client_by_id(db_connection.as_mut(), &client_id)
+        let client = ClientService::get_client_by_id(client_repository, &client_id)
             .await
             .map_err(|err| match err {
-                ClientServiceError::NotFoundError => ClientControllerError::InvalidClient,
-                _ => ClientControllerError::InternalError,
+                ClientServiceError::NotFound => ClientControllerError::InvalidClient,
+                _ => ClientControllerError::Internal,
             })?;
-
-        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
 
         Ok(ClientResponse {
             id: client.id,
@@ -128,16 +121,14 @@ impl ClientController {
             homepage_url: update_client_request.homepage_url,
         };
 
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+        let client_repository = &state.repository_container.as_ref().client_repository;
 
         let client =
-            ClientService::update_client_by_id(db_connection.as_mut(), &client_id, update_client)
+            ClientService::update_client_by_id(client_repository, &client_id, &update_client)
                 .await
                 .map_err(|err| match err {
-                    ClientServiceError::NotFoundError => ClientControllerError::InvalidClient,
-                    _ => ClientControllerError::InternalError,
+                    ClientServiceError::NotFound => ClientControllerError::InvalidClient,
+                    _ => ClientControllerError::Internal,
                 })?;
 
         Ok(ClientResponse {
@@ -151,33 +142,26 @@ impl ClientController {
     pub async fn delete(
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
-    ) -> Result<ClientResponse, ClientControllerError> {
-        let mut db_connection = get_connection_from_pool(&state.db_pool)
-            .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+    ) -> Result<StatusCode, ClientControllerError> {
+        let client_repository = &state.repository_container.as_ref().client_repository;
 
-        let client = ClientService::delete_client_by_id(db_connection.as_mut(), &client_id)
+        ClientService::delete_client_by_id(client_repository, &client_id)
             .await
-            .map_err(|_| ClientControllerError::InternalError)?;
+            .map_err(|_| ClientControllerError::Internal)?;
 
-        Ok(ClientResponse {
-            id: client.id,
-            name: client.name,
-            description: client.description,
-            homepage_url: client.homepage_url,
-        })
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 
 pub enum ClientControllerError {
-    InternalError,
+    Internal,
     InvalidClient,
 }
 
 impl ClientControllerError {
     pub fn error_message(&self) -> &'static str {
         match self {
-            Self::InternalError => {
+            Self::Internal => {
                 "An error has occurred while processing your request. Please try again later."
             }
             Self::InvalidClient => "The provided client is invalid.",
