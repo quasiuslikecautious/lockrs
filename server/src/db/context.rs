@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use deadpool::managed::Timeouts;
+use deadpool_redis::{Config, PoolConfig};
 use deadpool_runtime::Runtime;
 use diesel_async::{
     pooled_connection::{
@@ -11,8 +12,6 @@ use diesel_async::{
     AsyncPgConnection,
 };
 
-use deadpool_redis::{Config, PoolConfig};
-
 type AsyncPgPool = Pool<AsyncPgConnection>;
 type AsyncRedisPool = deadpool_redis::Pool;
 
@@ -22,8 +21,8 @@ pub type ManagedAsyncRedisConnection = deadpool_redis::Connection;
 pub type ManagedAsyncPgConnection = Object<AsyncPgConnection>;
 
 pub struct DbContext {
-    pg_pool: Arc<AsyncPgPool>,
-    redis_pool: Arc<AsyncRedisPool>,
+    pg_pool: AsyncPgPool,
+    redis_pool: AsyncRedisPool,
 }
 
 impl DbContext {
@@ -34,8 +33,8 @@ impl DbContext {
         redis_pool_size: usize,
     ) -> Self {
         Self {
-            pg_pool: Arc::new(Self::create_pg_pool(pg_url, &pg_pool_size)),
-            redis_pool: Arc::new(Self::create_redis_pool(redis_url, &redis_pool_size)),
+            pg_pool: Self::create_pg_pool(pg_url, &pg_pool_size),
+            redis_pool: Self::create_redis_pool(redis_url, &redis_pool_size),
         }
     }
 
@@ -69,8 +68,6 @@ impl DbContext {
 
     pub async fn get_pg_connection(&self) -> Result<ManagedAsyncPgConnection, DbContextError> {
         self.pg_pool
-            .clone()
-            .as_ref()
             .get()
             .await
             .map_err(|_| DbContextError::ConnectionFailed)
@@ -80,8 +77,6 @@ impl DbContext {
         &self,
     ) -> Result<ManagedAsyncRedisConnection, DbContextError> {
         self.redis_pool
-            .clone()
-            .as_ref()
             .get()
             .await
             .map_err(|_| DbContextError::ConnectionFailed)
@@ -104,10 +99,14 @@ impl DbContext {
                 Box::pin(future)
             })
             .await
-            .map_err(|_| DbContextError::BadTransaction)
+            .map_err(|err| {
+                println!("{:?}", err);
+                DbContextError::BadTransaction
+            })
     }
 }
 
+#[derive(Debug)]
 pub enum DbContextError {
     ConnectionFailed,
     BadTransaction,

@@ -10,7 +10,7 @@ use crate::{
     models::{ClientModel, ClientUpdateModel, RedirectCreateModel},
     pg::{models::PgClient, schema::clients},
     repositories::{ClientRepository, ClientRepositoryError, RedirectUriRepository},
-    DbContext,
+    DbContext, DbContextError,
 };
 
 pub struct PgClientRepository {
@@ -38,23 +38,32 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .execute_in_pg_transaction(|conn| {
                 async move {
+                    println!("transaction start...");
+
                     let client = diesel::insert_into(clients::table)
                         .values((
                             clients::id.eq(&client_create.id),
                             clients::secret.eq(&client_create.secret),
                             clients::user_id.eq(&client_create.user_id),
-                            clients::is_public.eq(client_create.secret.is_some()),
+                            clients::is_public.eq(client_create.secret.is_none()),
                             clients::name.eq(&client_create.name),
                             clients::description.eq(&client_create.description),
                             clients::homepage_url.eq(&client_create.homepage_url.to_string()),
                         ))
                         .get_result::<PgClient>(conn)
-                        .await?;
+                        .await
+                        .map_err(|_| DbContextError::BadTransaction)?;
+
+                    println!("client created...");
+
+                    println!("{}", &client.id);
 
                     redirect_repo
                         .create(redirect_create)
                         .await
-                        .map_err(|_| diesel::result::Error::RollbackTransaction)?;
+                        .map_err(|_| DbContextError::BadTransaction)?;
+
+                    println!("redirect created...");
 
                     Ok(client)
                 }

@@ -12,6 +12,7 @@ pub struct AppState {
     pub config: Arc<AppConfig>,
     pub jwt_util: Arc<JwtUtil>,
     pub repository_container: Arc<RepositoryContainer>,
+    pub db_context: Arc<DbContext>,
 }
 
 impl AppState {
@@ -49,6 +50,7 @@ impl AppState {
                 secret: RotatingKey::new(&key_duration, &overlap_duration),
             }),
             repository_container: Arc::new(repository_container),
+            db_context: Arc::clone(&db_context),
         }
     }
 }

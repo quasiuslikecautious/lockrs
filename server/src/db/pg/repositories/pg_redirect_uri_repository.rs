@@ -37,6 +37,9 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .await
             .map_err(|_| RedirectUriRepositoryError::BadConnection)?;
 
+        println!("pre redirect insert...");
+        println!("{:?}", &redirect_create);
+
         let pg_redirect = diesel::insert_into(redirect_uris::table)
             .values((
                 redirect_uris::client_id.eq(&redirect_create.client_id),
@@ -44,7 +47,12 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             ))
             .get_result::<PgRedirectUri>(conn)
             .await
-            .map_err(|_| RedirectUriRepositoryError::NotCreated)?;
+            .map_err(|err| {
+                println!("{:?}", err);
+                RedirectUriRepositoryError::NotCreated
+            })?;
+
+        println!("successfully created redirect...");
 
         Ok(RedirectMapper::from_pg(pg_redirect))
     }
