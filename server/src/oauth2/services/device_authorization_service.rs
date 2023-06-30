@@ -11,7 +11,7 @@ pub struct DeviceAuthorizationService;
 
 impl DeviceAuthorizationService {
     pub async fn create_device_authorization(
-        device_authorization_repository: &Box<dyn DeviceAuthorizationRepository>,
+        device_authorization_repository: &dyn DeviceAuthorizationRepository,
         client_id: &str,
         scopes_model: ScopeModel,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
@@ -32,7 +32,7 @@ impl DeviceAuthorizationService {
     }
 
     pub async fn get_from_device_code(
-        device_authorization_repository: &Box<dyn DeviceAuthorizationRepository>,
+        device_authorization_repository: &dyn DeviceAuthorizationRepository,
         device_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
         device_authorization_repository
@@ -42,7 +42,7 @@ impl DeviceAuthorizationService {
     }
 
     pub async fn get_from_user_code(
-        device_authorization_repository: &Box<dyn DeviceAuthorizationRepository>,
+        device_authorization_repository: &dyn DeviceAuthorizationRepository,
         user_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
         device_authorization_repository

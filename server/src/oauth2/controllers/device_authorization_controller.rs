@@ -25,7 +25,7 @@ impl DeviceAuthorizationController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<DeviceAuthorizationRequest>,
     ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationControllerError> {
-        let client_repository = &state.repository_container.as_ref().client_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
         ClientAuthService::verify_credentials(
             client_repository,
             &client_credentials.id,
@@ -34,12 +34,12 @@ impl DeviceAuthorizationController {
         .await
         .map_err(|_| DeviceAuthorizationControllerError::InvalidClient)?;
 
-        let scope_repository = &state.repository_container.as_ref().scope_repository;
+        let scope_repository = &*state.repository_container.as_ref().scope_repository;
         let scopes = ScopeService::get_from_list(scope_repository, &params.scope)
             .await
             .map_err(|_| DeviceAuthorizationControllerError::InvalidScopes)?;
 
-        let device_authorization_repository = &state
+        let device_authorization_repository = &*state
             .repository_container
             .as_ref()
             .device_authorization_repository;

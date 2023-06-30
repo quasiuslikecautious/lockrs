@@ -11,8 +11,8 @@ pub struct ClientService;
 
 impl ClientService {
     pub async fn create_client(
-        client_repository: &Box<dyn ClientRepository>,
-        redirect_repository: &Box<dyn RedirectUriRepository>,
+        client_repository: &dyn ClientRepository,
+        redirect_repository: &dyn RedirectUriRepository,
         new_client: ClientCreateModel,
     ) -> Result<ClientModel, ClientServiceError> {
         let id = Self::generate_random_string();
@@ -42,7 +42,7 @@ impl ClientService {
     }
 
     pub async fn get_client_by_id(
-        client_repository: &Box<dyn ClientRepository>,
+        client_repository: &dyn ClientRepository,
         id: &str,
     ) -> Result<ClientModel, ClientServiceError> {
         client_repository
@@ -52,7 +52,7 @@ impl ClientService {
     }
 
     pub async fn get_clients_by_user(
-        client_repository: &Box<dyn ClientRepository>,
+        client_repository: &dyn ClientRepository,
         user_id: &Uuid,
     ) -> Result<Vec<ClientModel>, ClientServiceError> {
         client_repository
@@ -62,7 +62,7 @@ impl ClientService {
     }
 
     pub async fn update_client_by_id(
-        client_repository: &Box<dyn ClientRepository>,
+        client_repository: &dyn ClientRepository,
         client_id: &str,
         update_client: &ClientUpdateModel,
     ) -> Result<ClientModel, ClientServiceError> {
@@ -73,7 +73,7 @@ impl ClientService {
     }
 
     pub async fn delete_client_by_id(
-        client_repository: &Box<dyn ClientRepository>,
+        client_repository: &dyn ClientRepository,
         client_id: &str,
     ) -> Result<(), ClientServiceError> {
         client_repository

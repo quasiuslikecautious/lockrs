@@ -13,8 +13,8 @@ pub struct AuthService;
 
 impl AuthService {
     pub async fn login(
-        user_repository: &Box<dyn UserRepository>,
-        session_token_repository: &Box<dyn SessionTokenRepository>,
+        user_repository: &dyn UserRepository,
+        session_token_repository: &dyn SessionTokenRepository,
         user_auth: &AuthModel,
     ) -> Result<SessionTokenModel, AuthServiceError> {
         let user = UserService::get_user_by_email(user_repository, &user_auth.email)
@@ -32,7 +32,7 @@ impl AuthService {
     }
 
     pub async fn register_user(
-        user_repository: &Box<dyn UserRepository>,
+        user_repository: &dyn UserRepository,
         register_user: &RegisterModel,
     ) -> Result<UserModel, AuthServiceError> {
         let password_hash = Self::hash_password(register_user.password.as_str())?;

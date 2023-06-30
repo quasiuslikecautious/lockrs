@@ -9,7 +9,7 @@ pub struct SessionTokenService;
 
 impl SessionTokenService {
     pub async fn create_session_token(
-        session_token_repository: &Box<dyn SessionTokenRepository>,
+        session_token_repository: &dyn SessionTokenRepository,
         user_id: &Uuid,
     ) -> Result<SessionTokenModel, SessionTokenServiceError> {
         let ttl = Duration::minutes(5);
@@ -35,7 +35,7 @@ impl SessionTokenService {
     }
 
     pub async fn validate_session_token(
-        session_token_repository: &Box<dyn SessionTokenRepository>,
+        session_token_repository: &dyn SessionTokenRepository,
         token: &str,
     ) -> Result<SessionTokenModel, SessionTokenServiceError> {
         let token = session_token_repository
@@ -49,7 +49,7 @@ impl SessionTokenService {
     }
 
     pub async fn delete_session_token(
-        session_token_repository: &Box<dyn SessionTokenRepository>,
+        session_token_repository: &dyn SessionTokenRepository,
         token: &str,
     ) -> Result<(), SessionTokenServiceError> {
         session_token_repository

@@ -29,7 +29,7 @@ impl PgClientRepository {
 impl ClientRepository for PgClientRepository {
     async fn create(
         &self,
-        redirect_repo: &Box<dyn RedirectUriRepository>,
+        redirect_repo: &dyn RedirectUriRepository,
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, ClientRepositoryError> {

@@ -12,8 +12,8 @@ pub struct TokenService;
 
 impl TokenService {
     pub async fn create_token(
-        access_token_repository: &Box<dyn AccessTokenRepository>,
-        refresh_token_repository: &Box<dyn RefreshTokenRepository>,
+        access_token_repository: &dyn AccessTokenRepository,
+        refresh_token_repository: &dyn RefreshTokenRepository,
         client_id: &str,
         user_id: &Option<Uuid>,
         scopes: ScopeModel,

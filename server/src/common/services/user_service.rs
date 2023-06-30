@@ -7,7 +7,7 @@ pub struct UserService {}
 
 impl UserService {
     pub async fn create_user(
-        user_repository: &Box<dyn UserRepository>,
+        user_repository: &dyn UserRepository,
         new_user: &UserCreateModel,
     ) -> Result<UserModel, UserServiceError> {
         user_repository
@@ -17,7 +17,7 @@ impl UserService {
     }
 
     pub async fn get_user_by_id(
-        user_repository: &Box<dyn UserRepository>,
+        user_repository: &dyn UserRepository,
         id: &Uuid,
     ) -> Result<UserModel, UserServiceError> {
         user_repository
@@ -27,7 +27,7 @@ impl UserService {
     }
 
     pub async fn get_user_by_email(
-        user_repository: &Box<dyn UserRepository>,
+        user_repository: &dyn UserRepository,
         email: &str,
     ) -> Result<UserModel, UserServiceError> {
         user_repository
@@ -37,7 +37,7 @@ impl UserService {
     }
 
     pub async fn update_user_by_id(
-        user_repository: &Box<dyn UserRepository>,
+        user_repository: &dyn UserRepository,
         id: &Uuid,
         update_user: &UserUpdateModel,
     ) -> Result<UserModel, UserServiceError> {
@@ -48,7 +48,7 @@ impl UserService {
     }
 
     pub async fn delete_user_by_id(
-        user_repository: &Box<dyn UserRepository>,
+        user_repository: &dyn UserRepository,
         id: &Uuid,
     ) -> Result<(), UserServiceError> {
         user_repository

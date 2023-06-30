@@ -37,7 +37,7 @@ impl AuthorizeController {
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
-        let client_repository = &state.repository_container.as_ref().client_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
         let client = ClientAuthService::verify_credentials(
             client_repository,
             &client_credentials.id,
@@ -47,12 +47,12 @@ impl AuthorizeController {
         .map_err(|_| AuthorizeControllerError::InvalidClient)?;
 
         // validate redirect uri, inform the user of the problem instead of redirecting
-        let redirect_repository = &state.repository_container.as_ref().redirect_repository;
+        let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
         RedirectService::verify_redirect(redirect_repository, &client.id, &params.redirect_uri)
             .await
             .map_err(|_| AuthorizeControllerError::InvalidRedirectUri)?;
 
-        let scope_repository = &state.repository_container.as_ref().scope_repository;
+        let scope_repository = &*state.repository_container.as_ref().scope_repository;
         let _scopes = ScopeService::get_from_list(scope_repository, &params.scope)
             .await
             .map_err(|_| AuthorizeControllerError::InvalidScopes)?;
