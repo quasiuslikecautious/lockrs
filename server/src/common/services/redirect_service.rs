@@ -10,11 +10,11 @@ pub struct RedirectService;
 impl RedirectService {
     pub async fn create_redirect(
         redirect_repository: &dyn RedirectUriRepository,
-        client_id: &String,
+        client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectServiceError> {
         let redirect_create = RedirectCreateModel {
-            client_id: client_id.clone(),
+            client_id: client_id.to_string(),
             uri: uri.clone(),
         };
 

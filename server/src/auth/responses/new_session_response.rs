@@ -22,16 +22,16 @@ pub struct NewSessionResponse {
 }
 
 impl NewSessionResponse {
-    pub fn create_http_cookie<'c>(name: &'c str, value: &'c String) -> String {
-        Cookie::build(name, value.as_str())
+    pub fn create_http_cookie<'c>(name: &'c str, value: &'c str) -> String {
+        Cookie::build(name, value)
             .path("/")
             .same_site(SameSite::Strict)
             .finish()
             .to_string()
     }
 
-    pub fn create_cookie<'c>(name: &'c str, value: &'c String) -> String {
-        Cookie::build(name, value.as_str())
+    pub fn create_cookie<'c>(name: &'c str, value: &'c str) -> String {
+        Cookie::build(name, value)
             .path("/")
             .same_site(SameSite::Strict)
             .finish()
@@ -50,11 +50,17 @@ impl IntoResponse for NewSessionResponse {
 
         (
             AppendHeaders([
-                (SET_COOKIE, Self::create_http_cookie("s_jwt", &jwt).as_str()),
-                (SET_COOKIE, Self::create_cookie("s_id", &self.id).as_str()),
                 (
                     SET_COOKIE,
-                    Self::create_cookie("u_id", &self.user_id.to_string()).as_str(),
+                    Self::create_http_cookie("s_jwt", jwt.as_str()).as_str(),
+                ),
+                (
+                    SET_COOKIE,
+                    Self::create_cookie("s_id", self.id.as_str()).as_str(),
+                ),
+                (
+                    SET_COOKIE,
+                    Self::create_cookie("u_id", self.user_id.to_string().as_str()).as_str(),
                 ),
             ]),
             Json(self),
