@@ -25,7 +25,6 @@ impl NewSessionResponse {
     pub fn create_http_cookie<'c>(name: &'c str, value: &'c String) -> String {
         Cookie::build(name, value.as_str())
             .path("/")
-            .http_only(true)
             .same_site(SameSite::Strict)
             .finish()
             .to_string()

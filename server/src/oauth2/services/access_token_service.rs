@@ -7,7 +7,7 @@ pub struct AccessTokenService {}
 
 impl AccessTokenService {
     pub async fn create_token(
-        access_token_repository: &Box<dyn AccessTokenRepository>,
+        access_token_repository: &dyn AccessTokenRepository,
         token_create: &AccessTokenCreateModel,
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
         access_token_repository
@@ -17,7 +17,7 @@ impl AccessTokenService {
     }
 
     pub async fn verify_token(
-        access_token_repository: &Box<dyn AccessTokenRepository>,
+        access_token_repository: &dyn AccessTokenRepository,
         token: &str,
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
         access_token_repository
@@ -27,7 +27,7 @@ impl AccessTokenService {
     }
 
     pub async fn delete_token(
-        access_token_repository: &Box<dyn AccessTokenRepository>,
+        access_token_repository: &dyn AccessTokenRepository,
         token: &str,
     ) -> Result<(), AccessTokenServiceError> {
         access_token_repository

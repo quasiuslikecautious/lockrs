@@ -42,9 +42,9 @@ impl SessionController {
         State(state): State<Arc<AppState>>,
         BearerAuth(session_token): BearerAuth,
     ) -> Result<NewSessionResponse, SessionControllerError> {
-        let session_repository = &state.repository_container.as_ref().session_repository;
+        let session_repository = &*state.repository_container.as_ref().session_repository;
         let session_token_repository =
-            &state.repository_container.as_ref().session_token_repository;
+            &*state.repository_container.as_ref().session_token_repository;
 
         let session_create = SessionCreateModel { session_token };
 
@@ -77,7 +77,7 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        let session_repository = &state.repository_container.as_ref().session_repository;
+        let session_repository = &*state.repository_container.as_ref().session_repository;
 
         let session = SessionService::get_session(session_repository, &jwt.user_id, &session_id)
             .await
@@ -103,7 +103,7 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        let session_repository = &state.repository_container.as_ref().session_repository;
+        let session_repository = &*state.repository_container.as_ref().session_repository;
 
         let session_update = SessionUpdateModel {
             refresh: session_update_request.refresh,
@@ -135,7 +135,7 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        let session_repository = &state.repository_container.as_ref().session_repository;
+        let session_repository = &*state.repository_container.as_ref().session_repository;
 
         SessionService::delete_session(session_repository, &jwt.user_id)
             .await

@@ -1,6 +1,7 @@
 mod auth;
 mod common;
 mod db;
+mod middlewares;
 mod oauth2;
 
 pub use self::{common::*, db::*};
@@ -36,7 +37,7 @@ async fn main() {
     let auth_routes = auth::routes().with_state(Arc::new(AppState::new().await));
     let oauth2_routes = oauth2::routes();
 
-    let app = Router::new()
+    let app_routes = Router::new()
         .nest(
             "/api/v1",
             Router::new()
@@ -51,8 +52,9 @@ async fn main() {
                     .body(boxed(Body::from(format!("error: {}", err))))
                     .expect("error response"),
             }
-        }))
-        .layer(TraceLayer::new_for_http());
+        }));
+
+    let app = middlewares::with_middleware_stack(app_routes).layer(TraceLayer::new_for_http());
 
     // run it with hyper on localhost:8080
     let addr = SocketAddr::from(([127, 0, 0, 1], 8081));

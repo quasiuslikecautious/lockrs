@@ -45,8 +45,7 @@ impl UserController {
             password: register_request.password,
         };
 
-        let user_repository = &state.repository_container.as_ref().user_repository;
-
+        let user_repository = &*state.repository_container.as_ref().user_repository;
         let user = AuthService::register_user(user_repository, &registration)
             .await
             .map_err(|err| match err {
@@ -71,8 +70,7 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
-        let user_repository = &state.repository_container.as_ref().user_repository;
-
+        let user_repository = &*state.repository_container.as_ref().user_repository;
         let user = UserService::get_user_by_id(user_repository, &user_id)
             .await
             .map_err(|err| match err {
@@ -100,7 +98,7 @@ impl UserController {
             email: update_user_request.email,
         };
 
-        let user_repository = &state.repository_container.as_ref().user_repository;
+        let user_repository = &*state.repository_container.as_ref().user_repository;
         let user = UserService::update_user_by_id(user_repository, &user_id, &update_user)
             .await
             .map_err(|err| match err {
@@ -123,7 +121,7 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
-        let user_repository = &state.repository_container.as_ref().user_repository;
+        let user_repository = &*state.repository_container.as_ref().user_repository;
         UserService::delete_user_by_id(user_repository, &user_id)
             .await
             .map_err(|err| match err {

@@ -24,9 +24,9 @@ impl AuthController {
             password: credentials.private,
         };
 
-        let user_repository = &state.repository_container.as_ref().user_repository;
+        let user_repository = &*state.repository_container.as_ref().user_repository;
         let session_token_repository =
-            &state.repository_container.as_ref().session_token_repository;
+            &*state.repository_container.as_ref().session_token_repository;
 
         let session_token = AuthService::login(user_repository, session_token_repository, &auth)
             .await

@@ -8,7 +8,7 @@ use crate::repositories::RedirectUriRepository;
 pub trait ClientRepository: Send + Sync {
     async fn create(
         &self,
-        redirect_repo: &Box<dyn RedirectUriRepository>,
+        redirect_repo: &dyn RedirectUriRepository,
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, ClientRepositoryError>;

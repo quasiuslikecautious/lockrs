@@ -4,7 +4,7 @@ pub struct ScopeService;
 
 impl ScopeService {
     pub async fn get_from_list(
-        scope_repository: &Box<dyn ScopeRepository>,
+        scope_repository: &dyn ScopeRepository,
         scope: &str,
     ) -> Result<ScopeModel, ScopeServiceError> {
         let scopes_list = scope

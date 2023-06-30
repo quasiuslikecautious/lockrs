@@ -9,7 +9,7 @@ pub struct RedirectService;
 
 impl RedirectService {
     pub async fn create_redirect(
-        redirect_repository: &Box<dyn RedirectUriRepository>,
+        redirect_repository: &dyn RedirectUriRepository,
         client_id: &String,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectServiceError> {
@@ -25,7 +25,7 @@ impl RedirectService {
     }
 
     pub async fn verify_redirect(
-        redirect_repository: &Box<dyn RedirectUriRepository>,
+        redirect_repository: &dyn RedirectUriRepository,
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectServiceError> {
@@ -36,7 +36,7 @@ impl RedirectService {
     }
 
     pub async fn get_redirects_from_client(
-        redirect_repository: &Box<dyn RedirectUriRepository>,
+        redirect_repository: &dyn RedirectUriRepository,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RedirectServiceError> {
         redirect_repository
