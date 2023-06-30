@@ -4,7 +4,7 @@ pub struct ClientAuthService;
 
 impl ClientAuthService {
     pub async fn verify_credentials(
-        client_repository: &Box<dyn ClientRepository>,
+        client_repository: &dyn ClientRepository,
         id: &str,
         secret: &Option<String>,
     ) -> Result<ClientModel, ClientAuthServiceError> {

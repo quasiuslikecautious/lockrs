@@ -41,7 +41,7 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
-        let client_repository = &state.repository_container.as_ref().client_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let clients = ClientService::get_clients_by_user(client_repository, &user_id)
             .await
@@ -75,8 +75,8 @@ impl ClientController {
             redirect_url: new_client_request.redirect_url,
         };
 
-        let client_repository = &state.repository_container.as_ref().client_repository;
-        let redirect_repository = &state.repository_container.as_ref().redirect_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
+        let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
 
         println!("before create...");
 
@@ -99,7 +99,7 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
-        let client_repository = &state.repository_container.as_ref().client_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let client = ClientService::get_client_by_id(client_repository, &client_id)
             .await
@@ -127,7 +127,7 @@ impl ClientController {
             homepage_url: update_client_request.homepage_url,
         };
 
-        let client_repository = &state.repository_container.as_ref().client_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let client =
             ClientService::update_client_by_id(client_repository, &client_id, &update_client)
@@ -149,7 +149,7 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<StatusCode, ClientControllerError> {
-        let client_repository = &state.repository_container.as_ref().client_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
 
         ClientService::delete_client_by_id(client_repository, &client_id)
             .await

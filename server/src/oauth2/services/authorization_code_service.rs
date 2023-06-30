@@ -7,7 +7,7 @@ pub struct AuthorizationCodeService;
 
 impl AuthorizationCodeService {
     pub async fn create(
-        _authorization_code_repository: Box<dyn AuthorizationCodeRepository>,
+        _authorization_code_repository: &dyn AuthorizationCodeRepository,
         _new_code: AuthorizationCodeCreateModel,
     ) -> AuthorizationCodeModel {
         todo!();

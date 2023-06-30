@@ -42,7 +42,7 @@ impl TokenController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
-        let client_repository = &state.repository_container.as_ref().client_repository;
+        let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let client = ClientAuthService::verify_credentials(
             client_repository,
@@ -52,7 +52,7 @@ impl TokenController {
         .await
         .map_err(|_| TokenControllerError::InvalidClient)?;
 
-        let scope_repository = &state.repository_container.as_ref().scope_repository;
+        let scope_repository = &*state.repository_container.as_ref().scope_repository;
 
         let scopes = ScopeService::get_from_list(scope_repository, params.scope.as_str())
             .await
@@ -99,10 +99,10 @@ impl TokenController {
             return Err(TokenControllerError::InvalidClient);
         }
 
-        let access_token_repository = &state.repository_container.as_ref().access_token_repository;
+        let access_token_repository = &*state.repository_container.as_ref().access_token_repository;
 
         let refresh_token_repository =
-            &state.repository_container.as_ref().refresh_token_repository;
+            &*state.repository_container.as_ref().refresh_token_repository;
 
         let token = TokenService::create_token(
             access_token_repository,
@@ -135,7 +135,7 @@ impl TokenController {
         };
 
         let refresh_token_repository =
-            &state.repository_container.as_ref().refresh_token_repository;
+            &*state.repository_container.as_ref().refresh_token_repository;
 
         let refresh_token =
             RefreshTokenService::use_token(refresh_token_repository, token.as_str())
@@ -145,7 +145,7 @@ impl TokenController {
                     _ => TokenControllerError::InternalError,
                 })?;
 
-        let access_token_repository = &state.repository_container.as_ref().access_token_repository;
+        let access_token_repository = &*state.repository_container.as_ref().access_token_repository;
 
         let token = TokenService::create_token(
             access_token_repository,

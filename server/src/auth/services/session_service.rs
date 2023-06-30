@@ -15,8 +15,8 @@ pub struct SessionService;
 
 impl SessionService {
     pub async fn create_session(
-        session_repository: &Box<dyn SessionRepository>,
-        session_token_repository: &Box<dyn SessionTokenRepository>,
+        session_repository: &dyn SessionRepository,
+        session_token_repository: &dyn SessionTokenRepository,
         token: &SessionCreateModel,
         session_duration: &Duration,
     ) -> Result<SessionModel, SessionServiceError> {
@@ -39,7 +39,7 @@ impl SessionService {
     }
 
     pub async fn get_session(
-        session_repository: &Box<dyn SessionRepository>,
+        session_repository: &dyn SessionRepository,
         user_id: &Uuid,
         session_id: &str,
     ) -> Result<SessionModel, SessionServiceError> {
@@ -50,7 +50,7 @@ impl SessionService {
     }
 
     pub async fn update_session(
-        session_repository: &Box<dyn SessionRepository>,
+        session_repository: &dyn SessionRepository,
         user_id: &Uuid,
         session_id: &str,
         update_model: &SessionUpdateModel,
@@ -72,7 +72,7 @@ impl SessionService {
     }
 
     pub async fn delete_session(
-        session_repository: &Box<dyn SessionRepository>,
+        session_repository: &dyn SessionRepository,
         user_id: &Uuid,
     ) -> Result<(), SessionServiceError> {
         session_repository
