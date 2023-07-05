@@ -15,7 +15,7 @@ impl TokenService {
         access_token_repository: &dyn AccessTokenRepository,
         refresh_token_repository: &dyn RefreshTokenRepository,
         client_id: &str,
-        user_id: &Option<Uuid>,
+        user_id: Option<&Uuid>,
         scopes: ScopeModel,
     ) -> Result<TokenModel, TokenServiceError> {
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
@@ -23,7 +23,7 @@ impl TokenService {
         let access_token_create = AccessTokenCreateModel {
             token: Self::generate_opaque_token(),
             client_id: client_id.to_string(),
-            user_id: *user_id,
+            user_id: user_id.cloned(),
             expires_at: access_expiry,
             scopes: scopes.scopes.clone(),
         };
@@ -39,7 +39,7 @@ impl TokenService {
             access_token_id: access_token.id,
             token: Self::generate_opaque_token(),
             client_id: client_id.to_string(),
-            user_id: *user_id,
+            user_id: user_id.cloned(),
             expires_at: refresh_expiry,
             scopes: scopes.scopes.clone(),
         };

@@ -94,7 +94,7 @@ impl ClientRepository for PgClientRepository {
     async fn get_by_credentials(
         &self,
         id: &str,
-        secret: &Option<String>,
+        secret: Option<&str>,
     ) -> Result<ClientModel, ClientRepositoryError> {
         let mut query = clients::table
             .into_boxed()

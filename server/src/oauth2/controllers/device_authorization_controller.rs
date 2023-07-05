@@ -29,7 +29,7 @@ impl DeviceAuthorizationController {
         ClientAuthService::verify_credentials(
             client_repository,
             &client_credentials.id,
-            &client_credentials.secret,
+            client_credentials.secret.as_deref(),
         )
         .await
         .map_err(|_| DeviceAuthorizationControllerError::InvalidClient)?;

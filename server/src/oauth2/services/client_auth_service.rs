@@ -6,7 +6,7 @@ impl ClientAuthService {
     pub async fn verify_credentials(
         client_repository: &dyn ClientRepository,
         id: &str,
-        secret: &Option<String>,
+        secret: Option<&str>,
     ) -> Result<ClientModel, ClientAuthServiceError> {
         client_repository
             .get_by_credentials(id, secret)

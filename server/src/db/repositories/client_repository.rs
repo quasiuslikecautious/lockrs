@@ -16,7 +16,7 @@ pub trait ClientRepository: Send + Sync {
     async fn get_by_credentials(
         &self,
         id: &str,
-        secret: &Option<String>,
+        secret: Option<&str>,
     ) -> Result<ClientModel, ClientRepositoryError>;
     async fn get_all_by_user_id(
         &self,

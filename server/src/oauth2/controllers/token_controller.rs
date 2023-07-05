@@ -47,7 +47,7 @@ impl TokenController {
         let client = ClientAuthService::verify_credentials(
             client_repository,
             &client_credentials.id,
-            &client_credentials.secret,
+            client_credentials.secret.as_deref(),
         )
         .await
         .map_err(|_| TokenControllerError::InvalidClient)?;
@@ -108,7 +108,7 @@ impl TokenController {
             access_token_repository,
             refresh_token_repository,
             &client.id,
-            &None,
+            None,
             scopes,
         )
         .await
@@ -151,7 +151,7 @@ impl TokenController {
             access_token_repository,
             refresh_token_repository,
             &client.id,
-            &refresh_token.user_id,
+            refresh_token.user_id.as_ref(),
             scopes,
         )
         .await
