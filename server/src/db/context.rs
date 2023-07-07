@@ -3,22 +3,19 @@ use std::time::Duration;
 use deadpool::managed::Timeouts;
 use deadpool_redis::{Config, PoolConfig};
 use deadpool_runtime::Runtime;
-use diesel_async::{
-    pooled_connection::{
-        deadpool::{Object, Pool},
-        AsyncDieselConnectionManager,
-    },
-    scoped_futures::ScopedBoxFuture,
-    AsyncPgConnection,
+use diesel_async::pooled_connection::{
+    deadpool::{Object, Pool},
+    AsyncDieselConnectionManager,
 };
 
 type AsyncPgPool = Pool<AsyncPgConnection>;
 type AsyncRedisPool = deadpool_redis::Pool;
 
+pub type AsyncPgConnection = diesel_async::AsyncPgConnection;
 pub type AsyncRedisConnection = deadpool_redis::redis::aio::Connection;
 
-pub type ManagedAsyncRedisConnection = deadpool_redis::Connection;
 pub type ManagedAsyncPgConnection = Object<AsyncPgConnection>;
+pub type ManagedAsyncRedisConnection = deadpool_redis::Connection;
 
 pub struct DbContext {
     pg_pool: AsyncPgPool,
@@ -81,39 +78,9 @@ impl DbContext {
             .await
             .map_err(|_| DbContextError::ConnectionFailed)
     }
-
-    pub async fn execute_in_pg_transaction<'b, T, F>(&self, f: F) -> Result<T, DbContextError>
-    where
-        F: for<'r> FnOnce(
-                &'r mut AsyncPgConnection,
-            ) -> ScopedBoxFuture<'b, 'r, Result<T, DbContextError>>
-            + Send,
-        T: 'b,
-    {
-        let connection = &mut self.get_pg_connection().await?;
-        connection
-            .build_transaction()
-            .read_write()
-            .run(|conn| {
-                let future = f(conn);
-                Box::pin(future)
-            })
-            .await
-            .map_err(|err| {
-                println!("{:?}", err);
-                DbContextError::BadTransaction
-            })
-    }
 }
 
 #[derive(Debug)]
 pub enum DbContextError {
     ConnectionFailed,
-    BadTransaction,
-}
-
-impl From<diesel::result::Error> for DbContextError {
-    fn from(_error: diesel::result::Error) -> Self {
-        Self::BadTransaction
-    }
 }
