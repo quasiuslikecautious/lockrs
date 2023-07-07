@@ -3,7 +3,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::{auth::models::SessionModel, DbContext};
+use crate::{auth::models::SessionModel, db::DbContext};
 
 pub type SessionRepositoryArc = Arc<Box<dyn SessionRepository>>;
 

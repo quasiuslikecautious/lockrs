@@ -4,10 +4,12 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 
 use crate::{
     auth::models::{AuthModel, RegisterModel, SessionTokenModel},
+    db::{
+        repositories::{SessionTokenRepository, UserRepository},
+        DbContext,
+    },
     models::{UserCreateModel, UserModel},
-    repositories::{SessionTokenRepository, UserRepository},
     services::{UserService, UserServiceError},
-    DbContext,
 };
 
 use super::SessionTokenService;

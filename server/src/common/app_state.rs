@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
-    pg::repositories::*,
-    redis::repositories::*,
+    db::{pg::repositories::*, redis::repositories::*, DbContext, RepositoryContainer},
     utils::jwt::{JwtUtil, RotatingKey},
-    AppConfig, DbContext, RepositoryContainer,
+    AppConfig,
 };
 
 #[derive(Clone)]

@@ -4,9 +4,8 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 use crate::{
+    db::{repositories::RedirectUriRepository, DbContext},
     models::{ClientModel, ClientUpdateModel, RedirectCreateModel},
-    repositories::RedirectUriRepository,
-    DbContext,
 };
 
 #[async_trait]

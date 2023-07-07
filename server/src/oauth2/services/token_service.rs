@@ -6,9 +6,11 @@ use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
+    db::{
+        repositories::{AccessTokenRepository, RefreshTokenRepository},
+        DbContext,
+    },
     oauth2::models::{AccessTokenCreateModel, RefreshTokenCreateModel, ScopeModel, TokenModel},
-    repositories::{AccessTokenRepository, RefreshTokenRepository},
-    DbContext,
 };
 
 pub struct TokenService;

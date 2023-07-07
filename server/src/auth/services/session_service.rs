@@ -7,8 +7,10 @@ use uuid::Uuid;
 
 use crate::{
     auth::models::{SessionCreateModel, SessionModel, SessionUpdateModel},
-    repositories::{SessionRepository, SessionTokenRepository},
-    DbContext,
+    db::{
+        repositories::{SessionRepository, SessionTokenRepository},
+        DbContext,
+    },
 };
 
 use super::SessionTokenService;

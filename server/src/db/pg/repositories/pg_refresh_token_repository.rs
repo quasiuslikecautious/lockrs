@@ -6,13 +6,15 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
 use crate::{
+    db::{
+        pg::{models::PgRefreshToken, schema::refresh_tokens},
+        repositories::{RefreshTokenRepository, RefreshTokenRepositoryError},
+        DbContext,
+    },
     oauth2::{
         mappers::RefreshTokenMapper,
         models::{RefreshTokenCreateModel, RefreshTokenModel},
     },
-    pg::{models::PgRefreshToken, schema::refresh_tokens},
-    repositories::{RefreshTokenRepository, RefreshTokenRepositoryError},
-    DbContext,
 };
 
 pub struct PgRefreshTokenRepository;

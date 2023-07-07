@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{models::ClientModel, repositories::ClientRepository, DbContext};
+use crate::{
+    db::{repositories::ClientRepository, DbContext},
+    models::ClientModel,
+};
 
 pub struct ClientAuthService;
 

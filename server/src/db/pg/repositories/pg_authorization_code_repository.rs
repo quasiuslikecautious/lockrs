@@ -3,9 +3,11 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::{
+    db::{
+        repositories::{AuthorizationCodeRepository, AuthorizationCodeRepositoryError},
+        DbContext,
+    },
     oauth2::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel},
-    repositories::{AuthorizationCodeRepository, AuthorizationCodeRepositoryError},
-    DbContext,
 };
 
 pub struct PgAuthorizationCodeRepository;

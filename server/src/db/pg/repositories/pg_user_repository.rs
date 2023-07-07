@@ -6,11 +6,13 @@ use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
 use crate::{
+    db::{
+        pg::{models::PgUser, schema::users},
+        repositories::{UserRepository, UserRepositoryError},
+        DbContext,
+    },
     mappers::UserMapper,
     models::{UserCreateModel, UserModel, UserUpdateModel},
-    pg::{models::PgUser, schema::users},
-    repositories::{UserRepository, UserRepositoryError},
-    DbContext,
 };
 
 pub struct PgUserRepository;

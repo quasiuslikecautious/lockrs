@@ -6,11 +6,13 @@ use diesel_async::{scoped_futures::ScopedFutureExt, RunQueryDsl};
 use uuid::Uuid;
 
 use crate::{
+    db::{
+        pg::{models::PgClient, schema::clients},
+        repositories::{ClientRepository, ClientRepositoryError, RedirectUriRepository},
+        DbContext, DbContextError,
+    },
     mappers::ClientMapper,
     models::{ClientModel, ClientUpdateModel, RedirectCreateModel},
-    pg::{models::PgClient, schema::clients},
-    repositories::{ClientRepository, ClientRepositoryError, RedirectUriRepository},
-    DbContext, DbContextError,
 };
 
 pub struct PgClientRepository;

@@ -5,8 +5,10 @@ use redis::AsyncCommands;
 
 use crate::{
     auth::models::SessionTokenModel,
-    repositories::{SessionTokenRepository, SessionTokenRepositoryError},
-    DbContext,
+    db::{
+        repositories::{SessionTokenRepository, SessionTokenRepositoryError},
+        DbContext,
+    },
 };
 
 pub struct RedisSessionTokenRepository;

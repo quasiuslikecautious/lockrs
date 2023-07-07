@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::{auth::models::SessionTokenModel, DbContext};
+use crate::{auth::models::SessionTokenModel, db::DbContext};
 
 pub type SessionTokenRepositoryArc = Arc<Box<dyn SessionTokenRepository>>;
 

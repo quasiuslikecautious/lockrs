@@ -3,9 +3,8 @@ use std::sync::Arc;
 use url::Url;
 
 use crate::{
+    db::{repositories::RedirectUriRepository, DbContext},
     models::{RedirectCreateModel, RedirectModel},
-    repositories::RedirectUriRepository,
-    DbContext,
 };
 
 pub struct RedirectService;

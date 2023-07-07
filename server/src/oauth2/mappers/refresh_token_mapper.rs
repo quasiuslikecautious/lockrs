@@ -1,4 +1,4 @@
-use crate::{oauth2::models::RefreshTokenModel, pg::models::PgRefreshToken};
+use crate::{db::pg::models::PgRefreshToken, oauth2::models::RefreshTokenModel};
 
 use super::ScopeMapper;
 

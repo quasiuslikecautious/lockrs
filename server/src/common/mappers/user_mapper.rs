@@ -1,4 +1,4 @@
-use crate::{models::UserModel, pg::models::PgUser};
+use crate::{db::pg::models::PgUser, models::UserModel};
 
 pub struct UserMapper;
 

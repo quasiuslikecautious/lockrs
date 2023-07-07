@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use diesel_async::scoped_futures::ScopedBoxFuture;
 
-use crate::{AsyncPgConnection, AsyncRedisConnection, DbContext, ManagedAsyncPgConnection};
+use crate::db::{AsyncPgConnection, AsyncRedisConnection, DbContext, ManagedAsyncPgConnection};
 
 pub struct ConnectionContainer {
     pg: Option<ManagedAsyncPgConnection>,
@@ -48,9 +48,7 @@ impl ConnectionContainer {
 
         if in_transaction {
             let conn = self.get_pg(db_context).await?;
-            let result = f(conn)
-                .await
-                .map_err(|_| ConnectionError::Transaction);
+            let result = f(conn).await.map_err(|_| ConnectionError::Transaction);
 
             return result;
         }
@@ -60,9 +58,7 @@ impl ConnectionContainer {
         let result = connection
             .build_transaction()
             .read_write()
-            .run(|conn| {
-                f(conn)
-            })
+            .run(|conn| f(conn))
             .await
             .map_err(|_| ConnectionError::Transaction);
 

@@ -5,7 +5,10 @@ use chrono::{offset::Utc, Duration};
 use rand::Rng;
 use uuid::Uuid;
 
-use crate::{auth::models::SessionTokenModel, repositories::SessionTokenRepository, DbContext};
+use crate::{
+    auth::models::SessionTokenModel,
+    db::{repositories::SessionTokenRepository, DbContext},
+};
 
 pub struct SessionTokenService;
 

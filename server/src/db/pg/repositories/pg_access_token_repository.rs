@@ -6,13 +6,15 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
 use crate::{
+    db::{
+        pg::{models::PgAccessToken, schema::access_tokens},
+        repositories::{AccessTokenRepository, AccessTokenRepositoryError},
+        DbContext,
+    },
     oauth2::{
         mappers::AccessTokenMapper,
         models::{AccessTokenCreateModel, AccessTokenModel},
     },
-    pg::{models::PgAccessToken, schema::access_tokens},
-    repositories::{AccessTokenRepository, AccessTokenRepositoryError},
-    DbContext,
 };
 
 pub struct PgAccessTokenRepository;

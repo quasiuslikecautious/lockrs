@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use uuid::Uuid;
 
-use crate::pg::schema::users;
+use crate::db::pg::schema::users;
 
 #[derive(Debug, Queryable, Insertable)]
 #[diesel(primary_key(id), table_name = users)]

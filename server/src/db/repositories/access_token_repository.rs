@@ -3,8 +3,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::{
+    db::DbContext,
     oauth2::models::{AccessTokenCreateModel, AccessTokenModel},
-    DbContext,
 };
 
 #[async_trait]

@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use crate::{
+    db::{repositories::AccessTokenRepository, DbContext},
     oauth2::models::{AccessTokenCreateModel, AccessTokenModel},
-    repositories::AccessTokenRepository,
-    DbContext,
 };
 
 pub struct AccessTokenService {}

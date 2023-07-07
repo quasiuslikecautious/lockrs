@@ -5,10 +5,12 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
 use crate::{
+    db::{
+        pg::schema::scopes,
+        repositories::{ScopeRepository, ScopeRepositoryError},
+        DbContext,
+    },
     oauth2::models::{ScopeCreateModel, ScopeModel},
-    pg::schema::scopes,
-    repositories::{ScopeRepository, ScopeRepositoryError},
-    DbContext,
 };
 
 pub struct PgScopeRepository;

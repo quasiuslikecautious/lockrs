@@ -3,9 +3,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::{
+    db::{repositories::UserRepository, DbContext},
     models::{UserCreateModel, UserModel, UserUpdateModel},
-    repositories::UserRepository,
-    DbContext,
 };
 
 pub struct UserService {}

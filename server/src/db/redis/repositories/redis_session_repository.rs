@@ -5,8 +5,10 @@ use uuid::Uuid;
 
 use crate::{
     auth::models::SessionModel,
-    repositories::{SessionRepository, SessionRepositoryError},
-    DbContext,
+    db::{
+        repositories::{SessionRepository, SessionRepositoryError},
+        DbContext,
+    },
 };
 
 pub struct RedisSessionRepository;

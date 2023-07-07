@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{oauth2::models::ScopeModel, repositories::ScopeRepository, DbContext};
+use crate::{
+    db::{repositories::ScopeRepository, DbContext},
+    oauth2::models::ScopeModel,
+};
 
 pub struct ScopeService;
 

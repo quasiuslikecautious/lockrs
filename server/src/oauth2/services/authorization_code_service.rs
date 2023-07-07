@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use crate::{
+    db::{repositories::AuthorizationCodeRepository, DbContext},
     oauth2::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel},
-    repositories::AuthorizationCodeRepository,
-    DbContext,
 };
 
 pub struct AuthorizationCodeService;

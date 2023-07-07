@@ -6,13 +6,15 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
 use crate::{
+    db::{
+        pg::{models::PgDeviceAuthorization, schema::device_authorizations},
+        repositories::{DeviceAuthorizationRepository, DeviceAuthorizationRepositoryError},
+        DbContext,
+    },
     oauth2::{
         mappers::DeviceAuthorizationMapper,
         models::{DeviceAuthorizationCreateModel, DeviceAuthorizationModel},
     },
-    pg::{models::PgDeviceAuthorization, schema::device_authorizations},
-    repositories::{DeviceAuthorizationRepository, DeviceAuthorizationRepositoryError},
-    DbContext,
 };
 
 pub struct PgDeviceAuthorizationRepository;

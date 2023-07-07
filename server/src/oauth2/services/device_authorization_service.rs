@@ -5,9 +5,8 @@ use chrono::{Duration, Utc};
 use ring::rand::{SecureRandom, SystemRandom};
 
 use crate::{
+    db::{repositories::DeviceAuthorizationRepository, DbContext},
     oauth2::models::{DeviceAuthorizationCreateModel, DeviceAuthorizationModel, ScopeModel},
-    repositories::DeviceAuthorizationRepository,
-    DbContext,
 };
 
 pub struct DeviceAuthorizationService;

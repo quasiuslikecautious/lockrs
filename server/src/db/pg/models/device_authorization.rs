@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
-use crate::pg::schema::device_authorizations;
+use crate::db::pg::schema::device_authorizations;
 
 #[derive(Debug, Queryable, Insertable, Identifiable)]
 #[diesel(primary_key(id), table_name = device_authorizations)]

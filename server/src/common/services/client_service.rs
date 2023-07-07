@@ -5,9 +5,11 @@ use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
+    db::{
+        repositories::{ClientRepository, RedirectUriRepository},
+        DbContext,
+    },
     models::{ClientCreateModel, ClientModel, ClientUpdateModel, RedirectCreateModel},
-    repositories::{ClientRepository, RedirectUriRepository},
-    DbContext,
 };
 
 pub struct ClientService;

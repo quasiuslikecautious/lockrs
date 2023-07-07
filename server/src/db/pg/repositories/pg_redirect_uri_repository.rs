@@ -6,11 +6,13 @@ use diesel_async::RunQueryDsl;
 use url::Url;
 
 use crate::{
+    db::{
+        pg::{models::PgRedirectUri, schema::redirect_uris},
+        repositories::{RedirectUriRepository, RedirectUriRepositoryError},
+        DbContext,
+    },
     mappers::RedirectMapper,
     models::{RedirectCreateModel, RedirectModel},
-    pg::{models::PgRedirectUri, schema::redirect_uris},
-    repositories::{RedirectUriRepository, RedirectUriRepositoryError},
-    DbContext,
 };
 
 pub struct PgRedirectUriRepository;
