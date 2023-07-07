@@ -45,8 +45,10 @@ impl UserController {
             password: register_request.password,
         };
 
+        let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
-        let user = AuthService::register_user(user_repository, &registration)
+
+        let user = AuthService::register_user(db_context, user_repository, &registration)
             .await
             .map_err(|err| match err {
                 AuthServiceError::AlreadyExists => UserControllerError::CreateConflict,
@@ -70,8 +72,9 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
+        let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
-        let user = UserService::get_user_by_id(user_repository, &user_id)
+        let user = UserService::get_user_by_id(db_context, user_repository, &user_id)
             .await
             .map_err(|err| match err {
                 UserServiceError::NotFound => UserControllerError::NotFound,
@@ -98,13 +101,15 @@ impl UserController {
             email: update_user_request.email,
         };
 
+        let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
-        let user = UserService::update_user_by_id(user_repository, &user_id, &update_user)
-            .await
-            .map_err(|err| match err {
-                UserServiceError::NotFound => UserControllerError::NotFound,
-                _ => UserControllerError::Internal,
-            })?;
+        let user =
+            UserService::update_user_by_id(db_context, user_repository, &user_id, &update_user)
+                .await
+                .map_err(|err| match err {
+                    UserServiceError::NotFound => UserControllerError::NotFound,
+                    _ => UserControllerError::Internal,
+                })?;
 
         Ok(UserResponse {
             id: user.id,
@@ -121,8 +126,9 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
+        let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
-        UserService::delete_user_by_id(user_repository, &user_id)
+        UserService::delete_user_by_id(db_context, user_repository, &user_id)
             .await
             .map_err(|err| match err {
                 UserServiceError::NotFound => UserControllerError::NotFound,

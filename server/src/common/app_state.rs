@@ -28,20 +28,16 @@ impl AppState {
             Arc::new(DbContext::new(postgres_url.as_str(), 5, redis_url.as_str(), 5).await);
 
         let repository_container = RepositoryContainer {
-            access_token_repository: Box::new(PgAccessTokenRepository::new(&db_context)),
-            authorization_code_repository: Box::new(PgAuthorizationCodeRepository::new(
-                &db_context,
-            )),
-            client_repository: Box::new(PgClientRepository::new(&db_context)),
-            device_authorization_repository: Box::new(PgDeviceAuthorizationRepository::new(
-                &db_context,
-            )),
-            redirect_repository: Box::new(PgRedirectUriRepository::new(&db_context)),
-            refresh_token_repository: Box::new(PgRefreshTokenRepository::new(&db_context)),
-            scope_repository: Box::new(PgScopeRepository::new(&db_context)),
-            session_repository: Box::new(RedisSessionRepository::new(&db_context)),
-            session_token_repository: Box::new(RedisSessionTokenRepository::new(&db_context)),
-            user_repository: Box::new(PgUserRepository::new(&db_context)),
+            access_token_repository: Box::new(PgAccessTokenRepository),
+            authorization_code_repository: Box::new(PgAuthorizationCodeRepository),
+            client_repository: Box::new(PgClientRepository),
+            device_authorization_repository: Box::new(PgDeviceAuthorizationRepository),
+            redirect_repository: Box::new(PgRedirectUriRepository),
+            refresh_token_repository: Box::new(PgRefreshTokenRepository),
+            scope_repository: Box::new(PgScopeRepository),
+            session_repository: Box::new(RedisSessionRepository),
+            session_token_repository: Box::new(RedisSessionTokenRepository),
+            user_repository: Box::new(PgUserRepository),
         };
 
         Self {

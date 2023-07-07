@@ -42,6 +42,7 @@ impl SessionController {
         State(state): State<Arc<AppState>>,
         BearerAuth(session_token): BearerAuth,
     ) -> Result<NewSessionResponse, SessionControllerError> {
+        let db_context = &state.as_ref().db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
         let session_token_repository =
             &*state.repository_container.as_ref().session_token_repository;
@@ -49,6 +50,7 @@ impl SessionController {
         let session_create = SessionCreateModel { session_token };
 
         let session = SessionService::create_session(
+            db_context,
             session_repository,
             session_token_repository,
             &session_create,
@@ -77,14 +79,16 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
+        let db_context = &state.as_ref().db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
 
-        let session = SessionService::get_session(session_repository, &jwt.user_id, &session_id)
-            .await
-            .map_err(|err| match err {
-                SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
-                _ => SessionControllerError::InternalError,
-            })?;
+        let session =
+            SessionService::get_session(db_context, session_repository, &jwt.user_id, &session_id)
+                .await
+                .map_err(|err| match err {
+                    SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
+                    _ => SessionControllerError::InternalError,
+                })?;
 
         Ok(SessionResponse {
             id: session.id,
@@ -103,6 +107,7 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
+        let db_context = &state.as_ref().db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
 
         let session_update = SessionUpdateModel {
@@ -110,6 +115,7 @@ impl SessionController {
         };
 
         let session = SessionService::update_session(
+            db_context,
             session_repository,
             &jwt.user_id,
             &session_id,
@@ -135,9 +141,10 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
+        let db_context = &state.as_ref().db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
 
-        SessionService::delete_session(session_repository, &jwt.user_id)
+        SessionService::delete_session(db_context, session_repository, &jwt.user_id)
             .await
             .map_err(|err| match err {
                 SessionServiceError::NotFound => SessionControllerError::SessionNotFound,

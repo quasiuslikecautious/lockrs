@@ -9,17 +9,9 @@ use crate::{
     DbContext,
 };
 
-pub struct RedisSessionTokenRepository {
-    db_context: Arc<DbContext>,
-}
+pub struct RedisSessionTokenRepository;
 
 impl RedisSessionTokenRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-
     fn into_redis_key(token: &str) -> String {
         format!("session_token:{}", token)
     }
@@ -29,10 +21,11 @@ impl RedisSessionTokenRepository {
 impl SessionTokenRepository for RedisSessionTokenRepository {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         token: &SessionTokenModel,
     ) -> Result<SessionTokenModel, SessionTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_redis_connection()
             .await
             .map_err(|_| SessionTokenRepositoryError::BadConnection)?;
@@ -54,10 +47,11 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
 
     async fn get_by_token(
         &self,
+        db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<SessionTokenModel, SessionTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_redis_connection()
             .await
             .map_err(|_| SessionTokenRepositoryError::BadConnection)?;
@@ -71,9 +65,13 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         serde_json::from_str(value.as_str()).map_err(|_| SessionTokenRepositoryError::BadData)
     }
 
-    async fn delete_by_token(&self, token: &str) -> Result<(), SessionTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn delete_by_token(
+        &self,
+        db_context: &Arc<DbContext>,
+        token: &str,
+    ) -> Result<(), SessionTokenRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_redis_connection()
             .await
             .map_err(|_| SessionTokenRepositoryError::BadConnection)?;

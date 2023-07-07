@@ -1,12 +1,14 @@
+use std::sync::Arc;
+
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
 use rand::Rng;
-
 use uuid::Uuid;
 
 use crate::{
     auth::models::{SessionCreateModel, SessionModel, SessionUpdateModel},
     repositories::{SessionRepository, SessionTokenRepository},
+    DbContext,
 };
 
 use super::SessionTokenService;
@@ -15,12 +17,14 @@ pub struct SessionService;
 
 impl SessionService {
     pub async fn create_session(
+        db_context: &Arc<DbContext>,
         session_repository: &dyn SessionRepository,
         session_token_repository: &dyn SessionTokenRepository,
         token: &SessionCreateModel,
         session_duration: &Duration,
     ) -> Result<SessionModel, SessionServiceError> {
         let token = SessionTokenService::validate_session_token(
+            db_context,
             session_token_repository,
             token.session_token.as_str(),
         )
@@ -33,30 +37,33 @@ impl SessionService {
 
         let session_data = SessionModel::new(&session_id, &user_id, &expires_at);
         session_repository
-            .create(&session_data)
+            .create(db_context, &session_data)
             .await
             .map_err(|_| SessionServiceError::NotCreated)
     }
 
     pub async fn get_session(
+        db_context: &Arc<DbContext>,
         session_repository: &dyn SessionRepository,
         user_id: &Uuid,
         session_id: &str,
     ) -> Result<SessionModel, SessionServiceError> {
         session_repository
-            .get_by_hash(session_id, user_id)
+            .get_by_hash(db_context, session_id, user_id)
             .await
             .map_err(|_| SessionServiceError::NotFound)
     }
 
     pub async fn update_session(
+        db_context: &Arc<DbContext>,
         session_repository: &dyn SessionRepository,
         user_id: &Uuid,
         session_id: &str,
         update_model: &SessionUpdateModel,
         session_duration: &Duration,
     ) -> Result<SessionModel, SessionServiceError> {
-        let mut session = Self::get_session(session_repository, user_id, session_id).await?;
+        let mut session =
+            Self::get_session(db_context, session_repository, user_id, session_id).await?;
 
         if !update_model.refresh {
             return Ok(session);
@@ -66,17 +73,18 @@ impl SessionService {
         session.expires_at = expires_at;
 
         session_repository
-            .update(&session)
+            .update(db_context, &session)
             .await
             .map_err(|_| SessionServiceError::NotUpdated)
     }
 
     pub async fn delete_session(
+        db_context: &Arc<DbContext>,
         session_repository: &dyn SessionRepository,
         user_id: &Uuid,
     ) -> Result<(), SessionServiceError> {
         session_repository
-            .delete_by_user_id(user_id)
+            .delete_by_user_id(db_context, user_id)
             .await
             .map_err(|_| SessionServiceError::BadDelete)
     }

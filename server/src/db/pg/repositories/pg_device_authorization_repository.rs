@@ -15,26 +15,17 @@ use crate::{
     DbContext,
 };
 
-pub struct PgDeviceAuthorizationRepository {
-    db_context: Arc<DbContext>,
-}
-
-impl PgDeviceAuthorizationRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-}
+pub struct PgDeviceAuthorizationRepository;
 
 #[async_trait]
 impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         device_authorization_create: &DeviceAuthorizationCreateModel,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| DeviceAuthorizationRepositoryError::BadConnection)?;
@@ -56,12 +47,13 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
 
     async fn get_by_user_code(
         &self,
+        db_context: &Arc<DbContext>,
         code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationRepositoryError> {
         let now = Utc::now().naive_utc();
 
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| DeviceAuthorizationRepositoryError::BadConnection)?;
@@ -79,12 +71,13 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
 
     async fn get_by_device_code(
         &self,
+        db_context: &Arc<DbContext>,
         code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationRepositoryError> {
         let now = Utc::now().naive_utc();
 
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| DeviceAuthorizationRepositoryError::BadConnection)?;
@@ -102,6 +95,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
 
     async fn delete_by_device_code(
         &self,
+        _db_context: &Arc<DbContext>,
         _id: &str,
     ) -> Result<(), DeviceAuthorizationRepositoryError> {
         todo!();

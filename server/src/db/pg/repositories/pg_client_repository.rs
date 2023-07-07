@@ -13,33 +13,21 @@ use crate::{
     DbContext, DbContextError,
 };
 
-pub struct PgClientRepository {
-    db_context: Arc<DbContext>,
-}
-
-impl PgClientRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-}
+pub struct PgClientRepository;
 
 #[async_trait]
 impl ClientRepository for PgClientRepository {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         redirect_repo: &dyn RedirectUriRepository,
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, ClientRepositoryError> {
-        let pg_client = self
-            .db_context
+        let pg_client = db_context
             .as_ref()
             .execute_in_pg_transaction(|conn| {
                 async move {
-                    println!("transaction start...");
-
                     let client = diesel::insert_into(clients::table)
                         .values((
                             clients::id.eq(&client_create.id),
@@ -54,16 +42,10 @@ impl ClientRepository for PgClientRepository {
                         .await
                         .map_err(|_| DbContextError::BadTransaction)?;
 
-                    println!("client created...");
-
-                    println!("{}", &client.id);
-
                     redirect_repo
-                        .create(redirect_create)
+                        .create(db_context, redirect_create)
                         .await
                         .map_err(|_| DbContextError::BadTransaction)?;
-
-                    println!("redirect created...");
 
                     Ok(client)
                 }
@@ -75,9 +57,13 @@ impl ClientRepository for PgClientRepository {
         Ok(ClientMapper::from_pg(pg_client))
     }
 
-    async fn get_by_id(&self, id: &str) -> Result<ClientModel, ClientRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn get_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &str,
+    ) -> Result<ClientModel, ClientRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| ClientRepositoryError::BadConnection)?;
@@ -93,6 +79,7 @@ impl ClientRepository for PgClientRepository {
 
     async fn get_by_credentials(
         &self,
+        db_context: &Arc<DbContext>,
         id: &str,
         secret: Option<&str>,
     ) -> Result<ClientModel, ClientRepositoryError> {
@@ -105,8 +92,8 @@ impl ClientRepository for PgClientRepository {
             query = query.filter(clients::secret.eq(secret));
         }
 
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| ClientRepositoryError::BadConnection)?;
@@ -121,10 +108,11 @@ impl ClientRepository for PgClientRepository {
 
     async fn get_all_by_user_id(
         &self,
+        db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<Vec<ClientModel>, ClientRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| ClientRepositoryError::BadConnection)?;
@@ -143,11 +131,12 @@ impl ClientRepository for PgClientRepository {
 
     async fn update_by_id(
         &self,
+        db_context: &Arc<DbContext>,
         id: &str,
         client_update: &ClientUpdateModel,
     ) -> Result<ClientModel, ClientRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| ClientRepositoryError::BadConnection)?;
@@ -162,9 +151,13 @@ impl ClientRepository for PgClientRepository {
         Ok(ClientMapper::from_pg(pg_client))
     }
 
-    async fn delete_by_id(&self, id: &str) -> Result<(), ClientRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn delete_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &str,
+    ) -> Result<(), ClientRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| ClientRepositoryError::BadConnection)?;

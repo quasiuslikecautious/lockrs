@@ -15,26 +15,16 @@ use crate::{
     DbContext,
 };
 
-pub struct PgRefreshTokenRepository {
-    db_context: Arc<DbContext>,
-}
-
-impl PgRefreshTokenRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-}
+pub struct PgRefreshTokenRepository;
 
 #[async_trait]
 impl RefreshTokenRepository for PgRefreshTokenRepository {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         token_create: &RefreshTokenCreateModel,
     ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
@@ -57,10 +47,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
 
     async fn get_by_token(
         &self,
+        db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
@@ -82,10 +72,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
 
     async fn use_by_token(
         &self,
+        db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
@@ -106,9 +96,12 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
 
-    async fn delete_by_token(&self, token: &str) -> Result<(), RefreshTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn delete_by_token(
+        &self,
+        db_context: &Arc<DbContext>,
+        token: &str,
+    ) -> Result<(), RefreshTokenRepositoryError> {
+        let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await

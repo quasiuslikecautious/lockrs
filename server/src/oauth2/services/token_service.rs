@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
 use ring::rand::{SecureRandom, SystemRandom};
@@ -6,12 +8,14 @@ use uuid::Uuid;
 use crate::{
     oauth2::models::{AccessTokenCreateModel, RefreshTokenCreateModel, ScopeModel, TokenModel},
     repositories::{AccessTokenRepository, RefreshTokenRepository},
+    DbContext,
 };
 
 pub struct TokenService;
 
 impl TokenService {
     pub async fn create_token(
+        db_context: &Arc<DbContext>,
         access_token_repository: &dyn AccessTokenRepository,
         refresh_token_repository: &dyn RefreshTokenRepository,
         client_id: &str,
@@ -29,7 +33,7 @@ impl TokenService {
         };
 
         let access_token = access_token_repository
-            .create(&access_token_create)
+            .create(db_context, &access_token_create)
             .await
             .map_err(|_| TokenServiceError::NotCreated)?;
 
@@ -45,7 +49,7 @@ impl TokenService {
         };
 
         let refresh_token = refresh_token_repository
-            .create(&refresh_token_create)
+            .create(db_context, &refresh_token_create)
             .await
             .map_err(|_| TokenServiceError::NotCreated)?;
 

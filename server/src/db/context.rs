@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use deadpool::managed::Timeouts;
 use deadpool_redis::{Config, PoolConfig};

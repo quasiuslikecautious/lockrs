@@ -1,33 +1,50 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::models::{ClientModel, ClientUpdateModel, RedirectCreateModel};
-use crate::repositories::RedirectUriRepository;
+use crate::{
+    models::{ClientModel, ClientUpdateModel, RedirectCreateModel},
+    repositories::RedirectUriRepository,
+    DbContext,
+};
 
 #[async_trait]
 pub trait ClientRepository: Send + Sync {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         redirect_repo: &dyn RedirectUriRepository,
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, ClientRepositoryError>;
-    async fn get_by_id(&self, id: &str) -> Result<ClientModel, ClientRepositoryError>;
+    async fn get_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &str,
+    ) -> Result<ClientModel, ClientRepositoryError>;
     async fn get_by_credentials(
         &self,
+        db_context: &Arc<DbContext>,
         id: &str,
         secret: Option<&str>,
     ) -> Result<ClientModel, ClientRepositoryError>;
     async fn get_all_by_user_id(
         &self,
+        db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<Vec<ClientModel>, ClientRepositoryError>;
     async fn update_by_id(
         &self,
+        db_context: &Arc<DbContext>,
         id: &str,
         client_update: &ClientUpdateModel,
     ) -> Result<ClientModel, ClientRepositoryError>;
-    async fn delete_by_id(&self, id: &str) -> Result<(), ClientRepositoryError>;
+    async fn delete_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &str,
+    ) -> Result<(), ClientRepositoryError>;
 }
 
 pub enum ClientRepositoryError {

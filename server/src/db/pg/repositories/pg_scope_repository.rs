@@ -11,22 +11,13 @@ use crate::{
     DbContext,
 };
 
-pub struct PgScopeRepository {
-    db_context: Arc<DbContext>,
-}
-
-impl PgScopeRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-}
+pub struct PgScopeRepository;
 
 #[async_trait]
 impl ScopeRepository for PgScopeRepository {
     async fn create(
         &self,
+        _db_context: &Arc<DbContext>,
         _scope_create: &ScopeCreateModel,
     ) -> Result<ScopeModel, ScopeRepositoryError> {
         todo!();
@@ -34,10 +25,11 @@ impl ScopeRepository for PgScopeRepository {
 
     async fn get_from_list(
         &self,
+        db_context: &Arc<DbContext>,
         scopes_list: &Vec<String>,
     ) -> Result<ScopeModel, ScopeRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| ScopeRepositoryError::BadConnection)?;
@@ -52,7 +44,11 @@ impl ScopeRepository for PgScopeRepository {
         Ok(ScopeModel { scopes: pg_scopes })
     }
 
-    async fn delete_by_name(&self, _id: &str) -> Result<(), ScopeRepositoryError> {
+    async fn delete_by_name(
+        &self,
+        _db_context: &Arc<DbContext>,
+        _id: &str,
+    ) -> Result<(), ScopeRepositoryError> {
         todo!();
     }
 }
