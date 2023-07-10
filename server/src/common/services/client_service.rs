@@ -44,7 +44,6 @@ impl ClientService {
         client_repository
             .create(
                 db_context,
-                redirect_repository,
                 &client_create,
                 &redirect_create,
             )

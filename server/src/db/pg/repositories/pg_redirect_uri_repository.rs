@@ -37,12 +37,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             ))
             .get_result::<PgRedirectUri>(conn)
             .await
-            .map_err(|err| {
-                println!("{:?}", err);
-                RedirectUriRepositoryError::NotCreated
-            })?;
-
-        println!("successfully created redirect...");
+            .map_err(|_| RedirectUriRepositoryError::NotCreated)?;
 
         Ok(RedirectMapper::from_pg(pg_redirect))
     }

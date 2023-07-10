@@ -13,7 +13,6 @@ pub trait ClientRepository: Send + Sync {
     async fn create(
         &self,
         db_context: &Arc<DbContext>,
-        redirect_repo: &dyn RedirectUriRepository,
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, ClientRepositoryError>;

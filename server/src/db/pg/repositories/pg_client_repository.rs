@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use diesel::prelude::*;
-use diesel_async::{scoped_futures::ScopedFutureExt, RunQueryDsl};
+use diesel_async::{scoped_futures::ScopedFutureExt, AsyncConnection, RunQueryDsl};
 use uuid::Uuid;
 
 use crate::{
     db::{
-        pg::{models::PgClient, schema::clients},
+        pg::{models::{PgClient, PgRedirectUri}, schema::clients, schema::redirect_uris},
         repositories::{ClientRepository, ClientRepositoryError, RedirectUriRepository},
         DbContext, DbContextError,
     },
@@ -22,37 +22,41 @@ impl ClientRepository for PgClientRepository {
     async fn create(
         &self,
         db_context: &Arc<DbContext>,
-        redirect_repo: &dyn RedirectUriRepository,
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, ClientRepositoryError> {
-        let pg_client = db_context
+        let connection = &mut db_context
             .as_ref()
-            .execute_in_pg_transaction(|conn| {
-                async move {
-                    let client = diesel::insert_into(clients::table)
-                        .values((
-                            clients::id.eq(&client_create.id),
-                            clients::secret.eq(&client_create.secret),
-                            clients::user_id.eq(&client_create.user_id),
-                            clients::is_public.eq(client_create.secret.is_none()),
-                            clients::name.eq(&client_create.name),
-                            clients::description.eq(&client_create.description),
-                            clients::homepage_url.eq(&client_create.homepage_url.to_string()),
-                        ))
-                        .get_result::<PgClient>(conn)
-                        .await
-                        .map_err(|_| DbContextError::BadTransaction)?;
+            .get_pg_connection()
+            .await
+            .map_err(|_| ClientRepositoryError::BadConnection)?;
 
-                    redirect_repo
-                        .create(db_context, redirect_create)
-                        .await
-                        .map_err(|_| DbContextError::BadTransaction)?;
+        let pg_client = connection.transaction::<_, DbContextError, _>(|conn| async move {
+                let client = diesel::insert_into(clients::table)
+                    .values((
+                        clients::id.eq(&client_create.id),
+                        clients::secret.eq(&client_create.secret),
+                        clients::user_id.eq(&client_create.user_id),
+                        clients::is_public.eq(client_create.secret.is_none()),
+                        clients::name.eq(&client_create.name),
+                        clients::description.eq(&client_create.description),
+                        clients::homepage_url.eq(&client_create.homepage_url.to_string()),
+                    ))
+                    .get_result::<PgClient>(conn)
+                    .await
+                    .map_err(|_| DbContextError::BadTransaction)?;
 
-                    Ok(client)
-                }
-                .scope_boxed()
-            })
+                diesel::insert_into(redirect_uris::table)
+                    .values((
+                        redirect_uris::client_id.eq(&redirect_create.client_id),
+                        redirect_uris::uri.eq(redirect_create.uri.to_string()),
+                    ))
+                    .get_result::<PgRedirectUri>(conn)
+                    .await
+                    .map_err(|_| DbContextError::BadTransaction)?;
+
+                Ok(client)
+            }.scope_boxed())
             .await
             .map_err(|_| ClientRepositoryError::NotCreated)?;
 
