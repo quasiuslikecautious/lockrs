@@ -1,21 +1,27 @@
+use std::sync::Arc;
+
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
 use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
+    db::{
+        repositories::{AccessTokenRepository, RefreshTokenRepository},
+        DbContext,
+    },
     oauth2::models::{AccessTokenCreateModel, RefreshTokenCreateModel, ScopeModel, TokenModel},
-    repositories::{AccessTokenRepository, RefreshTokenRepository},
 };
 
 pub struct TokenService;
 
 impl TokenService {
     pub async fn create_token(
+        db_context: &Arc<DbContext>,
         access_token_repository: &dyn AccessTokenRepository,
         refresh_token_repository: &dyn RefreshTokenRepository,
         client_id: &str,
-        user_id: &Option<Uuid>,
+        user_id: Option<&Uuid>,
         scopes: ScopeModel,
     ) -> Result<TokenModel, TokenServiceError> {
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
@@ -23,13 +29,13 @@ impl TokenService {
         let access_token_create = AccessTokenCreateModel {
             token: Self::generate_opaque_token(),
             client_id: client_id.to_string(),
-            user_id: *user_id,
+            user_id: user_id.cloned(),
             expires_at: access_expiry,
             scopes: scopes.scopes.clone(),
         };
 
         let access_token = access_token_repository
-            .create(&access_token_create)
+            .create(db_context, &access_token_create)
             .await
             .map_err(|_| TokenServiceError::NotCreated)?;
 
@@ -39,13 +45,13 @@ impl TokenService {
             access_token_id: access_token.id,
             token: Self::generate_opaque_token(),
             client_id: client_id.to_string(),
-            user_id: *user_id,
+            user_id: user_id.cloned(),
             expires_at: refresh_expiry,
             scopes: scopes.scopes.clone(),
         };
 
         let refresh_token = refresh_token_repository
-            .create(&refresh_token_create)
+            .create(db_context, &refresh_token_create)
             .await
             .map_err(|_| TokenServiceError::NotCreated)?;
 

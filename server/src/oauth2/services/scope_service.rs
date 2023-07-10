@@ -1,9 +1,15 @@
-use crate::{oauth2::models::ScopeModel, repositories::ScopeRepository};
+use std::sync::Arc;
+
+use crate::{
+    db::{repositories::ScopeRepository, DbContext},
+    oauth2::models::ScopeModel,
+};
 
 pub struct ScopeService;
 
 impl ScopeService {
     pub async fn get_from_list(
+        db_context: &Arc<DbContext>,
         scope_repository: &dyn ScopeRepository,
         scope: &str,
     ) -> Result<ScopeModel, ScopeServiceError> {
@@ -13,7 +19,7 @@ impl ScopeService {
             .collect::<Vec<String>>();
 
         scope_repository
-            .get_from_list(&scopes_list)
+            .get_from_list(db_context, &scopes_list)
             .await
             .map_err(|_| ScopeServiceError::InvalidScopes)
     }

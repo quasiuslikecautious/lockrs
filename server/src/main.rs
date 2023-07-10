@@ -4,7 +4,7 @@ mod db;
 mod middlewares;
 mod oauth2;
 
-pub use self::{common::*, db::*};
+pub use self::common::*;
 
 use std::{net::SocketAddr, sync::Arc};
 

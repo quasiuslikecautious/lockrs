@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::pg::schema::scopes;
+use crate::db::pg::schema::scopes;
 
 #[derive(Debug, Queryable, Insertable)]
 #[diesel(primary_key(id), table_name = scopes)]

@@ -6,33 +6,26 @@ use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
 use crate::{
+    db::{
+        pg::{models::PgUser, schema::users},
+        repositories::{UserRepository, UserRepositoryError},
+        DbContext,
+    },
     mappers::UserMapper,
     models::{UserCreateModel, UserModel, UserUpdateModel},
-    pg::{models::PgUser, schema::users},
-    repositories::{UserRepository, UserRepositoryError},
-    DbContext,
 };
 
-pub struct PgUserRepository {
-    db_context: Arc<DbContext>,
-}
-
-impl PgUserRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-}
+pub struct PgUserRepository;
 
 #[async_trait]
 impl UserRepository for PgUserRepository {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         user_create: &UserCreateModel,
     ) -> Result<UserModel, UserRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| UserRepositoryError::BadConnection)?;
@@ -49,9 +42,13 @@ impl UserRepository for PgUserRepository {
         Ok(UserMapper::from_pg(pg_user))
     }
 
-    async fn get_by_id(&self, id: &Uuid) -> Result<UserModel, UserRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn get_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &Uuid,
+    ) -> Result<UserModel, UserRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| UserRepositoryError::BadConnection)?;
@@ -65,9 +62,13 @@ impl UserRepository for PgUserRepository {
         Ok(UserMapper::from_pg(pg_user))
     }
 
-    async fn get_by_email(&self, email: &str) -> Result<UserModel, UserRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn get_by_email(
+        &self,
+        db_context: &Arc<DbContext>,
+        email: &str,
+    ) -> Result<UserModel, UserRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| UserRepositoryError::BadConnection)?;
@@ -83,11 +84,12 @@ impl UserRepository for PgUserRepository {
 
     async fn update_by_id(
         &self,
+        db_context: &Arc<DbContext>,
         id: &Uuid,
         update_user: &UserUpdateModel,
     ) -> Result<UserModel, UserRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| UserRepositoryError::BadConnection)?;
@@ -102,9 +104,13 @@ impl UserRepository for PgUserRepository {
         Ok(UserMapper::from_pg(pg_user))
     }
 
-    async fn delete_by_id(&self, id: &Uuid) -> Result<(), UserRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn delete_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &Uuid,
+    ) -> Result<(), UserRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| UserRepositoryError::BadConnection)?;

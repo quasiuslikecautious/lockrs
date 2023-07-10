@@ -42,21 +42,24 @@ impl TokenController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
+        let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let client = ClientAuthService::verify_credentials(
+            db_context,
             client_repository,
-            &client_credentials.id,
-            &client_credentials.secret,
+            client_credentials.id.as_str(),
+            client_credentials.secret.as_deref(),
         )
         .await
         .map_err(|_| TokenControllerError::InvalidClient)?;
 
         let scope_repository = &*state.repository_container.as_ref().scope_repository;
 
-        let scopes = ScopeService::get_from_list(scope_repository, params.scope.as_str())
-            .await
-            .map_err(|_| TokenControllerError::InvalidScopes)?;
+        let scopes =
+            ScopeService::get_from_list(db_context, scope_repository, params.scope.as_str())
+                .await
+                .map_err(|_| TokenControllerError::InvalidScopes)?;
 
         let token: TokenResponse = match params.grant_type.as_str() {
             "authorization_code" => Self::authorization_code_token(state).await,
@@ -99,16 +102,17 @@ impl TokenController {
             return Err(TokenControllerError::InvalidClient);
         }
 
+        let db_context = &state.as_ref().db_context;
         let access_token_repository = &*state.repository_container.as_ref().access_token_repository;
-
         let refresh_token_repository =
             &*state.repository_container.as_ref().refresh_token_repository;
 
         let token = TokenService::create_token(
+            db_context,
             access_token_repository,
             refresh_token_repository,
             &client.id,
-            &None,
+            None,
             scopes,
         )
         .await
@@ -134,11 +138,12 @@ impl TokenController {
             return Err(TokenControllerError::MissingRefreshToken);
         };
 
+        let db_context = &state.as_ref().db_context;
         let refresh_token_repository =
             &*state.repository_container.as_ref().refresh_token_repository;
 
         let refresh_token =
-            RefreshTokenService::use_token(refresh_token_repository, token.as_str())
+            RefreshTokenService::use_token(db_context, refresh_token_repository, token.as_str())
                 .await
                 .map_err(|err| match err {
                     RefreshTokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
@@ -148,10 +153,11 @@ impl TokenController {
         let access_token_repository = &*state.repository_container.as_ref().access_token_repository;
 
         let token = TokenService::create_token(
+            db_context,
             access_token_repository,
             refresh_token_repository,
             &client.id,
-            &refresh_token.user_id,
+            refresh_token.user_id.as_ref(),
             scopes,
         )
         .await

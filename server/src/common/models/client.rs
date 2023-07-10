@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use url::Url;
 use uuid::Uuid;
 
-use crate::pg::schema::clients;
+use crate::db::pg::schema::clients;
 
 #[derive(Debug, PartialEq)]
 pub struct ClientModel {

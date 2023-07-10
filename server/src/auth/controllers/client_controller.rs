@@ -41,9 +41,10 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
+        let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
-        let clients = ClientService::get_clients_by_user(client_repository, &user_id)
+        let clients = ClientService::get_clients_by_user(db_context, client_repository, &user_id)
             .await
             .map_err(|_| ClientControllerError::Internal)?;
 
@@ -73,13 +74,18 @@ impl ClientController {
             redirect_url: new_client_request.redirect_url,
         };
 
+        let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
         let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
 
-        let client =
-            ClientService::create_client(client_repository, redirect_repository, new_client)
-                .await
-                .map_err(|_| ClientControllerError::Internal)?;
+        let client = ClientService::create_client(
+            db_context,
+            client_repository,
+            redirect_repository,
+            new_client,
+        )
+        .await
+        .map_err(|_| ClientControllerError::Internal)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -93,9 +99,10 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
+        let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
-        let client = ClientService::get_client_by_id(client_repository, &client_id)
+        let client = ClientService::get_client_by_id(db_context, client_repository, &client_id)
             .await
             .map_err(|err| match err {
                 ClientServiceError::NotFound => ClientControllerError::InvalidClient,
@@ -121,15 +128,20 @@ impl ClientController {
             homepage_url: update_client_request.homepage_url,
         };
 
+        let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
-        let client =
-            ClientService::update_client_by_id(client_repository, &client_id, &update_client)
-                .await
-                .map_err(|err| match err {
-                    ClientServiceError::NotFound => ClientControllerError::InvalidClient,
-                    _ => ClientControllerError::Internal,
-                })?;
+        let client = ClientService::update_client_by_id(
+            db_context,
+            client_repository,
+            &client_id,
+            &update_client,
+        )
+        .await
+        .map_err(|err| match err {
+            ClientServiceError::NotFound => ClientControllerError::InvalidClient,
+            _ => ClientControllerError::Internal,
+        })?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -143,9 +155,10 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<StatusCode, ClientControllerError> {
+        let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
-        ClientService::delete_client_by_id(client_repository, &client_id)
+        ClientService::delete_client_by_id(db_context, client_repository, &client_id)
             .await
             .map_err(|_| ClientControllerError::Internal)?;
 

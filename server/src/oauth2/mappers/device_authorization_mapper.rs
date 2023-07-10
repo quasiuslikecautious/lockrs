@@ -1,4 +1,4 @@
-use crate::{oauth2::models::DeviceAuthorizationModel, pg::models::PgDeviceAuthorization};
+use crate::{db::pg::models::PgDeviceAuthorization, oauth2::models::DeviceAuthorizationModel};
 
 use super::ScopeMapper;
 

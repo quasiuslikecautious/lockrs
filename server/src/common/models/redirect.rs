@@ -7,6 +7,7 @@ pub struct RedirectModel {
     pub uri: Url,
 }
 
+#[derive(Debug)]
 pub struct RedirectCreateModel {
     pub client_id: String,
     pub uri: Url,

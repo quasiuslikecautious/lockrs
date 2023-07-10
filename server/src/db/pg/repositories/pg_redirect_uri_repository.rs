@@ -6,33 +6,26 @@ use diesel_async::RunQueryDsl;
 use url::Url;
 
 use crate::{
+    db::{
+        pg::{models::PgRedirectUri, schema::redirect_uris},
+        repositories::{RedirectUriRepository, RedirectUriRepositoryError},
+        DbContext,
+    },
     mappers::RedirectMapper,
     models::{RedirectCreateModel, RedirectModel},
-    pg::{models::PgRedirectUri, schema::redirect_uris},
-    repositories::{RedirectUriRepository, RedirectUriRepositoryError},
-    DbContext,
 };
 
-pub struct PgRedirectUriRepository {
-    db_context: Arc<DbContext>,
-}
-
-impl PgRedirectUriRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-}
+pub struct PgRedirectUriRepository;
 
 #[async_trait]
 impl RedirectUriRepository for PgRedirectUriRepository {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         redirect_create: &RedirectCreateModel,
     ) -> Result<RedirectModel, RedirectUriRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| RedirectUriRepositoryError::BadConnection)?;
@@ -51,11 +44,12 @@ impl RedirectUriRepository for PgRedirectUriRepository {
 
     async fn get_by_uri(
         &self,
+        db_context: &Arc<DbContext>,
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectUriRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| RedirectUriRepositoryError::BadConnection)?;
@@ -72,10 +66,11 @@ impl RedirectUriRepository for PgRedirectUriRepository {
 
     async fn get_all_by_client_id(
         &self,
+        db_context: &Arc<DbContext>,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RedirectUriRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_pg_connection()
             .await
             .map_err(|_| RedirectUriRepositoryError::BadConnection)?;

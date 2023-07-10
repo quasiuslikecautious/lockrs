@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
-use crate::pg::{models::PgClient, schema::redirect_uris};
+use crate::db::pg::{models::PgClient, schema::redirect_uris};
 
 #[derive(Debug, Queryable, Insertable, Associations, Identifiable)]
 #[diesel(belongs_to(PgClient, foreign_key = client_id))]

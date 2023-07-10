@@ -3,5 +3,6 @@ pub mod redis;
 pub mod repositories;
 
 mod context;
+mod repository_container;
 
-pub use self::context::*;
+pub use self::{context::*, repository_container::*};

@@ -1,9 +1,14 @@
+use std::sync::Arc;
+
 use bcrypt::{hash, verify, DEFAULT_COST};
 
 use crate::{
     auth::models::{AuthModel, RegisterModel, SessionTokenModel},
+    db::{
+        repositories::{SessionTokenRepository, UserRepository},
+        DbContext,
+    },
     models::{UserCreateModel, UserModel},
-    repositories::{SessionTokenRepository, UserRepository},
     services::{UserService, UserServiceError},
 };
 
@@ -13,25 +18,30 @@ pub struct AuthService;
 
 impl AuthService {
     pub async fn login(
+        db_context: &Arc<DbContext>,
         user_repository: &dyn UserRepository,
         session_token_repository: &dyn SessionTokenRepository,
         user_auth: &AuthModel,
     ) -> Result<SessionTokenModel, AuthServiceError> {
-        let user = UserService::get_user_by_email(user_repository, &user_auth.email)
+        let user = UserService::get_user_by_email(db_context, user_repository, &user_auth.email)
             .await
             .map_err(|_| AuthServiceError::Credentials)?;
 
         Self::verify_password(user_auth.password.as_str(), user.password_hash.as_str())?;
 
-        let session_token =
-            SessionTokenService::create_session_token(session_token_repository, &user.id)
-                .await
-                .map_err(|_| AuthServiceError::Token)?;
+        let session_token = SessionTokenService::create_session_token(
+            db_context,
+            session_token_repository,
+            &user.id,
+        )
+        .await
+        .map_err(|_| AuthServiceError::Token)?;
 
         Ok(session_token)
     }
 
     pub async fn register_user(
+        db_context: &Arc<DbContext>,
         user_repository: &dyn UserRepository,
         register_user: &RegisterModel,
     ) -> Result<UserModel, AuthServiceError> {
@@ -42,7 +52,7 @@ impl AuthService {
             password_hash,
         };
 
-        UserService::create_user(user_repository, &create_user)
+        UserService::create_user(db_context, user_repository, &create_user)
             .await
             .map_err(|err| match err {
                 UserServiceError::AlreadyExists => AuthServiceError::AlreadyExists,

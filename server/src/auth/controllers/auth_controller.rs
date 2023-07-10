@@ -24,16 +24,18 @@ impl AuthController {
             password: credentials.private,
         };
 
+        let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
         let session_token_repository =
             &*state.repository_container.as_ref().session_token_repository;
 
-        let session_token = AuthService::login(user_repository, session_token_repository, &auth)
-            .await
-            .map_err(|err| match err {
-                AuthServiceError::Credentials => AuthControllerError::InvalidCredentials,
-                _ => AuthControllerError::Internal,
-            })?;
+        let session_token =
+            AuthService::login(db_context, user_repository, session_token_repository, &auth)
+                .await
+                .map_err(|err| match err {
+                    AuthServiceError::Credentials => AuthControllerError::InvalidCredentials,
+                    _ => AuthControllerError::Internal,
+                })?;
 
         let token_response = SessionTokenResponse {
             session_token: session_token.token,

@@ -5,21 +5,15 @@ use uuid::Uuid;
 
 use crate::{
     auth::models::SessionModel,
-    repositories::{SessionRepository, SessionRepositoryError},
-    DbContext,
+    db::{
+        repositories::{SessionRepository, SessionRepositoryError},
+        DbContext,
+    },
 };
 
-pub struct RedisSessionRepository {
-    db_context: Arc<DbContext>,
-}
+pub struct RedisSessionRepository;
 
 impl RedisSessionRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-
     fn into_session_key(session_id: &str) -> String {
         format!("active_session:{}", session_id)
     }
@@ -31,9 +25,13 @@ impl RedisSessionRepository {
 
 #[async_trait]
 impl SessionRepository for RedisSessionRepository {
-    async fn create(&self, session: &SessionModel) -> Result<SessionModel, SessionRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn create(
+        &self,
+        db_context: &Arc<DbContext>,
+        session: &SessionModel,
+    ) -> Result<SessionModel, SessionRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_redis_connection()
             .await
             .map_err(|_| SessionRepositoryError::BadConnection)?;
@@ -63,11 +61,12 @@ impl SessionRepository for RedisSessionRepository {
 
     async fn get_by_hash(
         &self,
+        db_context: &Arc<DbContext>,
         session_id: &str,
         user_id: &Uuid,
     ) -> Result<SessionModel, SessionRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
+            .as_ref()
             .get_redis_connection()
             .await
             .map_err(|_| SessionRepositoryError::BadConnection)?;
@@ -85,9 +84,13 @@ impl SessionRepository for RedisSessionRepository {
         serde_json::from_str(value.as_str()).map_err(|_| SessionRepositoryError::BadData)
     }
 
-    async fn update(&self, session: &SessionModel) -> Result<SessionModel, SessionRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn update(
+        &self,
+        db_context: &Arc<DbContext>,
+        session: &SessionModel,
+    ) -> Result<SessionModel, SessionRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_redis_connection()
             .await
             .map_err(|_| SessionRepositoryError::BadConnection)?;
@@ -111,9 +114,13 @@ impl SessionRepository for RedisSessionRepository {
         Ok(session.clone())
     }
 
-    async fn delete_by_user_id(&self, id: &Uuid) -> Result<(), SessionRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn delete_by_user_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &Uuid,
+    ) -> Result<(), SessionRepositoryError> {
+        let conn = &mut db_context
+            .as_ref()
             .get_redis_connection()
             .await
             .map_err(|_| SessionRepositoryError::BadConnection)?;

@@ -1,4 +1,4 @@
-use crate::repositories::*;
+use crate::db::repositories::*;
 
 pub struct RepositoryContainer {
     pub access_token_repository: Box<dyn AccessTokenRepository>,

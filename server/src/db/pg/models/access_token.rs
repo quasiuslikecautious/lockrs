@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use uuid::Uuid;
 
-use crate::pg::schema::access_tokens;
+use crate::db::pg::schema::access_tokens;
 
 #[derive(Debug, Queryable, Insertable)]
 #[diesel(primary_key(id), table_name = access_tokens)]

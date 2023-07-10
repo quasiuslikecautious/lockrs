@@ -6,35 +6,27 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
 use crate::{
+    db::{
+        pg::{models::PgAccessToken, schema::access_tokens},
+        repositories::{AccessTokenRepository, AccessTokenRepositoryError},
+        DbContext,
+    },
     oauth2::{
         mappers::AccessTokenMapper,
         models::{AccessTokenCreateModel, AccessTokenModel},
     },
-    pg::{models::PgAccessToken, schema::access_tokens},
-    repositories::{AccessTokenRepository, AccessTokenRepositoryError},
-    DbContext,
 };
 
-pub struct PgAccessTokenRepository {
-    db_context: Arc<DbContext>,
-}
-
-impl PgAccessTokenRepository {
-    pub fn new(db_context: &Arc<DbContext>) -> Self {
-        Self {
-            db_context: Arc::clone(db_context),
-        }
-    }
-}
+pub struct PgAccessTokenRepository;
 
 #[async_trait]
 impl AccessTokenRepository for PgAccessTokenRepository {
     async fn create(
         &self,
+        db_context: &Arc<DbContext>,
         token_create: &AccessTokenCreateModel,
     ) -> Result<AccessTokenModel, AccessTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
@@ -57,10 +49,10 @@ impl AccessTokenRepository for PgAccessTokenRepository {
 
     async fn get_by_token(
         &self,
+        db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<AccessTokenModel, AccessTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+        let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
@@ -79,9 +71,12 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         Ok(AccessTokenMapper::from_pg(pg_token))
     }
 
-    async fn delete_by_token(&self, token: &str) -> Result<(), AccessTokenRepositoryError> {
-        let conn = &mut self
-            .db_context
+    async fn delete_by_token(
+        &self,
+        db_context: &Arc<DbContext>,
+        token: &str,
+    ) -> Result<(), AccessTokenRepositoryError> {
+        let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await

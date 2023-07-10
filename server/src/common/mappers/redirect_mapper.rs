@@ -1,6 +1,6 @@
 use url::Url;
 
-use crate::{models::RedirectModel, pg::models::PgRedirectUri};
+use crate::{db::pg::models::PgRedirectUri, models::RedirectModel};
 
 pub struct RedirectMapper;
 

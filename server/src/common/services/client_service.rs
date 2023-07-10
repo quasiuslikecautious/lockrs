@@ -1,16 +1,22 @@
+use std::sync::Arc;
+
 use base64::{engine::general_purpose, Engine as _};
 use ring::rand::{SecureRandom, SystemRandom};
 use uuid::Uuid;
 
 use crate::{
+    db::{
+        repositories::{ClientRepository, RedirectUriRepository},
+        DbContext,
+    },
     models::{ClientCreateModel, ClientModel, ClientUpdateModel, RedirectCreateModel},
-    repositories::{ClientRepository, RedirectUriRepository},
 };
 
 pub struct ClientService;
 
 impl ClientService {
     pub async fn create_client(
+        db_context: &Arc<DbContext>,
         client_repository: &dyn ClientRepository,
         redirect_repository: &dyn RedirectUriRepository,
         new_client: ClientCreateModel,
@@ -36,48 +42,56 @@ impl ClientService {
         };
 
         client_repository
-            .create(redirect_repository, &client_create, &redirect_create)
+            .create(
+                db_context,
+                &client_create,
+                &redirect_create,
+            )
             .await
             .map_err(|_| ClientServiceError::NotCreated)
     }
 
     pub async fn get_client_by_id(
+        db_context: &Arc<DbContext>,
         client_repository: &dyn ClientRepository,
         id: &str,
     ) -> Result<ClientModel, ClientServiceError> {
         client_repository
-            .get_by_id(id)
+            .get_by_id(db_context, id)
             .await
             .map_err(|_| ClientServiceError::NotFound)
     }
 
     pub async fn get_clients_by_user(
+        db_context: &Arc<DbContext>,
         client_repository: &dyn ClientRepository,
         user_id: &Uuid,
     ) -> Result<Vec<ClientModel>, ClientServiceError> {
         client_repository
-            .get_all_by_user_id(user_id)
+            .get_all_by_user_id(db_context, user_id)
             .await
             .map_err(|_| ClientServiceError::NotFound)
     }
 
     pub async fn update_client_by_id(
+        db_context: &Arc<DbContext>,
         client_repository: &dyn ClientRepository,
         client_id: &str,
         update_client: &ClientUpdateModel,
     ) -> Result<ClientModel, ClientServiceError> {
         client_repository
-            .update_by_id(client_id, update_client)
+            .update_by_id(db_context, client_id, update_client)
             .await
             .map_err(|_| ClientServiceError::NotUpdated)
     }
 
     pub async fn delete_client_by_id(
+        db_context: &Arc<DbContext>,
         client_repository: &dyn ClientRepository,
         client_id: &str,
     ) -> Result<(), ClientServiceError> {
         client_repository
-            .delete_by_id(client_id)
+            .delete_by_id(db_context, client_id)
             .await
             .map_err(|_| ClientServiceError::BadDelete)
     }

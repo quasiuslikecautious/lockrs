@@ -1,4 +1,4 @@
-use crate::{models::ClientModel, pg::models::PgClient};
+use crate::{db::pg::models::PgClient, models::ClientModel};
 
 pub struct ClientMapper;
 
