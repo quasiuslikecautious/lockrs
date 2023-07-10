@@ -1,2 +1,7 @@
 [workspace]
 members = ["server", "frontend"]
+
+[workspace.package]
+name = "lockrs"
+version = "0.1.0"
+authors = ["Zach <zach@quasius.dev>"]
