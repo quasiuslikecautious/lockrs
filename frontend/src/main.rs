@@ -1,76 +1,44 @@
-mod components;
-mod controllers;
-mod models;
-mod services;
-mod styles;
-mod views;
+#[cfg(feature = "ssr")]
+#[tokio::main]
+async fn main() {
+    use axum::{routing::post, Router};
+    use frontend::{app::*, fallback::file_and_error_handler};
+    use leptos::*;
+    use leptos_axum::{generate_route_list, LeptosRoutes};
+    use log::info;
 
-use yew::prelude::*;
-use yew_router::prelude::*;
+    simple_logger::init_with_level(log::Level::Info).expect("couldn't initialize logging");
 
-#[derive(Clone, Routable, PartialEq)]
-enum Route {
-    #[at("/client/:id")]
-    ClientDetailsRoute { id: String },
+    // Setting get_configuration(None) means we'll be using cargo-leptos's env values
+    // For deployment these variables are:
+    // <https://github.com/leptos-rs/start-axum#executing-a-server-on-a-remote-machine-without-the-toolchain>
+    // Alternately a file can be specified such as Some("Cargo.toml")
+    // The file would need to be included with the executable when moved to deployment
+    let conf = get_configuration(None).await.unwrap();
+    let addr = conf.leptos_options.site_addr;
+    let leptos_options = conf.leptos_options;
+    // Generate the list of routes in your Leptos App
+    let routes = generate_route_list(|cx| view! { cx, <App/> }).await;
 
-    #[at("/client/register")]
-    ClientRegisterRoute,
+    // build our application with a route
+    let app = Router::new()
+        .route("/api/*fn_name", post(leptos_axum::handle_server_fns))
+        .leptos_routes(&leptos_options, routes, |cx| view! { cx, <App/> })
+        .fallback(file_and_error_handler)
+        .with_state(leptos_options);
 
-    #[at("/device")]
-    DeviceRoute,
-
-    #[at("/")]
-    HomeRoute,
-
-    #[at("/login")]
-    LoginRoute,
-
-    #[at("/logout")]
-    LogoutRoute,
-
-    #[at("/logout/success")]
-    LogoutSuccessRoute,
-
-    #[at("/scopes/confirm")]
-    ScopeConfirmationRoute,
-
-    #[at("/signup")]
-    SignupRoute,
-
-    #[at("/user/:id")]
-    UserDetailsRoute { id: String },
+    // run our app with hyper
+    // `axum::Server` is a re-export of `hyper::Server`
+    info!("listening on http://{}", &addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
 
-fn switch(routes: Route) -> Html {
-    match routes {
-        Route::HomeRoute => html! { <h1>{ "Hello Frontend" }</h1> },
-        Route::ClientDetailsRoute { id } => html! { <h1>{ id }</h1> },
-        Route::ClientRegisterRoute => html! { <controllers::ClientRegistrationController /> },
-        Route::DeviceRoute => html! { <controllers::DeviceCodeController /> },
-        Route::LoginRoute => html! { <controllers::LoginController /> },
-        Route::LogoutRoute => html! { <controllers::LogoutController /> },
-        Route::LogoutSuccessRoute => html! { <controllers::LogoutSuccessController /> },
-        Route::ScopeConfirmationRoute => html! { <controllers::ScopeConfirmationController /> },
-        Route::SignupRoute => html! { <controllers::SignupController /> },
-        Route::UserDetailsRoute { id } => {
-            html! { <controllers::UserDetailsController user_id={id} /> }
-        }
-    }
-}
-
-#[function_component(App)]
-fn app() -> Html {
-    html! {
-        <BrowserRouter>
-            <components::IdCardContainer>
-                <Switch<Route> render={switch} />
-            </components::IdCardContainer>
-        </BrowserRouter>
-    }
-}
-
-fn main() {
-    wasm_logger::init(wasm_logger::Config::new(log::Level::Trace));
-    console_error_panic_hook::set_once();
-    yew::Renderer::<App>::new().render();
+#[cfg(not(feature = "ssr"))]
+pub fn main() {
+    // no client-side main function
+    // unless we want this to work with e.g., Trunk for a purely client-side app
+    // see lib.rs for hydration function instead
 }
