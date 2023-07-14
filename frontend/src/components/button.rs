@@ -3,7 +3,7 @@ use leptos::*;
 #[component]
 pub fn FilledButton<F>(cx: Scope, on_click: F, children: Children) -> impl IntoView
 where
-    F: FnMut(ev::MouseEvent) -> () + 'static,
+    F: FnMut(ev::MouseEvent) + 'static,
 {
     view! { cx,
         <button
@@ -18,7 +18,7 @@ where
 #[component]
 pub fn UnfilledButton<F>(cx: Scope, on_click: F, children: Children) -> impl IntoView
 where
-    F: FnMut(ev::MouseEvent) -> () + 'static,
+    F: FnMut(ev::MouseEvent) + 'static,
 {
     view! { cx,
         <div

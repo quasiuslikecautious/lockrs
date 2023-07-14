@@ -11,7 +11,7 @@ pub fn DropDownSelect<F>(
     children: Children,
 ) -> impl IntoView
 where
-    F: FnMut(ev::Event) -> () + 'static,
+    F: FnMut(ev::Event) + 'static,
 {
     view! { cx,
         <div class="mb-4">

@@ -11,7 +11,7 @@ pub fn FormField<F>(
     on_change: F,
 ) -> impl IntoView
 where
-    F: FnMut(ev::Event) -> () + 'static,
+    F: FnMut(ev::Event) + 'static,
 {
     view! { cx,
         <div class="mb-4">

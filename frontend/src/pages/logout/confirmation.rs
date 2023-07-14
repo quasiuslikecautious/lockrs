@@ -17,7 +17,7 @@ pub fn LogoutConfirmationPage(cx: Scope) -> impl IntoView {
 
             <form action="/logout/success">
                 <FilledButton
-                    on_click=move |ev| {
+                    on_click=move |_ev| {
                         log::info!("Button clicked");
                     }
             >
@@ -26,7 +26,7 @@ pub fn LogoutConfirmationPage(cx: Scope) -> impl IntoView {
             </form>
 
             <UnfilledButton
-                on_click=move |ev| {
+                on_click=move |_ev| {
                     log::info!("Button clicked");
                 }
             >

@@ -7,8 +7,8 @@ pub fn ClientRegisterPage(cx: Scope) -> impl IntoView {
     let (name, set_name) = create_signal(cx, "".to_string());
     let (description, set_description) = create_signal(cx, "".to_string());
     let (app_type, set_type) = create_signal(cx, "".to_string());
-    let (homepage, set_homepage) = create_signal(cx, "".to_string());
-    let (redirect, set_redirect) = create_signal(cx, "".to_string());
+    let (homepage, _set_homepage) = create_signal(cx, "".to_string());
+    let (redirect, _set_redirect) = create_signal(cx, "".to_string());
 
     view! { cx,
         <div id="login-page" class="relative text-left h-full">
