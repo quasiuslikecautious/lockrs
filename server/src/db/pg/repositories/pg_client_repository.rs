@@ -92,7 +92,7 @@ impl ClientRepository for PgClientRepository {
         let mut query = clients::table
             .into_boxed()
             .filter(clients::id.eq(&id))
-            .filter(clients::is_public.eq(secret.is_some()));
+            .filter(clients::is_public.eq(secret.is_none()));
 
         if let Some(secret) = secret {
             query = query.filter(clients::secret.eq(secret));
