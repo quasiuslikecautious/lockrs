@@ -19,7 +19,7 @@
   <h3 align="center">lockrs<h3>
 
   <p align="center">
-	A RESTful authentication and authorization API written in Rust (specifically using axum) and web app using Yew and Sylist. All data is stored in Redis or PostgreSQL with tokio async support using diesel_async and deadpool. Targeting OAuth2 specifications.
+	A RESTful authentication and authorization API written in Rust (specifically using axum) and web app using Leptos and TailwindCSS. All data is stored in Redis or PostgreSQL with tokio async support using diesel_async and deadpool. Targeting OAuth2 specifications.
 	<br />
 	<a href="https://github.com/quasiuslikecautious/lockrs">
 	  <strong>Explore the docs</strong>
@@ -70,11 +70,12 @@
 ### Built With
 
 * [![Rust][Rust.rs]][Rust-url]
-* [![Diesel][Diesel.rs]][Diesel-url]
 * [![Axum][Axum.rs]][Axum-url]
-* [![Yew][yew.rs]][Yew-url]
-* [![Redis][Redis.redis]][Redis-url]
+* [![Leptos][Leptos.rs]][Leptos-url]
+* [![TailwindCSS][Tailwind.css]][Tailwind-url]
+* [![Diesel][Diesel.rs]][Diesel-url]
 * [![PostgreSQL][PostgreSQL.psql]][PostgreSQL-url]
+* [![Redis][Redis.redis]][Redis-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -86,9 +87,9 @@ To get a local copy up and running follow these steps.
 
 ### Prerequisites
 
-To run this api, you will need to have cargo installed, and Redis and PostgreSQL setup
+To run this application, you will need to have cargo and cargo-leptos installed, and Redis and PostgreSQL setup
 * Cargo [installation docs](https://doc.rust-lang.org/cargo/getting-started/installation.html)
-* Trunk [installation docs](https://trunkrs.dev/#install)
+* Cargo-leptos [installation docs](https://github.com/leptos-rs/cargo-leptos)
 * Redis [download page](https://redis.io/download/)
 * PostgreSQL [download page](https://www.postgresql.org/download/)
 
@@ -115,12 +116,6 @@ I also highly recommend [cargo-watch]("https://crates.io/crates/cargo-watch") fo
    ```sh
    cargo build
    ```
-1. Install the diesel CLI and initialize diesel in the project
-   ```sh
-   # run this command in the project root e.g. .../lockrs/
-   cargo install diesel_cli
-   diesel setup
-   ```
 
 1. Setup your .env file with the database path and secrets
     ```sh
@@ -129,6 +124,14 @@ I also highly recommend [cargo-watch]("https://crates.io/crates/cargo-watch") fo
     echo KEY_INTERVAL={Seconds} > .env
     echo AUTH_INTERVAL={Seconds} > .env
     ```
+
+1. Install the diesel CLI and initialize diesel in the project
+   ```sh
+   # run this command in the server project root e.g. .../lockrs/server
+   cd server
+   cargo install diesel_cli
+   diesel setup
+   ```
 
 1. Initialize your database with the tables this project will use
     ``` sh
@@ -177,14 +180,33 @@ For convenience, a few standard requests have been stored in server/curls. If yo
 
 ### Running the web app on /frontend
 
-To start the web application, first we must start the backend api using the steps above. By default After you have the backend running, open a new terminal instance and run
+To start the web application, first we must start the backend api using the steps above. This project requires the use of nightly rust, so make sure to run:
 
 ```sh
-    cd frontend # go to frontend binary directory
-    trunk serve 
+    # run in /path/to/lockrs/frontend
+    rustup override set nightly
+```
+
+After you have the backend running, open a new terminal instance and run
+
+```sh
+    # run if not in frontend from last step already.
+    # Go to frontend binary directory
+    cd frontend
+
+    cargo leptos watch
 ```
 
 From this point, open up a browser and navigate to http://127.0.0.1:8000/signup and register a new user, /login to authenticate existing users, etc.
+
+If you do plan on making any changes to styling, make sure to have a terminal running:
+
+```sh
+    # run in /path/to/lockrs/frontend
+    npx tailwindcss -i ./input.css -o ./style/output.css --watch
+```
+
+to enable hot rebuilding of tailwind as you develop!
 
 _For more examples, please refer to the [Documentation](https://example.com) TODO will add link to API docs here_
 
@@ -204,6 +226,7 @@ _For more examples, please refer to the [Documentation](https://example.com) TOD
   - [ ] Add integration tests
   - [ ] Add a few end to end tests
 - [ ] Frontend
+  - [x] Switch from Yew to Leptos
   - [ ] Create pages for /user operations
   - [ ] Create pages for /client operations
   - [ ] Create pages for /redirect uri operations
@@ -275,8 +298,10 @@ Project Link: [https://github.com/quasiuslikecautious/lockrs](https://github.com
 [Diesel-url]: https://diesel.rs/
 [Axum.rs]: https://img.shields.io/badge/axum-000000?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD8AAAA4AQMAAABwlLIkAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAA4ElEQVQYlVXRPYrDMBAFYAXDupQPsGD2HgFdacsUxpNULn2lQC4SxxdwOhcPTaSnH2JVH/phNG+MelHd1RuFC5AA36tucUcD3oSFLMQMWYkJ8iAekCkhnBILxBJvSE9sGBN2DC5hGITA+UKs/nzRmfj9Jxbt/oiXM6c9Avba8GO+bW53Pr/2W0M83d6mWoJcS5Brqc/AGBEWRpNWAo8y6uXyfCsIJeyhqP9p7zdGZ83pKd9fffmuA7uofcVO59x7CWF0x3xqYjXD9Sve6Zj8VGZRp9NDOK86QV9mGocLQogPHV1XySZN2nYAAAAASUVORK5CYII=
 [Axum-url]: https://github.com/tokio-rs/axum
-[Yew.rs]: https://img.shields.io/badge/yew-FFFFFF?style=for-the-badge&logo=data:image/png;base64,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
-[Yew-url]: https://yew.rs
+[Leptos.rs]: https://img.shields.io/badge/Leptos-ef3939?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAD5UExURQAAABYLNxgMNxcNNhcNNufh5es3Ou4zOAAAHxcNNhgNN+s5Pfi4utra2hgNOBoQOgAAJBcNNRcLNhUKNhYLMxcLNhgMNxcMNxcNNxgNNxcNNxcNNhcNNxgNNmVeev///0c+XxcNNxkOOMrH0fBpbJmUp+jm6u/m6ZyXqTsyVdjW3SAVPjguU7Ctu+zk6Pfv8MzK0zctUjgvU+vf4vF3euw5PfF4e7GuvPF3eew3O6+ruu7l6Ow4POvk5+zk57KuvPF2efF4erCsujkvU+zf4uvf4zcuUrazwPz09O3l6LGtu3hxip2YqkA4Wt7d4i0jSd7d40pBYv///+fxzp8AAAAidFJOUwAulNb21ZMtCJf9/ZUHv70HmJUvLZaT2NX4mJbAv/0vltcrchWcAAAAAWJLR0QfBQ0QvQAAAAd0SU1FB+cHDgApH1wkuKcAAAC5SURBVBjTTU/HFoJAEBsUFbCCFTvYFbtYsWLv/v/POLN4MIdskre7kwFAcC43z3u8PnAgiJKOKJX9gSDzIZ2hUq3VwxEMZMc3mi1kBSBK9412p9vro5BiEMdjMByZ5nhISQKSyJPpDDGeo0yBirywKDCXKPn/YMUCerLeULDdoXSzT+39xrJGhyNKlzPWPp0vV4PGcgBpqnW7O/UyVD2r64/ni/mcwJaR8+8PWUkUfvsWipqqagpH+gsu0CAuf9g+3gAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMy0wNy0xNFQwMDo0MTozMSswMDowMFuu09YAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjMtMDctMTRUMDA6NDE6MzErMDA6MDAq82tqAAAAKHRFWHRkYXRlOnRpbWVzdGFtcAAyMDIzLTA3LTE0VDAwOjQxOjMxKzAwOjAwfeZKtQAAAABJRU5ErkJggg==
+[Leptos-url]: https://leptos.dev/
+[Tailwind.css]: https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white
+[Tailwind-url]: https://tailwindcss.com/
 [Redis.redis]: https://img.shields.io/badge/Redis-FF0000?style=for-the-badge&logo=redis&logoColor=white
 [Redis-url]: https://redis.io/
 [PostgreSQL.psql]:  	https://img.shields.io/badge/PostgreSQL-FFFFFF?style=for-the-badge&logo=postgresql&logoColor=blue
