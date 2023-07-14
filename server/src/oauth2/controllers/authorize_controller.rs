@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::Query,
+    extract::{Query, State},
     http::StatusCode,
     response::{IntoResponse, Redirect},
-    Extension,
 };
 use serde::Deserialize;
 use url::Url;
@@ -29,7 +28,7 @@ pub struct AuthorizeController;
 
 impl AuthorizeController {
     pub async fn handle(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<AuthorizeRequest>,
     ) -> impl IntoResponse {

@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
 use serde::Deserialize;
 use url::Url;
 
@@ -38,7 +42,7 @@ pub struct TokenController;
 
 impl TokenController {
     pub async fn handle(
-        Extension(state): Extension<Arc<AppState>>,
+        State(state): State<Arc<AppState>>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {

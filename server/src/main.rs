@@ -34,16 +34,14 @@ async fn main() {
         .with(filter)
         .init();
 
-    let auth_routes = auth::routes().with_state(Arc::new(AppState::new().await));
-    let oauth2_routes = oauth2::routes();
+    let state = Arc::new(AppState::new().await);
+
+    let auth_routes = auth::routes().with_state(Arc::clone(&state));
+    let oauth2_routes = oauth2::routes().with_state(Arc::clone(&state));
 
     let app_routes = Router::new()
-        .nest(
-            "/api/v1",
-            Router::new()
-                .merge(auth_routes)
-                .nest("/oauth2", oauth2_routes),
-        )
+        .nest("/api/v1", auth_routes)
+        .nest("/oauth2/v1", oauth2_routes)
         .fallback_service(get(|req| async move {
             match ServeDir::new(String::from("./dist")).oneshot(req).await {
                 Ok(res) => res.map(boxed),
