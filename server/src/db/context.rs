@@ -3,7 +3,10 @@ use std::time::Duration;
 use deadpool::managed::Timeouts;
 use deadpool_redis::{Config, PoolConfig};
 use deadpool_runtime::Runtime;
-use diesel_async::pooled_connection::{deadpool::{Object, Pool}, AsyncDieselConnectionManager};
+use diesel_async::pooled_connection::{
+    deadpool::{Object, Pool},
+    AsyncDieselConnectionManager,
+};
 
 type AsyncPgPool = Pool<AsyncPgConnection>;
 type AsyncRedisPool = deadpool_redis::Pool;
@@ -74,7 +77,7 @@ impl DbContext {
             .get()
             .await
             .map_err(|_| DbContextError::ConnectionFailed)
-    } 
+    }
 }
 
 #[derive(Debug)]

@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::{
     db::{
         pg::{models::PgUser, schema::users},
-        repositories::{UserRepository, UserRepositoryError},
+        repositories::{RepositoryError, UserRepository},
         DbContext,
     },
     mappers::UserMapper,
@@ -23,12 +23,12 @@ impl UserRepository for PgUserRepository {
         &self,
         db_context: &Arc<DbContext>,
         user_create: &UserCreateModel,
-    ) -> Result<UserModel, UserRepositoryError> {
+    ) -> Result<UserModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| UserRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_user = diesel::insert_into(users::table)
             .values((
@@ -37,7 +37,7 @@ impl UserRepository for PgUserRepository {
             ))
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|_| UserRepositoryError::NotCreated)?;
+            .map_err(|_| RepositoryError::NotCreated)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -46,18 +46,18 @@ impl UserRepository for PgUserRepository {
         &self,
         db_context: &Arc<DbContext>,
         id: &Uuid,
-    ) -> Result<UserModel, UserRepositoryError> {
+    ) -> Result<UserModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| UserRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_user = users::table
             .filter(users::id.eq(id))
             .first::<PgUser>(conn)
             .await
-            .map_err(|_| UserRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -66,18 +66,18 @@ impl UserRepository for PgUserRepository {
         &self,
         db_context: &Arc<DbContext>,
         email: &str,
-    ) -> Result<UserModel, UserRepositoryError> {
+    ) -> Result<UserModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| UserRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_user = users::table
             .filter(users::email.eq(email))
             .first::<PgUser>(conn)
             .await
-            .map_err(|_| UserRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -87,19 +87,19 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
         update_user: &UserUpdateModel,
-    ) -> Result<UserModel, UserRepositoryError> {
+    ) -> Result<UserModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| UserRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_user = diesel::update(users::table)
             .filter(users::id.eq(id))
             .set(update_user)
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|_| UserRepositoryError::NotUpdated)?;
+            .map_err(|_| RepositoryError::NotUpdated)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -108,20 +108,20 @@ impl UserRepository for PgUserRepository {
         &self,
         db_context: &Arc<DbContext>,
         id: &Uuid,
-    ) -> Result<(), UserRepositoryError> {
+    ) -> Result<(), RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| UserRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let rows_affected = diesel::delete(users::table.filter(users::id.eq(id)))
             .execute(conn)
             .await
-            .map_err(|_| UserRepositoryError::BadDelete)?;
+            .map_err(|_| RepositoryError::NotDeleted)?;
 
         if rows_affected != 1 {
-            return Err(UserRepositoryError::BadDelete);
+            return Err(RepositoryError::NotDeleted);
         }
 
         Ok(())

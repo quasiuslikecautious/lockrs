@@ -8,7 +8,7 @@ use diesel_async::RunQueryDsl;
 use crate::{
     db::{
         pg::{models::PgRefreshToken, schema::refresh_tokens},
-        repositories::{RefreshTokenRepository, RefreshTokenRepositoryError},
+        repositories::{RefreshTokenRepository, RepositoryError},
         DbContext,
     },
     oauth2::{
@@ -25,12 +25,12 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         &self,
         db_context: &Arc<DbContext>,
         token_create: &RefreshTokenCreateModel,
-    ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError> {
+    ) -> Result<RefreshTokenModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RefreshTokenRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_token = diesel::insert_into(refresh_tokens::table)
             .values((
@@ -42,7 +42,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             ))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|_| RefreshTokenRepositoryError::NotCreated)?;
+            .map_err(|_| RepositoryError::NotCreated)?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -51,12 +51,12 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError> {
+    ) -> Result<RefreshTokenModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RefreshTokenRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let now = Utc::now().naive_utc();
 
@@ -67,7 +67,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .filter(refresh_tokens::used.eq(false))
             .first::<PgRefreshToken>(conn)
             .await
-            .map_err(|_| RefreshTokenRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -76,12 +76,12 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError> {
+    ) -> Result<RefreshTokenModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RefreshTokenRepositoryError::NotUpdated)?;
+            .map_err(|_| RepositoryError::NotUpdated)?;
 
         let now = Utc::now().naive_utc();
 
@@ -93,7 +93,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .set(refresh_tokens::used.eq(true))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|_| RefreshTokenRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -102,21 +102,21 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<(), RefreshTokenRepositoryError> {
+    ) -> Result<(), RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RefreshTokenRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let affected_rows = diesel::delete(refresh_tokens::table)
             .filter(refresh_tokens::token.eq(token))
             .execute(conn)
             .await
-            .map_err(|_| RefreshTokenRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         if affected_rows != 1 {
-            return Err(RefreshTokenRepositoryError::BadDelete);
+            return Err(RepositoryError::NotDeleted);
         }
 
         Ok(())

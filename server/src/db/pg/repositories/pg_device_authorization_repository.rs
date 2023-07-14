@@ -8,7 +8,7 @@ use diesel_async::RunQueryDsl;
 use crate::{
     db::{
         pg::{models::PgDeviceAuthorization, schema::device_authorizations},
-        repositories::{DeviceAuthorizationRepository, DeviceAuthorizationRepositoryError},
+        repositories::{DeviceAuthorizationRepository, RepositoryError},
         DbContext,
     },
     oauth2::{
@@ -25,12 +25,12 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         &self,
         db_context: &Arc<DbContext>,
         device_authorization_create: &DeviceAuthorizationCreateModel,
-    ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationRepositoryError> {
+    ) -> Result<DeviceAuthorizationModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| DeviceAuthorizationRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_device_authorization = diesel::insert_into(device_authorizations::table)
             .values((
@@ -42,7 +42,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             ))
             .get_result::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|_| DeviceAuthorizationRepositoryError::NotCreated)?;
+            .map_err(|_| RepositoryError::NotCreated)?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }
@@ -51,14 +51,14 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         &self,
         db_context: &Arc<DbContext>,
         code: &str,
-    ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationRepositoryError> {
+    ) -> Result<DeviceAuthorizationModel, RepositoryError> {
         let now = Utc::now().naive_utc();
 
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| DeviceAuthorizationRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_device_authorization = device_authorizations::table
             .filter(device_authorizations::device_code.eq(code))
@@ -66,7 +66,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .filter(device_authorizations::expires_at.gt(now))
             .first::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|_| DeviceAuthorizationRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }
@@ -75,14 +75,14 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         &self,
         db_context: &Arc<DbContext>,
         code: &str,
-    ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationRepositoryError> {
+    ) -> Result<DeviceAuthorizationModel, RepositoryError> {
         let now = Utc::now().naive_utc();
 
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| DeviceAuthorizationRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_device_authorization = device_authorizations::table
             .filter(device_authorizations::user_code.eq(code))
@@ -90,7 +90,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .filter(device_authorizations::expires_at.gt(now))
             .first::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|_| DeviceAuthorizationRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }
@@ -99,7 +99,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         &self,
         _db_context: &Arc<DbContext>,
         _id: &str,
-    ) -> Result<(), DeviceAuthorizationRepositoryError> {
+    ) -> Result<(), RepositoryError> {
         todo!();
     }
 }

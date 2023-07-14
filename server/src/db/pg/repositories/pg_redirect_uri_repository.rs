@@ -8,7 +8,7 @@ use url::Url;
 use crate::{
     db::{
         pg::{models::PgRedirectUri, schema::redirect_uris},
-        repositories::{RedirectUriRepository, RedirectUriRepositoryError},
+        repositories::{RedirectUriRepository, RepositoryError},
         DbContext,
     },
     mappers::RedirectMapper,
@@ -23,12 +23,12 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         &self,
         db_context: &Arc<DbContext>,
         redirect_create: &RedirectCreateModel,
-    ) -> Result<RedirectModel, RedirectUriRepositoryError> {
+    ) -> Result<RedirectModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RedirectUriRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let pg_redirect = diesel::insert_into(redirect_uris::table)
             .values((
@@ -37,7 +37,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             ))
             .get_result::<PgRedirectUri>(conn)
             .await
-            .map_err(|_| RedirectUriRepositoryError::NotCreated)?;
+            .map_err(|_| RepositoryError::NotCreated)?;
 
         Ok(RedirectMapper::from_pg(pg_redirect))
     }
@@ -47,19 +47,19 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         db_context: &Arc<DbContext>,
         client_id: &str,
         uri: &Url,
-    ) -> Result<RedirectModel, RedirectUriRepositoryError> {
+    ) -> Result<RedirectModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RedirectUriRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let db_redirect = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .filter(redirect_uris::uri.eq(uri.to_string()))
             .first::<PgRedirectUri>(conn)
             .await
-            .map_err(|_| RedirectUriRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(RedirectMapper::from_pg(db_redirect))
     }
@@ -68,18 +68,18 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         &self,
         db_context: &Arc<DbContext>,
         client_id: &str,
-    ) -> Result<Vec<RedirectModel>, RedirectUriRepositoryError> {
+    ) -> Result<Vec<RedirectModel>, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RedirectUriRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let db_redirects = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .load::<PgRedirectUri>(conn)
             .await
-            .map_err(|_| RedirectUriRepositoryError::NoneFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
         Ok(db_redirects
             .into_iter()

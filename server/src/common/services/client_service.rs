@@ -42,11 +42,7 @@ impl ClientService {
         };
 
         client_repository
-            .create(
-                db_context,
-                &client_create,
-                &redirect_create,
-            )
+            .create(db_context, &client_create, &redirect_create)
             .await
             .map_err(|_| ClientServiceError::NotCreated)
     }

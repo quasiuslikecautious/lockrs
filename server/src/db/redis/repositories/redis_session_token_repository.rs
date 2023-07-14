@@ -6,7 +6,7 @@ use redis::AsyncCommands;
 use crate::{
     auth::models::SessionTokenModel,
     db::{
-        repositories::{SessionTokenRepository, SessionTokenRepositoryError},
+        repositories::{RepositoryError, SessionTokenRepository},
         DbContext,
     },
 };
@@ -25,12 +25,12 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         &self,
         db_context: &Arc<DbContext>,
         token: &SessionTokenModel,
-    ) -> Result<SessionTokenModel, SessionTokenRepositoryError> {
+    ) -> Result<SessionTokenModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| SessionTokenRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let key = Self::into_redis_key(token.token.as_str());
         let value = serde_json::to_string(token).unwrap();
@@ -42,7 +42,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .arg(token.expires_at)
             .query_async(conn)
             .await
-            .map_err(|_| SessionTokenRepositoryError::NotCreated)?;
+            .map_err(|_| RepositoryError::NotCreated)?;
 
         Ok(token.clone())
     }
@@ -51,32 +51,32 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<SessionTokenModel, SessionTokenRepositoryError> {
+    ) -> Result<SessionTokenModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| SessionTokenRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let key = Self::into_redis_key(token);
         let value: String = conn
             .get(key.as_str())
             .await
-            .map_err(|_| SessionTokenRepositoryError::NotFound)?;
+            .map_err(|_| RepositoryError::NotFound)?;
 
-        serde_json::from_str(value.as_str()).map_err(|_| SessionTokenRepositoryError::BadData)
+        serde_json::from_str(value.as_str()).map_err(|_| RepositoryError::BadData)
     }
 
     async fn delete_by_token(
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<(), SessionTokenRepositoryError> {
+    ) -> Result<(), RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| SessionTokenRepositoryError::BadConnection)?;
+            .map_err(|_| RepositoryError::ConnectionFailed)?;
 
         let key = Self::into_redis_key(token);
 
@@ -84,10 +84,10 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .arg(key.as_str())
             .query_async(conn)
             .await
-            .map_err(|_| SessionTokenRepositoryError::BadDelete)?;
+            .map_err(|_| RepositoryError::NotDeleted)?;
 
         if deleted != 1 {
-            return Err(SessionTokenRepositoryError::BadDelete);
+            return Err(RepositoryError::NotDeleted);
         }
 
         Ok(())

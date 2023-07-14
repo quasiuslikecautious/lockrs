@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::{auth::models::SessionTokenModel, db::DbContext};
+use crate::{
+    auth::models::SessionTokenModel,
+    db::{repositories::RepositoryError, DbContext},
+};
 
 pub type SessionTokenRepositoryArc = Arc<Box<dyn SessionTokenRepository>>;
 
@@ -12,23 +15,15 @@ pub trait SessionTokenRepository: Send + Sync {
         &self,
         db_context: &Arc<DbContext>,
         token: &SessionTokenModel,
-    ) -> Result<SessionTokenModel, SessionTokenRepositoryError>;
+    ) -> Result<SessionTokenModel, RepositoryError>;
     async fn get_by_token(
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<SessionTokenModel, SessionTokenRepositoryError>;
+    ) -> Result<SessionTokenModel, RepositoryError>;
     async fn delete_by_token(
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<(), SessionTokenRepositoryError>;
-}
-
-pub enum SessionTokenRepositoryError {
-    BadConnection,
-    NotCreated,
-    NotFound,
-    BadData,
-    BadDelete,
+    ) -> Result<(), RepositoryError>;
 }
