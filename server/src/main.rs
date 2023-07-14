@@ -57,7 +57,7 @@ async fn main() {
     let app = middlewares::with_middleware_stack(app_routes).layer(TraceLayer::new_for_http());
 
     // run it with hyper on localhost:8080
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8081));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 9000));
     println!("listening at {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

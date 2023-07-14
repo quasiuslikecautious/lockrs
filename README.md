@@ -87,10 +87,10 @@ To get a local copy up and running follow these steps.
 ### Prerequisites
 
 To run this api, you will need to have cargo installed, and Redis and PostgreSQL setup
-* Cargo [installation docs]("https://doc.rust-lang.org/cargo/getting-started/installation.html")
+* Cargo [installation docs](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 * Trunk [installation docs](https://trunkrs.dev/#install)
 * Redis [download page](https://redis.io/download/)
-* PostgreSQL [download page]("https://www.postgresql.org/download/")
+* PostgreSQL [download page](https://www.postgresql.org/download/)
 
 After installing postgres, make sure you setup a database to be used with the api, e.g.
 
@@ -153,20 +153,20 @@ cargo watch -x run -i log # if you have cargo-watch installed and want live relo
 
 in the project's root, and the server will start up. 
 
-By default, the server runs on port 8081, though this can be changed by changing the port number defined in the main function in server/main.rs.
+By default, the server runs on port 9000, though this can be changed by changing the port number defined in the main function in server/main.rs.
 
 _Example Auth Flow_
 ```sh
     # start up server
     cargo run
 
-    curl -X POST http://127.0.0.1:8081/api/v1/auth \
+    curl -X POST http://127.0.0.1:9000/api/v1/auth \
         -H 'Authorization: Basic <Basic Auth Credentials>'
 
     # user recieves session token in response, e.g.
     # { "session_token": <Some nonce>, "expires_at": <UNIX timestamp> }
 
-    curl -X POST http://127.0.0.1:8081/api/v1/session \
+    curl -X POST http://127.0.0.1:9000/api/v1/session \
         -c ./lockrs.cookies -b ./lockrs.cookies \
         -H 'Authorization: Bearer <session_token value>'
 
@@ -181,10 +181,10 @@ To start the web application, first we must start the backend api using the step
 
 ```sh
     cd frontend # go to frontend binary directory
-    trunk serve --proxy-backend=http://127.0.0.1:8081/api/ # create proxy and point it at running backend instance
+    trunk serve 
 ```
 
-From this point, open up a browser and navigate to http://127.0.0.1:8080/signup and register a new user, /login to authenticate existing users, etc.
+From this point, open up a browser and navigate to http://127.0.0.1:8000/signup and register a new user, /login to authenticate existing users, etc.
 
 _For more examples, please refer to the [Documentation](https://example.com) TODO will add link to API docs here_
 

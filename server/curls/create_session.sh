@@ -1,5 +1,5 @@
 session_token="$1"
-response=$(curl http://127.0.0.1:8081/api/v1/sessions \
+response=$(curl http://127.0.0.1:9000/api/v1/sessions \
   -X POST \
   --silent \
   --location \

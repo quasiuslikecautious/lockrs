@@ -1,4 +1,4 @@
-response=$(curl http://127.0.0.1:8081/api/v1/auth \
+response=$(curl http://127.0.0.1:9000/api/v1/auth \
   -X POST \
   --silent \
   --location \
