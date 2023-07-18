@@ -1,27 +1,30 @@
-use std::error::Error;
-use std::fmt;
+use thiserror::Error;
 
 use crate::db::DbContextError;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum RepositoryError {
     // crud errors
+    #[error("REPOSITORY ERROR :: Entity Not Created :: {0}")]
     NotCreated(String),
+    #[error("REPOSITORY ERROR :: Entity Already Exists :: {0}")]
     AlreadyExists(String),
-
+    #[error("REPOSITORY ERROR :: Entity Not Found :: {0}")]
     NotFound(String),
-
+    #[error("REPOSITORY ERROR :: Entity Not Updated :: {0}")]
     NotUpdated(String),
-
+    #[error("REPOSITORY ERROR :: Entity Not Deleted :: {0}")]
     NotDeleted(String),
 
     // db specific errors
+    #[error("REPOSITORY ERROR :: Failed to Establish Connection to Database :: {0}")]
     ConnectionFailed(String),
+    #[error("REPOSITORY ERROR :: Database Operation Failed :: {0}")]
     Database(String),
 }
 
 impl RepositoryError {
-    pub fn map_diesel_create<T: fmt::Debug>(create_model: &T, err: diesel::result::Error) -> Self {
+    pub fn map_diesel_create<T: std::fmt::Debug>(create_model: &T, err: diesel::result::Error) -> Self {
         match err {
             diesel::result::Error::DatabaseError(db_err, _) => match db_err {
                 diesel::result::DatabaseErrorKind::UniqueViolation => {
@@ -67,33 +70,6 @@ impl RepositoryError {
         match err {
             diesel::result::Error::NotFound => Self::NotDeleted(format!("{}", id)),
             _ => Self::Database(format!("{}", err)),
-        }
-    }
-}
-
-impl Error for RepositoryError {}
-
-impl fmt::Display for RepositoryError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::NotCreated(msg) => write!(f, "REPOSITORY ERROR :: Entity not created :: {}", msg),
-            Self::AlreadyExists(msg) => {
-                write!(f, "REPOSITORY ERROR :: Entity already exists :: {}", msg)
-            }
-            Self::NotFound(msg) => write!(f, "REPOSITORY ERROR :: Entity not found :: {}", msg),
-            Self::NotUpdated(msg) => write!(f, "REPOSITORY ERROR :: Entity not updated :: {}", msg),
-            Self::NotDeleted(msg) => write!(f, "REPOSITORY ERROR :: Entity not deleted :: {}", msg),
-
-            Self::ConnectionFailed(msg) => write!(
-                f,
-                "REPOSITORY ERROR :: Failed to get db connection :: {}",
-                msg
-            ),
-            Self::Database(msg) => write!(
-                f,
-                "REPOSITORY ERROR :: An error has occured from the database :: {}",
-                msg
-            ),
         }
     }
 }
