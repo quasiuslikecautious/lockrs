@@ -30,15 +30,10 @@ impl ScopeRepository for PgScopeRepository {
         db_context: &Arc<DbContext>,
         scopes_list: &Vec<String>,
     ) -> Result<ScopeModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
-
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_scopes = scopes::table
             .select(scopes::name)

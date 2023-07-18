@@ -95,7 +95,10 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             })?;
 
         if affected_rows != 1 {
-            let msg = format!("Expected 1 row to be affected by delete, but found {}", affected_rows);
+            let msg = format!(
+                "Expected 1 row to be affected by delete, but found {}",
+                affected_rows
+            );
             return Err(RepositoryError::NotDeleted(msg));
         }
 

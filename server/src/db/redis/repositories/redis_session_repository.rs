@@ -94,7 +94,10 @@ impl SessionRepository for RedisSessionRepository {
             })?;
 
         serde_json::from_str(value.as_str()).map_err(|_| {
-            let msg = format!("Invalid JSON data format for data stored at session {} for user {}", session_id, user_id);
+            let msg = format!(
+                "Invalid JSON data format for data stored at session {} for user {}",
+                session_id, user_id
+            );
             RepositoryError::BadData(msg)
         })
     }

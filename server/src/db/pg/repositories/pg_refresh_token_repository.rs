@@ -26,14 +26,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token_create: &RefreshTokenCreateModel,
     ) -> Result<RefreshTokenModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_token = diesel::insert_into(refresh_tokens::table)
             .values((
@@ -89,14 +85,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<RefreshTokenModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::NotUpdated(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::NotUpdated(msg)
+        })?;
 
         let now = Utc::now().naive_utc();
 
@@ -121,14 +113,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let affected_rows = diesel::delete(refresh_tokens::table)
             .filter(refresh_tokens::token.eq(token))
@@ -140,7 +128,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             })?;
 
         if affected_rows != 1 {
-            let msg = format!("Expected 1 row to be affected by delete, but found {}", affected_rows);
+            let msg = format!(
+                "Expected 1 row to be affected by delete, but found {}",
+                affected_rows
+            );
             return Err(RepositoryError::NotDeleted(msg));
         }
 

@@ -29,15 +29,10 @@ impl ClientRepository for PgClientRepository {
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, RepositoryError> {
-        let connection = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
-
+        let connection = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_client = connection
             .transaction::<_, diesel::result::Error, _>(|conn| {
@@ -81,14 +76,10 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
     ) -> Result<ClientModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_client = clients::table
             .filter(clients::id.eq(id))
@@ -117,22 +108,15 @@ impl ClientRepository for PgClientRepository {
             query = query.filter(clients::secret.eq(secret));
         }
 
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
-        let pg_client = query
-            .first::<PgClient>(conn)
-            .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+        let pg_client = query.first::<PgClient>(conn).await.map_err(|err| {
+            let msg = format!("{}", err);
+            RepositoryError::NotFound(msg)
+        })?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -142,14 +126,10 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<Vec<ClientModel>, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let clients = clients::table
             .filter(clients::user_id.eq(id))
@@ -172,14 +152,10 @@ impl ClientRepository for PgClientRepository {
         id: &str,
         client_update: &ClientUpdateModel,
     ) -> Result<ClientModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_client = diesel::update(clients::table)
             .filter(clients::id.eq(id))
@@ -199,14 +175,10 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
     ) -> Result<(), RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let affected_rows = diesel::delete(clients::table)
             .filter(clients::id.eq(id))
@@ -218,7 +190,10 @@ impl ClientRepository for PgClientRepository {
             })?;
 
         if affected_rows != 1 {
-            let msg = format!("Expected 1 row to be affected by delete, but found {}", affected_rows);
+            let msg = format!(
+                "Expected 1 row to be affected by delete, but found {}",
+                affected_rows
+            );
             return Err(RepositoryError::NotDeleted(msg));
         }
 

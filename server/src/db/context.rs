@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{error::Error, fmt, time::Duration};
 
 use deadpool::managed::Timeouts;
 use deadpool_redis::{Config, PoolConfig};
@@ -64,30 +64,35 @@ impl DbContext {
     }
 
     pub async fn get_pg_connection(&self) -> Result<ManagedAsyncPgConnection, DbContextError> {
-        self.pg_pool
-            .get()
-            .await
-            .map_err(|_| DbContextError::ConnectionFailed)
+        self.pg_pool.get().await.map_err(|_| {
+            let msg = format!("PG POOL CONNECTION FAILED");
+            DbContextError::ConnectionFailed(msg)
+        })
     }
 
     pub async fn get_redis_connection(
         &self,
     ) -> Result<ManagedAsyncRedisConnection, DbContextError> {
-        self.redis_pool
-            .get()
-            .await
-            .map_err(|_| DbContextError::ConnectionFailed)
+        self.redis_pool.get().await.map_err(|_| {
+            let msg = format!("REDIS POOL CONNECTION FAILED");
+            DbContextError::ConnectionFailed(msg)
+        })
     }
 }
 
 #[derive(Debug)]
 pub enum DbContextError {
-    ConnectionFailed,
-    BadTransaction,
+    ConnectionFailed(String),
+    BadTransaction(String),
 }
 
-impl From<diesel::result::Error> for DbContextError {
-    fn from(_error: diesel::result::Error) -> Self {
-        Self::BadTransaction
+impl Error for DbContextError {}
+
+impl fmt::Display for DbContextError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::ConnectionFailed(msg) => write!(f, "DB CONTEXT ERROR :: Failed to get connection from connection pool :: {}", msg),
+            Self::BadTransaction(msg) => write!(f, "DB CONTEXT ERROR :: An error occured while attempting a transaction, rolling back changes... :: {}", msg),
+        }
     }
 }

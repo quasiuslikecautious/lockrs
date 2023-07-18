@@ -68,16 +68,16 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             })?;
 
         let key = Self::into_redis_key(token);
-        let value: String = conn
-            .get(key.as_str())
-            .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+        let value: String = conn.get(key.as_str()).await.map_err(|err| {
+            let msg = format!("{}", err);
+            RepositoryError::NotFound(msg)
+        })?;
 
         serde_json::from_str(value.as_str()).map_err(|_| {
-            let msg = format!("Invalid JSON data format for data stored at token {}", token);
+            let msg = format!(
+                "Invalid JSON data format for data stored at token {}",
+                token
+            );
             RepositoryError::BadData(msg)
         })
     }
@@ -108,7 +108,10 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             })?;
 
         if deleted != 1 {
-            let msg = format!("Expected 1 row to be affected by delete, but found {}", deleted);
+            let msg = format!(
+                "Expected 1 row to be affected by delete, but found {}",
+                deleted
+            );
             return Err(RepositoryError::NotDeleted(msg));
         }
 

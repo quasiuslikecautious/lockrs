@@ -24,14 +24,10 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         db_context: &Arc<DbContext>,
         redirect_create: &RedirectCreateModel,
     ) -> Result<RedirectModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_redirect = diesel::insert_into(redirect_uris::table)
             .values((
@@ -54,14 +50,10 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let db_redirect = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
@@ -81,14 +73,10 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         db_context: &Arc<DbContext>,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let db_redirects = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))

@@ -24,14 +24,10 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         user_create: &UserCreateModel,
     ) -> Result<UserModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_user = diesel::insert_into(users::table)
             .values((
@@ -53,14 +49,10 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<UserModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_user = users::table
             .filter(users::id.eq(id))
@@ -79,14 +71,10 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         email: &str,
     ) -> Result<UserModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_user = users::table
             .filter(users::email.eq(email))
@@ -106,14 +94,10 @@ impl UserRepository for PgUserRepository {
         id: &Uuid,
         update_user: &UserUpdateModel,
     ) -> Result<UserModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_user = diesel::update(users::table)
             .filter(users::id.eq(id))
@@ -133,14 +117,10 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<(), RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let rows_affected = diesel::delete(users::table.filter(users::id.eq(id)))
             .execute(conn)
@@ -151,7 +131,10 @@ impl UserRepository for PgUserRepository {
             })?;
 
         if rows_affected != 1 {
-            let msg = format!("Expected 1 row to be affected by delete, but found {}", rows_affected);
+            let msg = format!(
+                "Expected 1 row to be affected by delete, but found {}",
+                rows_affected
+            );
             return Err(RepositoryError::NotDeleted(msg));
         }
 

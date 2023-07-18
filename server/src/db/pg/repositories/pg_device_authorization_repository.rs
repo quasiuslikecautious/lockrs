@@ -26,14 +26,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         db_context: &Arc<DbContext>,
         device_authorization_create: &DeviceAuthorizationCreateModel,
     ) -> Result<DeviceAuthorizationModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_device_authorization = diesel::insert_into(device_authorizations::table)
             .values((
@@ -60,14 +56,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
     ) -> Result<DeviceAuthorizationModel, RepositoryError> {
         let now = Utc::now().naive_utc();
 
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_device_authorization = device_authorizations::table
             .filter(device_authorizations::device_code.eq(code))
@@ -90,14 +82,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
     ) -> Result<DeviceAuthorizationModel, RepositoryError> {
         let now = Utc::now().naive_utc();
 
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| {
-                let msg = format!("TODO");
-                RepositoryError::ConnectionFailed(msg)
-            })?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_device_authorization = device_authorizations::table
             .filter(device_authorizations::user_code.eq(code))
