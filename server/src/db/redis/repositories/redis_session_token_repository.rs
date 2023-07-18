@@ -35,7 +35,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         redis::cmd("SET")
@@ -66,7 +66,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let value: String = conn.get(key.as_str()).await.map_err(|err| {
@@ -96,7 +96,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let deleted: i64 = redis::cmd("DEL")

@@ -35,7 +35,7 @@ impl ClientRepository for PgClientRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_client = connection
@@ -83,7 +83,7 @@ impl ClientRepository for PgClientRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_client = clients::table
@@ -116,7 +116,7 @@ impl ClientRepository for PgClientRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_client = query
@@ -138,7 +138,7 @@ impl ClientRepository for PgClientRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let clients = clients::table
@@ -165,7 +165,7 @@ impl ClientRepository for PgClientRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_client = diesel::update(clients::table)
@@ -189,7 +189,7 @@ impl ClientRepository for PgClientRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let affected_rows = diesel::delete(clients::table)

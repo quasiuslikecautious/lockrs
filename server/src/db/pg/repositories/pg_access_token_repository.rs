@@ -32,7 +32,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_token = diesel::insert_into(access_tokens::table)
@@ -61,7 +61,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let now = Utc::now().naive_utc();
@@ -88,7 +88,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let affected_rows = diesel::delete(access_tokens::table)

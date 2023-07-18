@@ -30,7 +30,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_redirect = diesel::insert_into(redirect_uris::table)
@@ -57,7 +57,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let db_redirect = redirect_uris::table
@@ -81,7 +81,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let db_redirects = redirect_uris::table

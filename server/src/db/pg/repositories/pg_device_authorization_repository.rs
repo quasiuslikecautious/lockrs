@@ -32,7 +32,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_device_authorization = diesel::insert_into(device_authorizations::table)
@@ -63,7 +63,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_device_authorization = device_authorizations::table
@@ -90,7 +90,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_device_authorization = device_authorizations::table

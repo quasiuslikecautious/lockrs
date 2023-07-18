@@ -30,7 +30,7 @@ impl UserRepository for PgUserRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_user = diesel::insert_into(users::table)
@@ -56,7 +56,7 @@ impl UserRepository for PgUserRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_user = users::table
@@ -79,7 +79,7 @@ impl UserRepository for PgUserRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_user = users::table
@@ -103,7 +103,7 @@ impl UserRepository for PgUserRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_user = diesel::update(users::table)
@@ -127,7 +127,7 @@ impl UserRepository for PgUserRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let rows_affected = diesel::delete(users::table.filter(users::id.eq(id)))

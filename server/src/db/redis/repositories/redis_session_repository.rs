@@ -46,7 +46,7 @@ impl SessionRepository for RedisSessionRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         redis::cmd("HSET")
@@ -80,7 +80,7 @@ impl SessionRepository for RedisSessionRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let value: String = redis::cmd("HGET")
@@ -119,7 +119,7 @@ impl SessionRepository for RedisSessionRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         redis::cmd("HSET")
@@ -151,7 +151,7 @@ impl SessionRepository for RedisSessionRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         redis::cmd("DEL")

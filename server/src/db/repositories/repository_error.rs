@@ -18,13 +18,16 @@ pub enum RepositoryError {
 
     // db specific errors
     #[error("REPOSITORY ERROR :: Failed to Establish Connection to Database :: {0}")]
-    ConnectionFailed(String),
+    Connection(String),
     #[error("REPOSITORY ERROR :: Database Operation Failed :: {0}")]
     Database(String),
 }
 
 impl RepositoryError {
-    pub fn map_diesel_create<T: std::fmt::Debug>(create_model: &T, err: diesel::result::Error) -> Self {
+    pub fn map_diesel_create<T: std::fmt::Debug>(
+        create_model: &T,
+        err: diesel::result::Error,
+    ) -> Self {
         match err {
             diesel::result::Error::DatabaseError(db_err, _) => match db_err {
                 diesel::result::DatabaseErrorKind::UniqueViolation => {
@@ -33,7 +36,7 @@ impl RepositoryError {
                 diesel::result::DatabaseErrorKind::ForeignKeyViolation
                 | diesel::result::DatabaseErrorKind::NotNullViolation
                 | diesel::result::DatabaseErrorKind::CheckViolation => {
-                    Self::NotFound(format!("{:?}", create_model))
+                    Self::NotCreated(format!("{:?}", create_model))
                 }
                 _ => Self::Database(format!("{}", err)),
             },

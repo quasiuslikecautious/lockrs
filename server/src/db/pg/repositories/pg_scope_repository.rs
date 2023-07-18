@@ -36,7 +36,7 @@ impl ScopeRepository for PgScopeRepository {
             .await
             .map_err(|err| {
                 let msg = format!("{}", err);
-                RepositoryError::ConnectionFailed(msg)
+                RepositoryError::Connection(msg)
             })?;
 
         let pg_scopes = scopes::table
