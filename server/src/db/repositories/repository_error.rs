@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt;
 
+use crate::db::DbContextError;
+
 #[derive(Debug)]
 pub enum RepositoryError {
     // crud errors

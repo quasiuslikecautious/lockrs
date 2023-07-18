@@ -26,10 +26,14 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token_create: &AccessTokenCreateModel,
     ) -> Result<AccessTokenModel, RepositoryError> {
-        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
-            let msg = format!("TODO");
-            RepositoryError::ConnectionFailed(msg)
-        })?;
+        let conn = &mut db_context
+            .as_ref()
+            .get_pg_connection()
+            .await
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_token = diesel::insert_into(access_tokens::table)
             .values((
@@ -54,10 +58,14 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<AccessTokenModel, RepositoryError> {
-        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
-            let msg = format!("TODO");
-            RepositoryError::ConnectionFailed(msg)
-        })?;
+        let conn = &mut db_context
+            .as_ref()
+            .get_pg_connection()
+            .await
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let now = Utc::now().naive_utc();
 
@@ -80,10 +88,14 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
-        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
-            let msg = format!("TODO");
-            RepositoryError::ConnectionFailed(msg)
-        })?;
+        let conn = &mut db_context
+            .as_ref()
+            .get_pg_connection()
+            .await
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let affected_rows = diesel::delete(access_tokens::table)
             .filter(access_tokens::token.eq(token))

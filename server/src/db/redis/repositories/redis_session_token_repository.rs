@@ -26,17 +26,17 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &SessionTokenModel,
     ) -> Result<SessionTokenModel, RepositoryError> {
+        let key = Self::into_redis_key(token.token.as_str());
+        let value = serde_json::to_string(token).unwrap();
+
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| {
-                let msg = format!("TODO");
+            .map_err(|err| {
+                let msg = format!("{}", err);
                 RepositoryError::ConnectionFailed(msg)
             })?;
-
-        let key = Self::into_redis_key(token.token.as_str());
-        let value = serde_json::to_string(token).unwrap();
 
         redis::cmd("SET")
             .arg(key.as_str())
@@ -58,16 +58,17 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<SessionTokenModel, RepositoryError> {
+        let key = Self::into_redis_key(token);
+
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| {
-                let msg = format!("TODO");
+            .map_err(|err| {
+                let msg = format!("{}", err);
                 RepositoryError::ConnectionFailed(msg)
             })?;
 
-        let key = Self::into_redis_key(token);
         let value: String = conn.get(key.as_str()).await.map_err(|err| {
             let msg = format!("{}", err);
             RepositoryError::NotFound(msg)
@@ -87,16 +88,16 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
+        let key = Self::into_redis_key(token);
+
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| {
-                let msg = format!("TODO");
+            .map_err(|err| {
+                let msg = format!("{}", err);
                 RepositoryError::ConnectionFailed(msg)
             })?;
-
-        let key = Self::into_redis_key(token);
 
         let deleted: i64 = redis::cmd("DEL")
             .arg(key.as_str())
