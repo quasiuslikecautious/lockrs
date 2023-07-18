@@ -11,6 +11,7 @@ pub struct AccessTokenModel {
     pub scopes: Vec<String>,
 }
 
+#[derive(Debug)]
 pub struct AccessTokenCreateModel {
     pub token: String,
     pub client_id: String,

@@ -98,7 +98,7 @@ impl SessionRepository for RedisSessionRepository {
                 "Invalid JSON data format for data stored at session {} for user {}",
                 session_id, user_id
             );
-            RepositoryError::BadData(msg)
+            RepositoryError::Database(msg)
         })
     }
 

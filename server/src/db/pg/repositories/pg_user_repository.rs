@@ -40,10 +40,7 @@ impl UserRepository for PgUserRepository {
             ))
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_create(&user_create, err))?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -66,10 +63,7 @@ impl UserRepository for PgUserRepository {
             .filter(users::id.eq(id))
             .first::<PgUser>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(id.to_string().as_str(), err))?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -92,10 +86,7 @@ impl UserRepository for PgUserRepository {
             .filter(users::email.eq(email))
             .first::<PgUser>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(email, err))?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -120,10 +111,7 @@ impl UserRepository for PgUserRepository {
             .set(update_user)
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotUpdated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_update(id.to_string().as_str(), err))?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -145,10 +133,7 @@ impl UserRepository for PgUserRepository {
         let rows_affected = diesel::delete(users::table.filter(users::id.eq(id)))
             .execute(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotUpdated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_delete(id.to_string().as_str(), err))?;
 
         if rows_affected != 1 {
             let msg = format!(

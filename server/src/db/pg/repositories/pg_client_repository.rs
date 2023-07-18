@@ -67,10 +67,7 @@ impl ClientRepository for PgClientRepository {
                 .scope_boxed()
             })
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_create(&client_create, err))?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -93,10 +90,7 @@ impl ClientRepository for PgClientRepository {
             .filter(clients::id.eq(id))
             .first::<PgClient>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(id, err))?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -125,10 +119,10 @@ impl ClientRepository for PgClientRepository {
                 RepositoryError::ConnectionFailed(msg)
             })?;
 
-        let pg_client = query.first::<PgClient>(conn).await.map_err(|err| {
-            let msg = format!("{}", err);
-            RepositoryError::NotFound(msg)
-        })?;
+        let pg_client = query
+            .first::<PgClient>(conn)
+            .await
+            .map_err(|err| RepositoryError::map_diesel_found(id, err))?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -151,10 +145,7 @@ impl ClientRepository for PgClientRepository {
             .filter(clients::user_id.eq(id))
             .load::<PgClient>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(id.to_string().as_str(), err))?;
 
         Ok(clients
             .into_iter()
@@ -182,10 +173,7 @@ impl ClientRepository for PgClientRepository {
             .set(client_update)
             .get_result::<PgClient>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotUpdated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_update(id, err))?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -208,17 +196,14 @@ impl ClientRepository for PgClientRepository {
             .filter(clients::id.eq(id))
             .execute(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotDeleted(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_delete(id, err))?;
 
         if affected_rows != 1 {
             let msg = format!(
                 "Expected 1 row to be affected by delete, but found {}",
                 affected_rows
             );
-            return Err(RepositoryError::NotDeleted(msg));
+            return Err(RepositoryError::Database(msg));
         }
 
         Ok(())

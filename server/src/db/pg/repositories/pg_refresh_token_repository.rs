@@ -45,10 +45,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             ))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_create(&token_create, err))?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -76,10 +73,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .filter(refresh_tokens::used.eq(false))
             .first::<PgRefreshToken>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(token, err))?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -108,10 +102,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .set(refresh_tokens::used.eq(true))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_update(token, err))?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -134,10 +125,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .filter(refresh_tokens::token.eq(token))
             .execute(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_delete(token, err))?;
 
         if affected_rows != 1 {
             let msg = format!(

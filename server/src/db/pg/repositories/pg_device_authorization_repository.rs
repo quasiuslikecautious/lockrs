@@ -45,10 +45,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             ))
             .get_result::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_create(&device_authorization_create, err))?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }
@@ -75,10 +72,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .filter(device_authorizations::expires_at.gt(now))
             .first::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(code, err))?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }
@@ -105,10 +99,7 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .filter(device_authorizations::expires_at.gt(now))
             .first::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(code, err))?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }

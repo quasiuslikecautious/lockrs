@@ -45,8 +45,7 @@ impl ScopeRepository for PgScopeRepository {
             .load(conn)
             .await
             .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
+                RepositoryError::map_diesel_found(scopes_list.join(" ").as_str(), err)
             })?;
 
         Ok(ScopeModel { scopes: pg_scopes })

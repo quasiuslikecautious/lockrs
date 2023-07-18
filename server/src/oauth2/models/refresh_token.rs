@@ -12,6 +12,7 @@ pub struct RefreshTokenModel {
     pub expires_at: NaiveDateTime,
 }
 
+#[derive(Debug)]
 pub struct RefreshTokenCreateModel {
     pub access_token_id: i32,
     pub token: String,

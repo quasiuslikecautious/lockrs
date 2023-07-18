@@ -40,10 +40,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             ))
             .get_result::<PgRedirectUri>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_create(&redirect_create, err))?;
 
         Ok(RedirectMapper::from_pg(pg_redirect))
     }
@@ -68,10 +65,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .filter(redirect_uris::uri.eq(uri.to_string()))
             .first::<PgRedirectUri>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(uri.as_str(), err))?;
 
         Ok(RedirectMapper::from_pg(db_redirect))
     }
@@ -94,10 +88,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .filter(redirect_uris::client_id.eq(client_id))
             .load::<PgRedirectUri>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_found(client_id, err))?;
 
         Ok(db_redirects
             .into_iter()

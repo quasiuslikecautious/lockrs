@@ -79,7 +79,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
                 "Invalid JSON data format for data stored at token {}",
                 token
             );
-            RepositoryError::BadData(msg)
+            RepositoryError::Database(msg)
         })
     }
 

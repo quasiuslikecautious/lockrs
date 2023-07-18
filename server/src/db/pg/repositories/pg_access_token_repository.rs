@@ -45,10 +45,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             ))
             .get_result::<PgAccessToken>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_create(&token_create, err))?;
 
         Ok(AccessTokenMapper::from_pg(pg_token))
     }
@@ -75,10 +72,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .filter(access_tokens::expires_at.gt(&now))
             .first::<PgAccessToken>(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_update(token, err))?;
 
         Ok(AccessTokenMapper::from_pg(pg_token))
     }
@@ -101,17 +95,14 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .filter(access_tokens::token.eq(token))
             .execute(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(|err| RepositoryError::map_diesel_delete(token, err))?;
 
         if affected_rows != 1 {
             let msg = format!(
                 "Expected 1 row to be affected by delete, but found {}",
                 affected_rows
             );
-            return Err(RepositoryError::NotDeleted(msg));
+            return Err(RepositoryError::Database(msg));
         }
 
         Ok(())
