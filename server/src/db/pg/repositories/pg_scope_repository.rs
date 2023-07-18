@@ -34,14 +34,21 @@ impl ScopeRepository for PgScopeRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
+
 
         let pg_scopes = scopes::table
             .select(scopes::name)
             .filter(scopes::name.eq_any(scopes_list))
             .load(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(ScopeModel { scopes: pg_scopes })
     }

@@ -18,7 +18,7 @@ impl ClientService {
     pub async fn create_client(
         db_context: &Arc<DbContext>,
         client_repository: &dyn ClientRepository,
-        redirect_repository: &dyn RedirectUriRepository,
+        _redirect_repository: &dyn RedirectUriRepository,
         new_client: ClientCreateModel,
     ) -> Result<ClientModel, ClientServiceError> {
         let id = Self::generate_random_string();

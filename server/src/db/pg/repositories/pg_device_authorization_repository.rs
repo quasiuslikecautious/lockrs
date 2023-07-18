@@ -30,7 +30,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_device_authorization = diesel::insert_into(device_authorizations::table)
             .values((
@@ -42,7 +45,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             ))
             .get_result::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|_| RepositoryError::NotCreated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotCreated(msg)
+            })?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }
@@ -58,7 +64,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_device_authorization = device_authorizations::table
             .filter(device_authorizations::device_code.eq(code))
@@ -66,7 +75,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .filter(device_authorizations::expires_at.gt(now))
             .first::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }
@@ -82,7 +94,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_device_authorization = device_authorizations::table
             .filter(device_authorizations::user_code.eq(code))
@@ -90,7 +105,10 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
             .filter(device_authorizations::expires_at.gt(now))
             .first::<PgDeviceAuthorization>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(DeviceAuthorizationMapper::from_pg(pg_device_authorization))
     }

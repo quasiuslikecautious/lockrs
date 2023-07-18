@@ -26,11 +26,10 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token_create: &AccessTokenCreateModel,
     ) -> Result<AccessTokenModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let pg_token = diesel::insert_into(access_tokens::table)
             .values((
@@ -42,7 +41,10 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             ))
             .get_result::<PgAccessToken>(conn)
             .await
-            .map_err(|_| RepositoryError::NotCreated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotCreated(msg)
+            })?;
 
         Ok(AccessTokenMapper::from_pg(pg_token))
     }
@@ -52,11 +54,10 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<AccessTokenModel, RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let now = Utc::now().naive_utc();
 
@@ -66,7 +67,10 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .filter(access_tokens::expires_at.gt(&now))
             .first::<PgAccessToken>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(AccessTokenMapper::from_pg(pg_token))
     }
@@ -76,20 +80,23 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+        let conn = &mut db_context.as_ref().get_pg_connection().await.map_err(|_| {
+            let msg = format!("TODO");
+            RepositoryError::ConnectionFailed(msg)
+        })?;
 
         let affected_rows = diesel::delete(access_tokens::table)
             .filter(access_tokens::token.eq(token))
             .execute(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         if affected_rows != 1 {
-            return Err(RepositoryError::NotDeleted);
+            let msg = format!("Expected 1 row to be affected by delete, but found {}", affected_rows);
+            return Err(RepositoryError::NotDeleted(msg));
         }
 
         Ok(())

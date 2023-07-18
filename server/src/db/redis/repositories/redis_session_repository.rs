@@ -34,7 +34,10 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let user_id = &session.user_id;
         let user_key = Self::into_user_key(user_id);
@@ -54,7 +57,10 @@ impl SessionRepository for RedisSessionRepository {
             .arg(expires_at)
             .query_async(conn)
             .await
-            .map_err(|_| RepositoryError::NotCreated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotCreated(msg)
+            })?;
 
         Ok(session.clone())
     }
@@ -69,7 +75,10 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let user_key = Self::into_user_key(user_id);
         let session_key = Self::into_session_key(session_id);
@@ -79,9 +88,15 @@ impl SessionRepository for RedisSessionRepository {
             .arg(session_key.as_str())
             .query_async(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
-        serde_json::from_str(value.as_str()).map_err(|_| RepositoryError::BadData)
+        serde_json::from_str(value.as_str()).map_err(|_| {
+            let msg = format!("Invalid JSON data format for data stored at session {} for user {}", session_id, user_id);
+            RepositoryError::BadData(msg)
+        })
     }
 
     async fn update(
@@ -93,7 +108,10 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let user_key = Self::into_user_key(&session.user_id);
         let session_key = Self::into_session_key(session.id.as_str());
@@ -109,7 +127,10 @@ impl SessionRepository for RedisSessionRepository {
             .arg(expires_at)
             .query_async(conn)
             .await
-            .map_err(|_| RepositoryError::NotUpdated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotUpdated(msg)
+            })?;
 
         Ok(session.clone())
     }
@@ -123,7 +144,10 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let key = Self::into_user_key(id);
 
@@ -131,7 +155,10 @@ impl SessionRepository for RedisSessionRepository {
             .arg(key.as_str())
             .query_async(conn)
             .await
-            .map_err(|_| RepositoryError::NotDeleted)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotDeleted(msg)
+            })?;
 
         Ok(())
     }

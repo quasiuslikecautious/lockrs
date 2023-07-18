@@ -28,7 +28,10 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_user = diesel::insert_into(users::table)
             .values((
@@ -37,7 +40,10 @@ impl UserRepository for PgUserRepository {
             ))
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|_| RepositoryError::NotCreated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotCreated(msg)
+            })?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -51,13 +57,19 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_user = users::table
             .filter(users::id.eq(id))
             .first::<PgUser>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -71,13 +83,19 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_user = users::table
             .filter(users::email.eq(email))
             .first::<PgUser>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -92,14 +110,20 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_user = diesel::update(users::table)
             .filter(users::id.eq(id))
             .set(update_user)
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|_| RepositoryError::NotUpdated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotUpdated(msg)
+            })?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -113,15 +137,22 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let rows_affected = diesel::delete(users::table.filter(users::id.eq(id)))
             .execute(conn)
             .await
-            .map_err(|_| RepositoryError::NotDeleted)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotUpdated(msg)
+            })?;
 
         if rows_affected != 1 {
-            return Err(RepositoryError::NotDeleted);
+            let msg = format!("Expected 1 row to be affected by delete, but found {}", rows_affected);
+            return Err(RepositoryError::NotDeleted(msg));
         }
 
         Ok(())

@@ -30,7 +30,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_token = diesel::insert_into(refresh_tokens::table)
             .values((
@@ -42,7 +45,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             ))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|_| RepositoryError::NotCreated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotCreated(msg)
+            })?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -56,7 +62,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|err| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let now = Utc::now().naive_utc();
 
@@ -67,7 +76,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .filter(refresh_tokens::used.eq(false))
             .first::<PgRefreshToken>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -81,7 +93,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::NotUpdated)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::NotUpdated(msg)
+            })?;
 
         let now = Utc::now().naive_utc();
 
@@ -93,7 +108,10 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .set(refresh_tokens::used.eq(true))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -107,16 +125,23 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let affected_rows = diesel::delete(refresh_tokens::table)
             .filter(refresh_tokens::token.eq(token))
             .execute(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         if affected_rows != 1 {
-            return Err(RepositoryError::NotDeleted);
+            let msg = format!("Expected 1 row to be affected by delete, but found {}", affected_rows);
+            return Err(RepositoryError::NotDeleted(msg));
         }
 
         Ok(())

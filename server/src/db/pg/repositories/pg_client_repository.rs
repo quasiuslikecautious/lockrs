@@ -33,7 +33,11 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
+
 
         let pg_client = connection
             .transaction::<_, diesel::result::Error, _>(|conn| {
@@ -64,7 +68,10 @@ impl ClientRepository for PgClientRepository {
                 .scope_boxed()
             })
             .await
-            .map_err(|_| RepositoryError::NotCreated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotCreated(msg)
+            })?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -78,13 +85,19 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_client = clients::table
             .filter(clients::id.eq(id))
             .first::<PgClient>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -108,12 +121,18 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_client = query
             .first::<PgClient>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -127,13 +146,19 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let clients = clients::table
             .filter(clients::user_id.eq(id))
             .load::<PgClient>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(clients
             .into_iter()
@@ -151,14 +176,20 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_client = diesel::update(clients::table)
             .filter(clients::id.eq(id))
             .set(client_update)
             .get_result::<PgClient>(conn)
             .await
-            .map_err(|_| RepositoryError::NotUpdated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotUpdated(msg)
+            })?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -172,16 +203,23 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let affected_rows = diesel::delete(clients::table)
             .filter(clients::id.eq(id))
             .execute(conn)
             .await
-            .map_err(|_| RepositoryError::NotDeleted)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotDeleted(msg)
+            })?;
 
         if affected_rows != 1 {
-            return Err(RepositoryError::NotDeleted);
+            let msg = format!("Expected 1 row to be affected by delete, but found {}", affected_rows);
+            return Err(RepositoryError::NotDeleted(msg));
         }
 
         Ok(())

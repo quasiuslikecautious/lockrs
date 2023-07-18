@@ -28,7 +28,10 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let pg_redirect = diesel::insert_into(redirect_uris::table)
             .values((
@@ -37,7 +40,10 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             ))
             .get_result::<PgRedirectUri>(conn)
             .await
-            .map_err(|_| RepositoryError::NotCreated)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotCreated(msg)
+            })?;
 
         Ok(RedirectMapper::from_pg(pg_redirect))
     }
@@ -52,14 +58,20 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let db_redirect = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .filter(redirect_uris::uri.eq(uri.to_string()))
             .first::<PgRedirectUri>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(RedirectMapper::from_pg(db_redirect))
     }
@@ -73,13 +85,19 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| RepositoryError::ConnectionFailed)?;
+            .map_err(|_| {
+                let msg = format!("TODO");
+                RepositoryError::ConnectionFailed(msg)
+            })?;
 
         let db_redirects = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .load::<PgRedirectUri>(conn)
             .await
-            .map_err(|_| RepositoryError::NotFound)?;
+            .map_err(|err| {
+                let msg = format!("{}", err);
+                RepositoryError::NotFound(msg)
+            })?;
 
         Ok(db_redirects
             .into_iter()
