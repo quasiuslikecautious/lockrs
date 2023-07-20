@@ -1,4 +1,4 @@
-use std::{error::Error, fmt, time::Duration};
+use std::time::Duration;
 
 use deadpool::managed::Timeouts;
 use deadpool_redis::{Config, PoolConfig};
@@ -7,6 +7,7 @@ use diesel_async::pooled_connection::{
     deadpool::{Object, Pool},
     AsyncDieselConnectionManager,
 };
+use thiserror::Error;
 
 type AsyncPgPool = Pool<AsyncPgConnection>;
 type AsyncRedisPool = deadpool_redis::Pool;
@@ -80,19 +81,8 @@ impl DbContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum DbContextError {
+    #[error("DB CONTEXT ERROR :: Failed to get connection from connection pool :: {0}")]
     ConnectionFailed(String),
-    BadTransaction(String),
-}
-
-impl Error for DbContextError {}
-
-impl fmt::Display for DbContextError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::ConnectionFailed(msg) => write!(f, "DB CONTEXT ERROR :: Failed to get connection from connection pool :: {}", msg),
-            Self::BadTransaction(msg) => write!(f, "DB CONTEXT ERROR :: An error occured while attempting a transaction, rolling back changes... :: {}", msg),
-        }
-    }
 }

@@ -77,13 +77,9 @@ impl ClientController {
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
-        let client = ClientService::create_client(
-            db_context,
-            client_repository,
-            new_client,
-        )
-        .await
-        .map_err(|_| ClientControllerError::Internal)?;
+        let client = ClientService::create_client(db_context, client_repository, new_client)
+            .await
+            .map_err(|_| ClientControllerError::Internal)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -103,9 +99,7 @@ impl ClientController {
         let client = ClientService::get_client_by_id(db_context, client_repository, &client_id)
             .await
             .map_err(|err| match err {
-                ClientServiceError::NotFound(_) => {
-                    ClientControllerError::InvalidClient
-                },
+                ClientServiceError::NotFound(_) => ClientControllerError::InvalidClient,
                 _ => ClientControllerError::Internal,
             })?;
 

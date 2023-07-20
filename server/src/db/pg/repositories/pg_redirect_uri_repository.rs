@@ -28,10 +28,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let pg_redirect = diesel::insert_into(redirect_uris::table)
             .values((
@@ -40,7 +37,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             ))
             .get_result::<PgRedirectUri>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_create(&redirect_create, err))?;
+            .map_err(RepositoryError::map_diesel_create)?;
 
         Ok(RedirectMapper::from_pg(pg_redirect))
     }
@@ -55,17 +52,14 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let db_redirect = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .filter(redirect_uris::uri.eq(uri.to_string()))
             .first::<PgRedirectUri>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_found(uri.as_str(), err))?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(RedirectMapper::from_pg(db_redirect))
     }
@@ -79,16 +73,13 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let db_redirects = redirect_uris::table
             .filter(redirect_uris::client_id.eq(client_id))
             .load::<PgRedirectUri>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_found(client_id, err))?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(db_redirects
             .into_iter()

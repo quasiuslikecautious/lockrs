@@ -1,78 +1,112 @@
+use diesel::result as DieselResult;
+use diesel::result::Error as DieselError;
+use redis::{RedisError, ErrorKind as RedisErrorKind};
 use thiserror::Error;
 
 use crate::db::DbContextError;
 
 #[derive(Debug, Error)]
-pub enum RepositoryError {
-    // crud errors
-    #[error("REPOSITORY ERROR :: Entity Not Created :: {0}")]
-    NotCreated(String),
-    #[error("REPOSITORY ERROR :: Entity Already Exists :: {0}")]
-    AlreadyExists(String),
-    #[error("REPOSITORY ERROR :: Entity Not Found :: {0}")]
-    NotFound(String),
-    #[error("REPOSITORY ERROR :: Entity Not Updated :: {0}")]
-    NotUpdated(String),
-    #[error("REPOSITORY ERROR :: Entity Not Deleted :: {0}")]
-    NotDeleted(String),
+pub enum QueryFailure {
+    #[error("Entity Not Created")]
+    NotCreated,
+    #[error("Entity Already Exists")]
+    AlreadyExists,
+    #[error("Entity Not Found")]
+    NotFound,
+    #[error("Entity Not Updated")]
+    NotUpdated,
+    #[error("Entity Not Deleted")]
+    NotDeleted,
+}
 
-    // db specific errors
-    #[error("REPOSITORY ERROR :: Failed to Establish Connection to Database :: {0}")]
-    Connection(String),
-    #[error("REPOSITORY ERROR :: Database Operation Failed :: {0}")]
-    Database(String),
+#[derive(Debug, Error)]
+pub enum RepositoryError {
+    #[error("REPOSITORY ERROR :: Database Query Failed :: {0} :: {1}")]
+    QueryFailed(String, QueryFailure),
+
+    #[error("REPOSITORY ERROR :: An error occured while attempting to execute a query :: {0}")]
+    InternalError(String),
 }
 
 impl RepositoryError {
-    pub fn map_diesel_create<T: std::fmt::Debug>(
-        create_model: &T,
-        err: diesel::result::Error,
-    ) -> Self {
+    pub fn map_diesel_create(err: DieselError) -> Self {
+        let err_msg = format!("{}", &err);
         match err {
-            diesel::result::Error::DatabaseError(db_err, _) => match db_err {
-                diesel::result::DatabaseErrorKind::UniqueViolation => {
-                    Self::AlreadyExists(format!("{:?}", create_model))
+            DieselError::DatabaseError(db_err, _) => match db_err {
+                DieselResult::DatabaseErrorKind::UniqueViolation => {
+                    Self::QueryFailed(err_msg, QueryFailure::AlreadyExists)
                 }
-                diesel::result::DatabaseErrorKind::ForeignKeyViolation
-                | diesel::result::DatabaseErrorKind::NotNullViolation
-                | diesel::result::DatabaseErrorKind::CheckViolation => {
-                    Self::NotCreated(format!("{:?}", create_model))
+                DieselResult::DatabaseErrorKind::ForeignKeyViolation
+                | DieselResult::DatabaseErrorKind::NotNullViolation
+                | DieselResult::DatabaseErrorKind::CheckViolation => {
+                    Self::QueryFailed(err_msg, QueryFailure::NotCreated)
                 }
-                _ => Self::Database(format!("{}", err)),
+                _ => Self::InternalError(format!("{}", err)),
             },
-            _ => Self::Database(format!("{}", err)),
+
+            _ => Self::InternalError(format!("{}", err)),
         }
     }
 
-    pub fn map_diesel_found(id: &str, err: diesel::result::Error) -> Self {
+    pub fn map_diesel_found(err: DieselError) -> Self {
+        let err_msg = format!("{}", &err);
         match err {
-            diesel::result::Error::NotFound => Self::NotFound(format!("{}", id)),
-            _ => Self::Database(format!("{}", err)),
+            DieselError::NotFound => Self::QueryFailed(err_msg, QueryFailure::NotFound),
+            _ => Self::InternalError(format!("{}", err)),
         }
     }
 
-    pub fn map_diesel_update(id: &str, err: diesel::result::Error) -> Self {
+    pub fn map_diesel_update(err: DieselError) -> Self {
+        let err_msg = format!("{}", &err);
         match err {
-            diesel::result::Error::NotFound => Self::NotUpdated(format!("{}", id)),
-            diesel::result::Error::DatabaseError(db_err, _) => match db_err {
-                diesel::result::DatabaseErrorKind::UniqueViolation => {
-                    Self::AlreadyExists(format!("{}", id))
+            DieselError::NotFound => Self::QueryFailed(err_msg, QueryFailure::NotUpdated),
+
+            DieselError::DatabaseError(db_err, _) => match db_err {
+                DieselResult::DatabaseErrorKind::UniqueViolation => {
+                    Self::QueryFailed(err_msg, QueryFailure::AlreadyExists)
                 }
-                diesel::result::DatabaseErrorKind::ForeignKeyViolation
-                | diesel::result::DatabaseErrorKind::NotNullViolation
-                | diesel::result::DatabaseErrorKind::CheckViolation => {
-                    Self::NotUpdated(format!("{}", err))
+                DieselResult::DatabaseErrorKind::ForeignKeyViolation
+                | DieselResult::DatabaseErrorKind::NotNullViolation
+                | DieselResult::DatabaseErrorKind::CheckViolation => {
+                    Self::QueryFailed(err_msg, QueryFailure::NotUpdated)
                 }
-                _ => Self::Database(format!("{}", err)),
+                _ => Self::InternalError(err_msg),
             },
-            _ => Self::Database(format!("{}", err)),
+
+            _ => Self::InternalError(err_msg),
         }
     }
 
-    pub fn map_diesel_delete(id: &str, err: diesel::result::Error) -> Self {
+    pub fn map_diesel_delete(err: DieselError) -> Self {
+        let err_msg = format!("{}", &err);
         match err {
-            diesel::result::Error::NotFound => Self::NotDeleted(format!("{}", id)),
-            _ => Self::Database(format!("{}", err)),
+            DieselError::NotFound => Self::QueryFailed(err_msg, QueryFailure::NotDeleted),
+            _ => Self::InternalError(err_msg),
         }
+    }
+
+    pub fn map_redis_create(err: RedisError) -> Self {
+        let msg = err.detail().unwrap_or("Failed to create entity redis").to_string();
+        
+        Self::InternalError(msg)
+    }
+
+    pub fn map_redis(err: RedisError) -> Self {
+        let kind = err.kind();
+        let msg = err.detail().unwrap_or("Failed to create entity redis").to_string();
+
+        // assume type error is converting nil to struct. annoying error to debug
+        // if it is not but ¯\_(ツ)_/¯, TODO later
+        match kind {
+            RedisErrorKind::TypeError => Self::QueryFailed(msg, QueryFailure::NotFound),
+            _ => Self::InternalError(msg),
+        }
+    }
+}
+
+impl From<DbContextError> for RepositoryError {
+    fn from(err: DbContextError) -> Self {
+        let err_msg = format!("{}", &err);
+        Self::InternalError(err_msg)
     }
 }

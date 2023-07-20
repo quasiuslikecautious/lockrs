@@ -8,7 +8,7 @@ use diesel_async::RunQueryDsl;
 use crate::{
     db::{
         pg::{models::PgAccessToken, schema::access_tokens},
-        repositories::{AccessTokenRepository, RepositoryError},
+        repositories::{AccessTokenRepository, QueryFailure, RepositoryError},
         DbContext,
     },
     oauth2::{
@@ -30,10 +30,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let pg_token = diesel::insert_into(access_tokens::table)
             .values((
@@ -45,7 +42,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             ))
             .get_result::<PgAccessToken>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_create(&token_create, err))?;
+            .map_err(RepositoryError::map_diesel_create)?;
 
         Ok(AccessTokenMapper::from_pg(pg_token))
     }
@@ -59,10 +56,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let now = Utc::now().naive_utc();
 
@@ -72,7 +66,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .filter(access_tokens::expires_at.gt(&now))
             .first::<PgAccessToken>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_update(token, err))?;
+            .map_err(RepositoryError::map_diesel_update)?;
 
         Ok(AccessTokenMapper::from_pg(pg_token))
     }
@@ -86,23 +80,20 @@ impl AccessTokenRepository for PgAccessTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let affected_rows = diesel::delete(access_tokens::table)
             .filter(access_tokens::token.eq(token))
             .execute(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_delete(token, err))?;
+            .map_err(RepositoryError::map_diesel_delete)?;
 
         if affected_rows != 1 {
             let msg = format!(
                 "Expected 1 row to be affected by delete, but found {}",
                 affected_rows
             );
-            return Err(RepositoryError::Database(msg));
+            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
         }
 
         Ok(())

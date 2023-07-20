@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::{
     db::{
         pg::{models::PgUser, schema::users},
-        repositories::{RepositoryError, UserRepository},
+        repositories::{QueryFailure, RepositoryError, UserRepository},
         DbContext,
     },
     mappers::UserMapper,
@@ -28,10 +28,7 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let pg_user = diesel::insert_into(users::table)
             .values((
@@ -40,7 +37,7 @@ impl UserRepository for PgUserRepository {
             ))
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_create(&user_create, err))?;
+            .map_err(RepositoryError::map_diesel_create)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -54,16 +51,13 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let pg_user = users::table
             .filter(users::id.eq(id))
             .first::<PgUser>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_found(id.to_string().as_str(), err))?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -77,16 +71,13 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let pg_user = users::table
             .filter(users::email.eq(email))
             .first::<PgUser>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_found(email, err))?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -101,17 +92,14 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let pg_user = diesel::update(users::table)
             .filter(users::id.eq(id))
             .set(update_user)
             .get_result::<PgUser>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_update(id.to_string().as_str(), err))?;
+            .map_err(RepositoryError::map_diesel_update)?;
 
         Ok(UserMapper::from_pg(pg_user))
     }
@@ -125,22 +113,19 @@ impl UserRepository for PgUserRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let rows_affected = diesel::delete(users::table.filter(users::id.eq(id)))
             .execute(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_delete(id.to_string().as_str(), err))?;
+            .map_err(RepositoryError::map_diesel_delete)?;
 
         if rows_affected != 1 {
             let msg = format!(
                 "Expected 1 row to be affected by delete, but found {}",
                 rows_affected
             );
-            return Err(RepositoryError::NotDeleted(msg));
+            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
         }
 
         Ok(())

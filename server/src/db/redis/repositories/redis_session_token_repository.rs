@@ -6,7 +6,7 @@ use redis::AsyncCommands;
 use crate::{
     auth::models::SessionTokenModel,
     db::{
-        repositories::{RepositoryError, SessionTokenRepository},
+        repositories::{QueryFailure, RepositoryError, SessionTokenRepository},
         DbContext,
     },
 };
@@ -33,10 +33,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         redis::cmd("SET")
             .arg(key.as_str())
@@ -45,10 +42,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .arg(token.expires_at)
             .query_async(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(RepositoryError::map_redis_create)?;
 
         Ok(token.clone())
     }
@@ -64,22 +58,19 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
-        let value: String = conn.get(key.as_str()).await.map_err(|err| {
-            let msg = format!("{}", err);
-            RepositoryError::NotFound(msg)
-        })?;
+        let value: String = conn
+            .get(key.as_str())
+            .await
+            .map_err(RepositoryError::map_redis)?;
 
         serde_json::from_str(value.as_str()).map_err(|_| {
             let msg = format!(
                 "Invalid JSON data format for data stored at token {}",
                 token
             );
-            RepositoryError::Database(msg)
+            RepositoryError::InternalError(msg)
         })
     }
 
@@ -94,26 +85,20 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let deleted: i64 = redis::cmd("DEL")
             .arg(key.as_str())
             .query_async(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotDeleted(msg)
-            })?;
+            .map_err(RepositoryError::map_redis)?;
 
         if deleted != 1 {
             let msg = format!(
                 "Expected 1 row to be affected by delete, but found {}",
                 deleted
             );
-            return Err(RepositoryError::NotDeleted(msg));
+            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
         }
 
         Ok(())

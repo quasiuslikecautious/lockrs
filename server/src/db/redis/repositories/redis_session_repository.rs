@@ -44,10 +44,7 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         redis::cmd("HSET")
             .arg(user_key.as_str())
@@ -57,10 +54,7 @@ impl SessionRepository for RedisSessionRepository {
             .arg(expires_at)
             .query_async(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotCreated(msg)
-            })?;
+            .map_err(RepositoryError::map_redis_create)?;
 
         Ok(session.clone())
     }
@@ -78,27 +72,21 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let value: String = redis::cmd("HGET")
             .arg(user_key.as_str())
             .arg(session_key.as_str())
             .query_async(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotFound(msg)
-            })?;
+            .map_err(RepositoryError::map_redis)?;
 
         serde_json::from_str(value.as_str()).map_err(|_| {
             let msg = format!(
                 "Invalid JSON data format for data stored at session {} for user {}",
                 session_id, user_id
             );
-            RepositoryError::Database(msg)
+            RepositoryError::InternalError(msg)
         })
     }
 
@@ -117,10 +105,7 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         redis::cmd("HSET")
             .arg(user_key.as_str())
@@ -130,10 +115,7 @@ impl SessionRepository for RedisSessionRepository {
             .arg(expires_at)
             .query_async(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotUpdated(msg)
-            })?;
+            .map_err(RepositoryError::map_redis)?;
 
         Ok(session.clone())
     }
@@ -149,19 +131,13 @@ impl SessionRepository for RedisSessionRepository {
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         redis::cmd("DEL")
             .arg(key.as_str())
             .query_async(conn)
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotDeleted(msg)
-            })?;
+            .map_err(RepositoryError::map_redis)?;
 
         Ok(())
     }

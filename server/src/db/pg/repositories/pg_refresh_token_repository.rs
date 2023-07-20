@@ -8,7 +8,7 @@ use diesel_async::RunQueryDsl;
 use crate::{
     db::{
         pg::{models::PgRefreshToken, schema::refresh_tokens},
-        repositories::{RefreshTokenRepository, RepositoryError},
+        repositories::{QueryFailure, RefreshTokenRepository, RepositoryError},
         DbContext,
     },
     oauth2::{
@@ -30,10 +30,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let pg_token = diesel::insert_into(refresh_tokens::table)
             .values((
@@ -45,7 +42,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             ))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_create(&token_create, err))?;
+            .map_err(RepositoryError::map_diesel_create)?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -59,10 +56,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let now = Utc::now().naive_utc();
 
@@ -73,7 +67,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .filter(refresh_tokens::used.eq(false))
             .first::<PgRefreshToken>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_found(token, err))?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -87,10 +81,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::NotUpdated(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let now = Utc::now().naive_utc();
 
@@ -102,7 +93,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .set(refresh_tokens::used.eq(true))
             .get_result::<PgRefreshToken>(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_update(token, err))?;
+            .map_err(RepositoryError::map_diesel_update)?;
 
         Ok(RefreshTokenMapper::from_pg(pg_token))
     }
@@ -116,23 +107,20 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|err| {
-                let msg = format!("{}", err);
-                RepositoryError::Connection(msg)
-            })?;
+            .map_err(RepositoryError::from)?;
 
         let affected_rows = diesel::delete(refresh_tokens::table)
             .filter(refresh_tokens::token.eq(token))
             .execute(conn)
             .await
-            .map_err(|err| RepositoryError::map_diesel_delete(token, err))?;
+            .map_err(RepositoryError::map_diesel_delete)?;
 
         if affected_rows != 1 {
             let msg = format!(
                 "Expected 1 row to be affected by delete, but found {}",
                 affected_rows
             );
-            return Err(RepositoryError::NotDeleted(msg));
+            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
         }
 
         Ok(())

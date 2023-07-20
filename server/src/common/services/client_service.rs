@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     db::{
-        repositories::{ClientRepository, RepositoryError}, 
+        repositories::{ClientRepository, QueryFailure, RepositoryError},
         DbContext,
     },
     models::{ClientCreateModel, ClientModel, ClientUpdateModel, RedirectCreateModel},
@@ -113,21 +113,26 @@ pub enum ClientServiceError {
     #[error("CLIENT SERVICE ERROR :: Bad Deletion :: {0}")]
     BadDelete(String),
 
-    #[error("CLIENT SERVICE ERROR :: Repository Error")]
-    Repository(String),
+    #[error("CLIENT SERVICE ERROR :: Repository Error :: {0}")]
+    InternalError(String),
 }
 
 impl From<RepositoryError> for ClientServiceError {
     fn from(err: RepositoryError) -> Self {
         match err {
-            RepositoryError::AlreadyExists(msg) => Self::AlreadyExists(msg), 
-            RepositoryError::NotCreated(msg) => Self::NotCreated(msg), 
-            RepositoryError::NotFound(msg) => Self::NotFound(msg), 
-            RepositoryError::NotUpdated(msg) => Self::NotUpdated(msg), 
-            RepositoryError::NotDeleted(msg) => Self::BadDelete(msg), 
+            // BL errors
 
-            RepositoryError::Connection(msg) => Self::Repository(msg),
-            RepositoryError::Database(msg) => Self::Repository(msg),
+            // CRUD errors
+            RepositoryError::QueryFailed(msg, query_err) => match query_err {
+                QueryFailure::AlreadyExists => Self::AlreadyExists(msg),
+                QueryFailure::NotCreated => Self::NotCreated(msg),
+                QueryFailure::NotFound => Self::NotFound(msg),
+                QueryFailure::NotUpdated => Self::NotUpdated(msg),
+                QueryFailure::NotDeleted => Self::BadDelete(msg),
+            },
+
+            // InternalErrors
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
         }
     }
 }
