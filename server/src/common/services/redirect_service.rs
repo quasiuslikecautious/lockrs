@@ -1,9 +1,13 @@
 use std::sync::Arc;
 
+use thiserror::Error;
 use url::Url;
 
 use crate::{
-    db::{repositories::RedirectUriRepository, DbContext},
+    db::{
+        repositories::{QueryFailure, RedirectUriRepository, RepositoryError},
+        DbContext,
+    },
     models::{RedirectCreateModel, RedirectModel},
 };
 
@@ -24,7 +28,7 @@ impl RedirectService {
         redirect_repository
             .create(db_context, &redirect_create)
             .await
-            .map_err(|_| RedirectServiceError::NotCreated)
+            .map_err(RedirectServiceError::from)
     }
 
     pub async fn verify_redirect(
@@ -36,7 +40,7 @@ impl RedirectService {
         redirect_repository
             .get_by_uri(db_context, client_id, uri)
             .await
-            .map_err(|_| RedirectServiceError::NotFound)
+            .map_err(RedirectServiceError::from)
     }
 
     pub async fn get_redirects_from_client(
@@ -47,12 +51,31 @@ impl RedirectService {
         redirect_repository
             .get_all_by_client_id(db_context, client_id)
             .await
-            .map_err(|_| RedirectServiceError::NoneFound)
+            .map_err(RedirectServiceError::from)
     }
 }
 
+#[derive(Debug, Error)]
 pub enum RedirectServiceError {
-    NotCreated,
-    NotFound,
-    NoneFound,
+    #[error("REDIRECT SERVICE ERROR :: Redirect not created :: {0}")]
+    NotCreated(String),
+    #[error("REDIRECT SERVICE ERROR :: Redirect not found :: {0}")]
+    NotFound(String),
+
+    #[error("REDIRECT SERVICE ERROR :: Internal error :: {0}")]
+    InternalError(String),
+}
+
+impl From<RepositoryError> for RedirectServiceError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            RepositoryError::QueryFailed(msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated(msg),
+                QueryFailure::NotFound => Self::NotFound(msg),
+                _ => Self::InternalError(format!("TODO error not implemented")),
+            },
+
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }

@@ -113,7 +113,7 @@ pub enum ClientServiceError {
     #[error("CLIENT SERVICE ERROR :: Bad Deletion :: {0}")]
     BadDelete(String),
 
-    #[error("CLIENT SERVICE ERROR :: Repository Error :: {0}")]
+    #[error("CLIENT SERVICE ERROR :: Internal Error :: {0}")]
     InternalError(String),
 }
 
