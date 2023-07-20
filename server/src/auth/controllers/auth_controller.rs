@@ -32,10 +32,7 @@ impl AuthController {
         let session_token =
             AuthService::login(db_context, user_repository, session_token_repository, &auth)
                 .await
-                .map_err(|err| match err {
-                    AuthServiceError::Credentials => AuthControllerError::InvalidCredentials,
-                    _ => AuthControllerError::Internal,
-                })?;
+                .map_err(AuthControllerError::from)?;
 
         let token_response = SessionTokenResponse {
             session_token: session_token.token,
@@ -47,17 +44,33 @@ impl AuthController {
 }
 
 pub enum AuthControllerError {
-    Internal,
     InvalidCredentials,
+    Internal,
 }
 
 impl AuthControllerError {
+    pub fn error_code(&self) -> StatusCode {
+        match self {
+            Self::InvalidCredentials => StatusCode::UNAUTHORIZED,
+            Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+    
     pub fn error_message(&self) -> &'static str {
         match self {
+            Self::InvalidCredentials => "The provided credentials were invalid or not found.",
             Self::Internal => {
                 "An error has occurred while proccessing your request. Please try again later."
             }
-            Self::InvalidCredentials => "The provided credentials were invalid or not found.",
+        }
+    }
+}
+
+impl From<AuthServiceError> for AuthControllerError {
+    fn from(err: AuthServiceError) -> Self {
+        match err {
+            AuthServiceError::Credentials(msg) => Self::InvalidCredentials,
+            _ => Self::Internal,
         }
     }
 }

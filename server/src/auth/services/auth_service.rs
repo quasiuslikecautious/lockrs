@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{BcryptError, hash, verify, DEFAULT_COST};
+use thiserror::Error;
 
 use crate::{
     auth::models::{AuthModel, RegisterModel, SessionTokenModel},
@@ -25,7 +26,7 @@ impl AuthService {
     ) -> Result<SessionTokenModel, AuthServiceError> {
         let user = UserService::get_user_by_email(db_context, user_repository, &user_auth.email)
             .await
-            .map_err(|_| AuthServiceError::Credentials)?;
+            .map_err(AuthServiceError::from)?;
 
         Self::verify_password(user_auth.password.as_str(), user.password_hash.as_str())?;
 
@@ -35,7 +36,7 @@ impl AuthService {
             &user.id,
         )
         .await
-        .map_err(|_| AuthServiceError::Token)?;
+        .map_err(|_| AuthServiceError::Token(format!("TODO After Session Token Service rework...")))?;
 
         Ok(session_token)
     }
@@ -54,30 +55,56 @@ impl AuthService {
 
         UserService::create_user(db_context, user_repository, &create_user)
             .await
-            .map_err(|err| match err {
-                UserServiceError::AlreadyExists => AuthServiceError::AlreadyExists,
-                _ => AuthServiceError::NotCreated,
-            })
+            .map_err(AuthServiceError::from)
     }
 
     fn hash_password(password: &str) -> Result<String, AuthServiceError> {
-        hash(password, DEFAULT_COST).map_err(|_| AuthServiceError::NotCreated)
+        hash(password, DEFAULT_COST).map_err(AuthServiceError::from)
     }
 
     fn verify_password(password: &str, hash: &str) -> Result<(), AuthServiceError> {
-        let valid_password = verify(password, hash).map_err(|_| AuthServiceError::Credentials)?;
+        let valid_password = verify(password, hash).map_err(AuthServiceError::from)?;
 
         if !valid_password {
-            return Err(AuthServiceError::Credentials);
+            return Err(AuthServiceError::Credentials(format!("Invalid password supplied")));
         }
 
         Ok(())
     }
 }
 
+#[derive(Debug, Error)]
 pub enum AuthServiceError {
-    Token,
-    Credentials,
-    NotCreated,
-    AlreadyExists,
+    #[error("AUTH SERVICE ERROR :: Invalid token :: {0}")]
+    Token(String),
+    #[error("AUTH SERVICE ERROR :: Invalid credentials :: {0}")]
+    Credentials(String),
+    #[error("AUTH SERVICE ERROR :: User already exists :: {0}")]
+    AlreadyExists(String),
+    #[error("AUTH SERVICE ERROR :: User not created :: {0}")]
+    NotCreated(String),
+
+    #[error("AUTH SERVICE ERROR :: Internal error :: {0}")]
+    InternalError(String),
+}
+
+impl From<UserServiceError> for AuthServiceError {
+    fn from(err: UserServiceError) -> Self {
+        match err {
+            UserServiceError::AlreadyExists(msg) => Self::AlreadyExists(msg),
+            UserServiceError::NotCreated(msg) => Self::NotCreated(msg),
+            UserServiceError::NotFound(msg) => Self::Credentials(msg),
+            // QueryFailure::NotUpdated => Self::NotUpdated(msg),
+
+            UserServiceError::InternalError(msg) => Self::InternalError(msg),
+
+            _ => Self::InternalError(format!("TODO Error not implemented")),
+        }
+    }
+}
+
+impl From<BcryptError> for AuthServiceError {
+    fn from(err: BcryptError) -> Self {
+        Self::InternalError(format!("{:?}", err))
+    }
 }
