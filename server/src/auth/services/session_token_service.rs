@@ -93,8 +93,7 @@ impl From<RepositoryError> for SessionTokenServiceError {
                 QueryFailure::NotFound => Self::NotFound(msg),
                 QueryFailure::NotDeleted => Self::NotDeleted(msg),
 
-                QueryFailure::AlreadyExists => Self::InternalError(msg),
-                QueryFailure::NotUpdated => Self::InternalError(msg),
+                _ => Self::InternalError(msg),
             },
             RepositoryError::InternalError(msg) => Self::InternalError(msg),
         }
