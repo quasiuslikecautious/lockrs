@@ -6,7 +6,10 @@ use ring::rand::{SecureRandom, SystemRandom};
 use thiserror::Error;
 
 use crate::{
-    db::{repositories::{DeviceAuthorizationRepository, RepositoryError, QueryFailure}, DbContext},
+    db::{
+        repositories::{DeviceAuthorizationRepository, QueryFailure, RepositoryError},
+        DbContext,
+    },
     oauth2::models::{DeviceAuthorizationCreateModel, DeviceAuthorizationModel, ScopeModel},
 };
 
@@ -66,7 +69,9 @@ impl DeviceAuthorizationService {
         let rng = SystemRandom::new();
 
         rng.fill(&mut buffer).map_err(|_| {
-            DeviceAuthorizationServiceError::InternalError("Filling SystemRandom failed on generate_user_code.".into())
+            DeviceAuthorizationServiceError::InternalError(
+                "Filling SystemRandom failed on generate_user_code.".into(),
+            )
         })?;
 
         for byte in buffer.iter() {
@@ -82,7 +87,9 @@ impl DeviceAuthorizationService {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
         rng.fill(&mut buffer).map_err(|_| {
-            DeviceAuthorizationServiceError::InternalError("Filling SystemRandom failed on generate_device_code".into())
+            DeviceAuthorizationServiceError::InternalError(
+                "Filling SystemRandom failed on generate_device_code".into(),
+            )
         })?;
         let code = general_purpose::URL_SAFE_NO_PAD.encode(buffer);
 

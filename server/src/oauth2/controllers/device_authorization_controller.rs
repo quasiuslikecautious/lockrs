@@ -11,7 +11,10 @@ use serde::Deserialize;
 use crate::{
     oauth2::{
         responses::DeviceAuthorizationResponse,
-        services::{ClientAuthService, DeviceAuthorizationService, ScopeService, DeviceAuthorizationServiceError},
+        services::{
+            ClientAuthService, ClientAuthServiceError, DeviceAuthorizationService,
+            DeviceAuthorizationServiceError, ScopeService,
+        },
     },
     utils::extractors::ExtractClientCredentials,
     AppState,
@@ -40,7 +43,7 @@ impl DeviceAuthorizationController {
             client_credentials.secret.as_deref(),
         )
         .await
-        .map_err(|_| DeviceAuthorizationControllerError::InvalidClient)?;
+        .map_err(DeviceAuthorizationControllerError::from)?;
 
         let scope_repository = &*state.repository_container.as_ref().scope_repository;
         let scopes = ScopeService::get_from_list(db_context, scope_repository, &params.scope)
@@ -48,7 +51,8 @@ impl DeviceAuthorizationController {
             .map_err(|_| DeviceAuthorizationControllerError::InvalidScopes)?;
 
         let device_authorization_repository = &*state
-            .repository_container.as_ref()
+            .repository_container
+            .as_ref()
             .device_authorization_repository;
 
         let device_authorization = DeviceAuthorizationService::create_device_authorization(
@@ -94,7 +98,7 @@ impl DeviceAuthorizationControllerError {
             Self::BadRequest => "Unable to perform the requested operation.",
             Self::InternalError => {
                 "An error occurred processing your request. Please try again later."
-            },
+            }
         }
     }
 }
@@ -105,6 +109,16 @@ impl From<DeviceAuthorizationServiceError> for DeviceAuthorizationControllerErro
         match err {
             DeviceAuthorizationServiceError::NotCreated(_) => Self::BadRequest,
 
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<ClientAuthServiceError> for DeviceAuthorizationControllerError {
+    fn from(err: ClientAuthServiceError) -> Self {
+        error!("{}", err);
+        match err {
+            ClientAuthServiceError::NotFound(_) => Self::InternalError,
             _ => Self::InternalError,
         }
     }

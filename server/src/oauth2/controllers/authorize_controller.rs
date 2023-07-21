@@ -5,11 +5,12 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Redirect},
 };
+use log::error;
 use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    oauth2::services::{ClientAuthService, ScopeService},
+    oauth2::services::{ClientAuthService, ClientAuthServiceError, ScopeService},
     services::RedirectService,
     utils::extractors::ExtractClientCredentials,
     AppState,
@@ -46,7 +47,7 @@ impl AuthorizeController {
             client_credentials.secret.as_deref(),
         )
         .await
-        .map_err(|_| AuthorizeControllerError::InvalidClient)?;
+        .map_err(AuthorizeControllerError::from)?;
 
         // validate redirect uri, inform the user of the problem instead of redirecting
         let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
@@ -73,12 +74,13 @@ impl AuthorizeController {
 }
 
 pub enum AuthorizeControllerError {
-    InternalError,
     InvalidResponseType,
     InvalidClient,
     InvalidRedirectUri,
     InvalidScopes,
     InvalidCodeChallengeMethod,
+
+    InternalError,
 }
 
 impl AuthorizeControllerError {
@@ -90,6 +92,16 @@ impl AuthorizeControllerError {
             Self::InvalidRedirectUri => "The provided redirect uri is not recognized by the server for the provided client.",
             Self::InvalidScopes => "The provided scopes are invalid.",
             Self::InvalidCodeChallengeMethod => "The provided code challenge method is unsupported. Only \"plain\" or \"S256\" code challenge methods are supported by this server",
+        }
+    }
+}
+
+impl From<ClientAuthServiceError> for AuthorizeControllerError {
+    fn from(err: ClientAuthServiceError) -> Self {
+        error!("{}", err);
+        match err {
+            ClientAuthServiceError::NotFound(_) => Self::InternalError,
+            _ => Self::InternalError,
         }
     }
 }

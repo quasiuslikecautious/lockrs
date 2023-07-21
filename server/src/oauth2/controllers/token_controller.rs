@@ -13,8 +13,8 @@ use crate::{
     models::ClientModel,
     oauth2::models::ScopeModel,
     oauth2::services::{
-        ClientAuthService, RefreshTokenService, RefreshTokenServiceError, ScopeService,
-        TokenService,
+        ClientAuthService, ClientAuthServiceError, RefreshTokenService, RefreshTokenServiceError,
+        ScopeService, TokenService,
     },
     oauth2::{responses::TokenResponse, services::TokenServiceError},
     utils::extractors::ExtractClientCredentials,
@@ -57,7 +57,7 @@ impl TokenController {
             client_credentials.secret.as_deref(),
         )
         .await
-        .map_err(|_| TokenControllerError::InvalidClient)?;
+        .map_err(TokenControllerError::from)?;
 
         let scope_repository = &*state.repository_container.as_ref().scope_repository;
 
@@ -226,6 +226,16 @@ impl From<RefreshTokenServiceError> for TokenControllerError {
         error!("{}", err);
         match err {
             RefreshTokenServiceError::NotFound(_) => Self::InvalidRefreshToken,
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<ClientAuthServiceError> for TokenControllerError {
+    fn from(err: ClientAuthServiceError) -> Self {
+        error!("{}", err);
+        match err {
+            ClientAuthServiceError::NotFound(_) => Self::InternalError,
             _ => Self::InternalError,
         }
     }
