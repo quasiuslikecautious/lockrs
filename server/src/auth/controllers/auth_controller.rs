@@ -69,7 +69,7 @@ impl AuthControllerError {
 impl From<AuthServiceError> for AuthControllerError {
     fn from(err: AuthServiceError) -> Self {
         match err {
-            AuthServiceError::Credentials(msg) => Self::InvalidCredentials,
+            AuthServiceError::Credentials(_) => Self::InvalidCredentials,
             _ => Self::Internal,
         }
     }
@@ -77,6 +77,6 @@ impl From<AuthServiceError> for AuthControllerError {
 
 impl IntoResponse for AuthControllerError {
     fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }

@@ -4,7 +4,10 @@ use bcrypt::{BcryptError, hash, verify, DEFAULT_COST};
 use thiserror::Error;
 
 use crate::{
-    auth::models::{AuthModel, RegisterModel, SessionTokenModel},
+    auth::{
+        models::{AuthModel, RegisterModel, SessionTokenModel},
+        services::SessionTokenServiceError,
+    },
     db::{
         repositories::{SessionTokenRepository, UserRepository},
         DbContext,
@@ -36,7 +39,7 @@ impl AuthService {
             &user.id,
         )
         .await
-        .map_err(|_| AuthServiceError::Token(format!("TODO After Session Token Service rework...")))?;
+        .map_err(AuthServiceError::from)?;
 
         Ok(session_token)
     }
@@ -99,6 +102,19 @@ impl From<UserServiceError> for AuthServiceError {
             UserServiceError::InternalError(msg) => Self::InternalError(msg),
 
             _ => Self::InternalError(format!("TODO Error not implemented")),
+        }
+    }
+}
+
+impl From<SessionTokenServiceError> for AuthServiceError {
+    fn from(err: SessionTokenServiceError) -> Self {
+        match err {
+            SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
+            
+            SessionTokenServiceError::NotCreated(msg) => Self::InternalError(msg),
+            SessionTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
+
+            SessionTokenServiceError::InternalError(msg) => Self::InternalError(msg),
         }
     }
 }

@@ -51,10 +51,7 @@ impl UserController {
 
         let user = AuthService::register_user(db_context, user_repository, &registration)
             .await
-            .map_err(|err| {
-                error!("USER CONTROLLER ERROR :: Create :: {:?}", err);
-                UserControllerError::from(err)
-            })?;
+            .map_err(UserControllerError::from)?;
 
         let user_response = UserResponse {
             id: user.id,
@@ -150,9 +147,10 @@ impl UserController {
 }
 
 pub enum UserControllerError {
+    Jwt,
     NotFound,
     AlreadyExists,
-    Jwt,
+    BadRequest,
     Internal,
 }
 
@@ -161,19 +159,20 @@ impl UserControllerError {
         match self {
             Self::Jwt => StatusCode::UNAUTHORIZED,
             Self::NotFound => StatusCode::NOT_FOUND,
+            Self::AlreadyExists => StatusCode::BAD_REQUEST,
 
+            Self::BadRequest => StatusCode::BAD_REQUEST,
             Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
-
-            _ => StatusCode::BAD_REQUEST,
         }
     }
 
     pub fn error_message(&self) -> &'static str {
         match self {
+            Self::Jwt => "You do not have permission to view the requested resource.",
             Self::AlreadyExists => "An account is already associated with that email. Please login or use a different email.",
             Self::NotFound => "The requested user was not found.",
-            Self::Jwt => "You do not have permission to view the requested resource.",
 
+            Self::BadRequest => "Unable to perform the operation as requested.",
             Self::Internal => "An error occurred while processing your request. Please try again later.",
         }
     }
@@ -181,9 +180,26 @@ impl UserControllerError {
 
 impl From<AuthServiceError> for UserControllerError {
     fn from(err: AuthServiceError) -> Self {
+        error!("USER CONTROLLER ERROR :: {}", err);
         match err {
-            AuthServiceError::AlreadyExists(msg) => Self::AlreadyExists,
+            AuthServiceError::AlreadyExists(_) => Self::AlreadyExists,
             _ => Self::Internal,
+        }
+    }
+}
+
+impl From<UserServiceError> for UserControllerError {
+    fn from(err: UserServiceError) -> Self {
+        error!("USER CONTROLLER ERROR :: {}", err);
+        match err {
+            UserServiceError::AlreadyExists(_) => Self::AlreadyExists, 
+            UserServiceError::NotFound(_) => Self::NotFound,
+
+            UserServiceError::NotCreated(_) => Self::BadRequest,
+            UserServiceError::NotUpdated(_) => Self::BadRequest,
+            UserServiceError::NotDeleted(_) => Self::BadRequest,
+
+            UserServiceError::InternalError(_) => Self::Internal,
         }
     }
 }

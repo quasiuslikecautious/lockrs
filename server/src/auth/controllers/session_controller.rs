@@ -6,7 +6,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-
+use log::error;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -57,10 +57,7 @@ impl SessionController {
             &state.config.auth_interval,
         )
         .await
-        .map_err(|err| match err {
-            SessionServiceError::Token => SessionControllerError::SessionToken,
-            _ => SessionControllerError::InternalError,
-        })?;
+        .map_err(SessionServiceError::from)?;
 
         Ok(NewSessionResponse {
             jwt_util: Arc::clone(&state.jwt_util),
@@ -85,10 +82,7 @@ impl SessionController {
         let session =
             SessionService::get_session(db_context, session_repository, &jwt.user_id, &session_id)
                 .await
-                .map_err(|err| match err {
-                    SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
-                    _ => SessionControllerError::InternalError,
-                })?;
+                .map_err(SessionControllerError::from)?;
 
         Ok(SessionResponse {
             id: session.id,
@@ -123,7 +117,7 @@ impl SessionController {
             &state.config.auth_interval,
         )
         .await
-        .map_err(|_| SessionControllerError::InternalError)?;
+        .map_err(SessionControllerError::from)?;
 
         Ok(SessionResponse {
             id: session.id,
@@ -146,38 +140,62 @@ impl SessionController {
 
         SessionService::delete_session(db_context, session_repository, &jwt.user_id)
             .await
-            .map_err(|err| match err {
-                SessionServiceError::NotFound => SessionControllerError::SessionNotFound,
-                _ => SessionControllerError::InternalError,
-            })?;
+            .map_err(SessionControllerError::from)?;
 
         Ok(EndSessionResponse {})
     }
 }
 
 pub enum SessionControllerError {
-    InternalError,
-    SessionNotFound,
-    SessionToken,
     Jwt,
+    SessionToken,
+    NotFound,
+    BadRequest,
+    InternalError,
 }
 
 impl SessionControllerError {
-    pub fn error_code(&self) -> &'static str {
+    pub fn error_code(&self) -> StatusCode {
         match self {
+            Self::Jwt => StatusCode::UNAUTHORIZED,
+            Self::SessionToken => StatusCode::UNAUTHORIZED,
+            Self::NotFound => StatusCode::NOT_FOUND,
+            Self::BadRequest => StatusCode::BAD_REQUEST,
+            Self::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    pub fn error_message(&self) -> &'static str {
+        match self {
+            Self::Jwt => "You do not have permission to access this resource.",
+            Self::SessionToken => "The provided session token is invalid.",
+            Self::NotFound => "Session token not found.",
+            Self::BadRequest => "Unable to perform the requested operation.",
             Self::InternalError => {
                 "An error has occurred while processing your request. Please try again later."
             }
-            Self::SessionNotFound => "Session token not found.",
-            Self::SessionToken => "The provided session token is invalid.",
-            Self::Jwt => "You do not have permission to access this resource.",
         }
     }
 }
 
+impl From<SessionServiceError> for SessionControllerError {
+    fn from(err: SessionServiceError) -> Self {
+        error!("SESSION CONTROLLER ERROR :: {}", err);
+        match err {
+            SessionServiceError::Token(_) => Self::SessionToken,
+            SessionServiceError::NotFound(_) => Self::NotFound,
+
+            SessionServiceError::NotCreated(_) => Self::BadRequest,
+            SessionServiceError::NotUpdated(_) => Self::BadRequest,
+            SessionServiceError::NotDeleted(_) => Self::BadRequest,
+
+            SessionServiceError::InternalError(_) => Self::InternalError,
+        }
+    }
+} 
+
 impl IntoResponse for SessionControllerError {
     fn into_response(self) -> axum::response::Response {
-        println!("response error: {}", self.error_code());
-        (StatusCode::BAD_REQUEST, self.error_code()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }
