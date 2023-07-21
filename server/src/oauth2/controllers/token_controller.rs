@@ -235,7 +235,7 @@ impl From<ClientAuthServiceError> for TokenControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
         error!("{}", err);
         match err {
-            ClientAuthServiceError::NotFound(_) => Self::InternalError,
+            ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
             _ => Self::InternalError,
         }
     }
