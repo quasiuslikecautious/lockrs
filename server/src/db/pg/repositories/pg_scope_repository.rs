@@ -7,7 +7,7 @@ use diesel_async::RunQueryDsl;
 use crate::{
     db::{
         pg::schema::scopes,
-        repositories::{ScopeRepository, ScopeRepositoryError},
+        repositories::{RepositoryError, ScopeRepository},
         DbContext,
     },
     oauth2::models::{ScopeCreateModel, ScopeModel},
@@ -21,7 +21,7 @@ impl ScopeRepository for PgScopeRepository {
         &self,
         _db_context: &Arc<DbContext>,
         _scope_create: &ScopeCreateModel,
-    ) -> Result<ScopeModel, ScopeRepositoryError> {
+    ) -> Result<ScopeModel, RepositoryError> {
         todo!();
     }
 
@@ -29,19 +29,19 @@ impl ScopeRepository for PgScopeRepository {
         &self,
         db_context: &Arc<DbContext>,
         scopes_list: &Vec<String>,
-    ) -> Result<ScopeModel, ScopeRepositoryError> {
+    ) -> Result<ScopeModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| ScopeRepositoryError::BadConnection)?;
+            .map_err(RepositoryError::from)?;
 
         let pg_scopes = scopes::table
             .select(scopes::name)
             .filter(scopes::name.eq_any(scopes_list))
             .load(conn)
             .await
-            .map_err(|_| ScopeRepositoryError::NoneFound)?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(ScopeModel { scopes: pg_scopes })
     }
@@ -50,7 +50,7 @@ impl ScopeRepository for PgScopeRepository {
         &self,
         _db_context: &Arc<DbContext>,
         _id: &str,
-    ) -> Result<(), ScopeRepositoryError> {
+    ) -> Result<(), RepositoryError> {
         todo!();
     }
 }

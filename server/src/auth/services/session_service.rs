@@ -3,17 +3,19 @@ use std::sync::Arc;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
 use rand::Rng;
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    auth::models::{SessionCreateModel, SessionModel, SessionUpdateModel},
+    auth::{
+        models::{SessionCreateModel, SessionModel, SessionUpdateModel},
+        services::{SessionTokenService, SessionTokenServiceError},
+    },
     db::{
-        repositories::{SessionRepository, SessionTokenRepository},
+        repositories::{QueryFailure, RepositoryError, SessionRepository, SessionTokenRepository},
         DbContext,
     },
 };
-
-use super::SessionTokenService;
 
 pub struct SessionService;
 
@@ -31,7 +33,7 @@ impl SessionService {
             token.session_token.as_str(),
         )
         .await
-        .map_err(|_| SessionServiceError::Token)?;
+        .map_err(SessionServiceError::from)?;
 
         let user_id = token.user_id;
         let session_id = Self::generate_session_id();
@@ -41,7 +43,7 @@ impl SessionService {
         session_repository
             .create(db_context, &session_data)
             .await
-            .map_err(|_| SessionServiceError::NotCreated)
+            .map_err(SessionServiceError::from)
     }
 
     pub async fn get_session(
@@ -53,7 +55,7 @@ impl SessionService {
         session_repository
             .get_by_hash(db_context, session_id, user_id)
             .await
-            .map_err(|_| SessionServiceError::NotFound)
+            .map_err(SessionServiceError::from)
     }
 
     pub async fn update_session(
@@ -77,7 +79,7 @@ impl SessionService {
         session_repository
             .update(db_context, &session)
             .await
-            .map_err(|_| SessionServiceError::NotUpdated)
+            .map_err(SessionServiceError::from)
     }
 
     pub async fn delete_session(
@@ -88,7 +90,7 @@ impl SessionService {
         session_repository
             .delete_by_user_id(db_context, user_id)
             .await
-            .map_err(|_| SessionServiceError::BadDelete)
+            .map_err(SessionServiceError::from)
     }
 
     fn generate_session_id() -> String {
@@ -99,10 +101,48 @@ impl SessionService {
     }
 }
 
+#[derive(Debug, Error)]
 pub enum SessionServiceError {
-    NotCreated,
-    NotFound,
-    NotUpdated,
-    BadDelete,
-    Token,
+    #[error("SESSION SERVICE ERROR :: Not Created :: {0}")]
+    NotCreated(String),
+    #[error("SESSION SERVICE ERROR :: Not Found :: {0}")]
+    NotFound(String),
+    #[error("SESSION SERVICE ERROR :: Not Updated :: {0}")]
+    NotUpdated(String),
+    #[error("SESSION SERVICE ERROR :: Not Deleted :: {0}")]
+    NotDeleted(String),
+    #[error("SESSION SERVICE ERROR :: Bad Token :: {0}")]
+    Token(String),
+
+    #[error("SESSION SERVICE ERROR :: Internal Error :: {0}")]
+    InternalError(String),
+}
+
+impl From<RepositoryError> for SessionServiceError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            RepositoryError::QueryFailed(msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated(msg),
+                QueryFailure::NotFound => Self::NotFound(msg),
+                QueryFailure::NotUpdated => Self::NotUpdated(msg),
+                QueryFailure::NotDeleted => Self::NotDeleted(msg),
+
+                QueryFailure::AlreadyExists => Self::InternalError(msg),
+            },
+
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
+}
+
+impl From<SessionTokenServiceError> for SessionServiceError {
+    fn from(err: SessionTokenServiceError) -> Self {
+        match err {
+            SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
+
+            SessionTokenServiceError::NotCreated(msg) => Self::InternalError(msg),
+            SessionTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
+            SessionTokenServiceError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }

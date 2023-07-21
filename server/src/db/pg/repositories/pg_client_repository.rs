@@ -7,9 +7,13 @@ use uuid::Uuid;
 
 use crate::{
     db::{
-        pg::{models::{PgClient, PgRedirectUri}, schema::clients, schema::redirect_uris},
-        repositories::{ClientRepository, ClientRepositoryError, RedirectUriRepository},
-        DbContext, DbContextError,
+        pg::{
+            models::{PgClient, PgRedirectUri},
+            schema::clients,
+            schema::redirect_uris,
+        },
+        repositories::{ClientRepository, QueryFailure, RepositoryError},
+        DbContext,
     },
     mappers::ClientMapper,
     models::{ClientModel, ClientUpdateModel, RedirectCreateModel},
@@ -24,41 +28,43 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
-    ) -> Result<ClientModel, ClientRepositoryError> {
+    ) -> Result<ClientModel, RepositoryError> {
         let connection = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| ClientRepositoryError::BadConnection)?;
+            .map_err(RepositoryError::from)?;
 
-        let pg_client = connection.transaction::<_, DbContextError, _>(|conn| async move {
-                let client = diesel::insert_into(clients::table)
-                    .values((
-                        clients::id.eq(&client_create.id),
-                        clients::secret.eq(&client_create.secret),
-                        clients::user_id.eq(&client_create.user_id),
-                        clients::is_public.eq(client_create.secret.is_none()),
-                        clients::name.eq(&client_create.name),
-                        clients::description.eq(&client_create.description),
-                        clients::homepage_url.eq(&client_create.homepage_url.to_string()),
-                    ))
-                    .get_result::<PgClient>(conn)
-                    .await
-                    .map_err(|_| DbContextError::BadTransaction)?;
+        let pg_client = connection
+            .transaction::<_, diesel::result::Error, _>(|conn| {
+                async move {
+                    let client = diesel::insert_into(clients::table)
+                        .values((
+                            clients::id.eq(&client_create.id),
+                            clients::secret.eq(&client_create.secret),
+                            clients::user_id.eq(&client_create.user_id),
+                            clients::is_public.eq(client_create.secret.is_none()),
+                            clients::name.eq(&client_create.name),
+                            clients::description.eq(&client_create.description),
+                            clients::homepage_url.eq(&client_create.homepage_url.to_string()),
+                        ))
+                        .get_result::<PgClient>(conn)
+                        .await?;
 
-                diesel::insert_into(redirect_uris::table)
-                    .values((
-                        redirect_uris::client_id.eq(&redirect_create.client_id),
-                        redirect_uris::uri.eq(redirect_create.uri.to_string()),
-                    ))
-                    .get_result::<PgRedirectUri>(conn)
-                    .await
-                    .map_err(|_| DbContextError::BadTransaction)?;
+                    diesel::insert_into(redirect_uris::table)
+                        .values((
+                            redirect_uris::client_id.eq(&redirect_create.client_id),
+                            redirect_uris::uri.eq(redirect_create.uri.to_string()),
+                        ))
+                        .get_result::<PgRedirectUri>(conn)
+                        .await?;
 
-                Ok(client)
-            }.scope_boxed())
+                    Ok(client)
+                }
+                .scope_boxed()
+            })
             .await
-            .map_err(|_| ClientRepositoryError::NotCreated)?;
+            .map_err(RepositoryError::map_diesel_create)?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -67,18 +73,18 @@ impl ClientRepository for PgClientRepository {
         &self,
         db_context: &Arc<DbContext>,
         id: &str,
-    ) -> Result<ClientModel, ClientRepositoryError> {
+    ) -> Result<ClientModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| ClientRepositoryError::BadConnection)?;
+            .map_err(RepositoryError::from)?;
 
         let pg_client = clients::table
             .filter(clients::id.eq(id))
             .first::<PgClient>(conn)
             .await
-            .map_err(|_| ClientRepositoryError::NotFound)?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -88,7 +94,7 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
         secret: Option<&str>,
-    ) -> Result<ClientModel, ClientRepositoryError> {
+    ) -> Result<ClientModel, RepositoryError> {
         let mut query = clients::table
             .into_boxed()
             .filter(clients::id.eq(&id))
@@ -102,12 +108,12 @@ impl ClientRepository for PgClientRepository {
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| ClientRepositoryError::BadConnection)?;
+            .map_err(RepositoryError::from)?;
 
         let pg_client = query
             .first::<PgClient>(conn)
             .await
-            .map_err(|_| ClientRepositoryError::NotFound)?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -116,18 +122,18 @@ impl ClientRepository for PgClientRepository {
         &self,
         db_context: &Arc<DbContext>,
         id: &Uuid,
-    ) -> Result<Vec<ClientModel>, ClientRepositoryError> {
+    ) -> Result<Vec<ClientModel>, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| ClientRepositoryError::BadConnection)?;
+            .map_err(RepositoryError::from)?;
 
         let clients = clients::table
             .filter(clients::user_id.eq(id))
             .load::<PgClient>(conn)
             .await
-            .map_err(|_| ClientRepositoryError::NotFound)?;
+            .map_err(RepositoryError::map_diesel_found)?;
 
         Ok(clients
             .into_iter()
@@ -140,19 +146,19 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
         client_update: &ClientUpdateModel,
-    ) -> Result<ClientModel, ClientRepositoryError> {
+    ) -> Result<ClientModel, RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| ClientRepositoryError::BadConnection)?;
+            .map_err(RepositoryError::from)?;
 
         let pg_client = diesel::update(clients::table)
             .filter(clients::id.eq(id))
             .set(client_update)
             .get_result::<PgClient>(conn)
             .await
-            .map_err(|_| ClientRepositoryError::NotUpdated)?;
+            .map_err(RepositoryError::map_diesel_update)?;
 
         Ok(ClientMapper::from_pg(pg_client))
     }
@@ -161,21 +167,25 @@ impl ClientRepository for PgClientRepository {
         &self,
         db_context: &Arc<DbContext>,
         id: &str,
-    ) -> Result<(), ClientRepositoryError> {
+    ) -> Result<(), RepositoryError> {
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
             .await
-            .map_err(|_| ClientRepositoryError::BadConnection)?;
+            .map_err(RepositoryError::from)?;
 
         let affected_rows = diesel::delete(clients::table)
             .filter(clients::id.eq(id))
             .execute(conn)
             .await
-            .map_err(|_| ClientRepositoryError::BadDelete)?;
+            .map_err(RepositoryError::map_diesel_delete)?;
 
         if affected_rows != 1 {
-            return Err(ClientRepositoryError::BadDelete);
+            let msg = format!(
+                "Expected 1 row to be affected by delete, but found {}",
+                affected_rows
+            );
+            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
         }
 
         Ok(())

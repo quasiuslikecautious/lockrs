@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use crate::{
     db::{
-        repositories::{AuthorizationCodeRepository, AuthorizationCodeRepositoryError},
+        repositories::{AuthorizationCodeRepository, RepositoryError},
         DbContext,
     },
     oauth2::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel},
@@ -18,7 +18,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         &self,
         _db_context: &Arc<DbContext>,
         _auth_code_create: &AuthorizationCodeCreateModel,
-    ) -> Result<AuthorizationCodeModel, AuthorizationCodeRepositoryError> {
+    ) -> Result<AuthorizationCodeModel, RepositoryError> {
         todo!();
     }
 
@@ -26,7 +26,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         &self,
         _db_context: &Arc<DbContext>,
         _id: &str,
-    ) -> Result<AuthorizationCodeModel, AuthorizationCodeRepositoryError> {
+    ) -> Result<AuthorizationCodeModel, RepositoryError> {
         todo!();
     }
 
@@ -34,7 +34,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         &self,
         _db_context: &Arc<DbContext>,
         _code: &str,
-    ) -> Result<AuthorizationCodeModel, AuthorizationCodeRepositoryError> {
+    ) -> Result<AuthorizationCodeModel, RepositoryError> {
         todo!();
     }
 
@@ -42,7 +42,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         &self,
         _db_context: &Arc<DbContext>,
         _id: &str,
-    ) -> Result<AuthorizationCodeModel, AuthorizationCodeRepositoryError> {
+    ) -> Result<AuthorizationCodeModel, RepositoryError> {
         todo!();
     }
 }

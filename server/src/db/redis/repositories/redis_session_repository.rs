@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::{
     auth::models::SessionModel,
     db::{
-        repositories::{SessionRepository, SessionRepositoryError},
+        repositories::{RepositoryError, SessionRepository},
         DbContext,
     },
 };
@@ -29,13 +29,7 @@ impl SessionRepository for RedisSessionRepository {
         &self,
         db_context: &Arc<DbContext>,
         session: &SessionModel,
-    ) -> Result<SessionModel, SessionRepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_redis_connection()
-            .await
-            .map_err(|_| SessionRepositoryError::BadConnection)?;
-
+    ) -> Result<SessionModel, RepositoryError> {
         let user_id = &session.user_id;
         let user_key = Self::into_user_key(user_id);
 
@@ -46,6 +40,12 @@ impl SessionRepository for RedisSessionRepository {
 
         let value = serde_json::to_string(session).unwrap();
 
+        let conn = &mut db_context
+            .as_ref()
+            .get_redis_connection()
+            .await
+            .map_err(RepositoryError::from)?;
+
         redis::cmd("HSET")
             .arg(user_key.as_str())
             .arg(session_key.as_str())
@@ -54,7 +54,7 @@ impl SessionRepository for RedisSessionRepository {
             .arg(expires_at)
             .query_async(conn)
             .await
-            .map_err(|_| SessionRepositoryError::NotCreated)?;
+            .map_err(RepositoryError::map_redis_create)?;
 
         Ok(session.clone())
     }
@@ -64,42 +64,48 @@ impl SessionRepository for RedisSessionRepository {
         db_context: &Arc<DbContext>,
         session_id: &str,
         user_id: &Uuid,
-    ) -> Result<SessionModel, SessionRepositoryError> {
+    ) -> Result<SessionModel, RepositoryError> {
+        let user_key = Self::into_user_key(user_id);
+        let session_key = Self::into_session_key(session_id);
+
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| SessionRepositoryError::BadConnection)?;
-
-        let user_key = Self::into_user_key(user_id);
-        let session_key = Self::into_session_key(session_id);
+            .map_err(RepositoryError::from)?;
 
         let value: String = redis::cmd("HGET")
             .arg(user_key.as_str())
             .arg(session_key.as_str())
             .query_async(conn)
             .await
-            .map_err(|_| SessionRepositoryError::NotFound)?;
+            .map_err(RepositoryError::map_redis)?;
 
-        serde_json::from_str(value.as_str()).map_err(|_| SessionRepositoryError::BadData)
+        serde_json::from_str(value.as_str()).map_err(|_| {
+            let msg = format!(
+                "Invalid JSON data format for data stored at session {} for user {}",
+                session_id, user_id
+            );
+            RepositoryError::InternalError(msg)
+        })
     }
 
     async fn update(
         &self,
         db_context: &Arc<DbContext>,
         session: &SessionModel,
-    ) -> Result<SessionModel, SessionRepositoryError> {
-        let conn = &mut db_context
-            .as_ref()
-            .get_redis_connection()
-            .await
-            .map_err(|_| SessionRepositoryError::BadConnection)?;
-
+    ) -> Result<SessionModel, RepositoryError> {
         let user_key = Self::into_user_key(&session.user_id);
         let session_key = Self::into_session_key(session.id.as_str());
         let expires_at = &session.expires_at;
 
         let value = serde_json::to_string(&session).unwrap();
+
+        let conn = &mut db_context
+            .as_ref()
+            .get_redis_connection()
+            .await
+            .map_err(RepositoryError::from)?;
 
         redis::cmd("HSET")
             .arg(user_key.as_str())
@@ -109,7 +115,7 @@ impl SessionRepository for RedisSessionRepository {
             .arg(expires_at)
             .query_async(conn)
             .await
-            .map_err(|_| SessionRepositoryError::NotUpdated)?;
+            .map_err(RepositoryError::map_redis)?;
 
         Ok(session.clone())
     }
@@ -118,20 +124,20 @@ impl SessionRepository for RedisSessionRepository {
         &self,
         db_context: &Arc<DbContext>,
         id: &Uuid,
-    ) -> Result<(), SessionRepositoryError> {
+    ) -> Result<(), RepositoryError> {
+        let key = Self::into_user_key(id);
+
         let conn = &mut db_context
             .as_ref()
             .get_redis_connection()
             .await
-            .map_err(|_| SessionRepositoryError::BadConnection)?;
-
-        let key = Self::into_user_key(id);
+            .map_err(RepositoryError::from)?;
 
         redis::cmd("DEL")
             .arg(key.as_str())
             .query_async(conn)
             .await
-            .map_err(|_| SessionRepositoryError::BadDelete)?;
+            .map_err(RepositoryError::map_redis)?;
 
         Ok(())
     }

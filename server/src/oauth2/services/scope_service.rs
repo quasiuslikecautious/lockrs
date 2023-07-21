@@ -1,7 +1,12 @@
 use std::sync::Arc;
 
+use thiserror::Error;
+
 use crate::{
-    db::{repositories::ScopeRepository, DbContext},
+    db::{
+        repositories::{QueryFailure, RepositoryError, ScopeRepository},
+        DbContext,
+    },
     oauth2::models::ScopeModel,
 };
 
@@ -21,10 +26,29 @@ impl ScopeService {
         scope_repository
             .get_from_list(db_context, &scopes_list)
             .await
-            .map_err(|_| ScopeServiceError::InvalidScopes)
+            .map_err(ScopeServiceError::from)
     }
 }
 
+#[derive(Debug, Error)]
 pub enum ScopeServiceError {
-    InvalidScopes,
+    #[error("SCOPE SERVICE ERROR :: No valid scopes found :: {0}")]
+    InvalidScopes(String),
+
+    #[error("SCOPE SERVICE ERROR :: Internal Error :: {0}")]
+    InternalError(String),
+}
+
+impl From<RepositoryError> for ScopeServiceError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            RepositoryError::QueryFailed(msg, query_err) => match query_err {
+                QueryFailure::NotFound => Self::InvalidScopes(msg),
+
+                _ => Self::InternalError(msg),
+            },
+
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }

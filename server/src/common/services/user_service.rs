@@ -1,9 +1,13 @@
 use std::sync::Arc;
 
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    db::{repositories::UserRepository, DbContext},
+    db::{
+        repositories::{QueryFailure, RepositoryError, UserRepository},
+        DbContext,
+    },
     models::{UserCreateModel, UserModel, UserUpdateModel},
 };
 
@@ -18,7 +22,7 @@ impl UserService {
         user_repository
             .create(db_context, new_user)
             .await
-            .map_err(|_| UserServiceError::NotCreated)
+            .map_err(UserServiceError::from)
     }
 
     pub async fn get_user_by_id(
@@ -29,7 +33,7 @@ impl UserService {
         user_repository
             .get_by_id(db_context, id)
             .await
-            .map_err(|_| UserServiceError::NotFound)
+            .map_err(UserServiceError::from)
     }
 
     pub async fn get_user_by_email(
@@ -40,7 +44,7 @@ impl UserService {
         user_repository
             .get_by_email(db_context, email)
             .await
-            .map_err(|_| UserServiceError::NotFound)
+            .map_err(UserServiceError::from)
     }
 
     pub async fn update_user_by_id(
@@ -52,7 +56,7 @@ impl UserService {
         user_repository
             .update_by_id(db_context, id, update_user)
             .await
-            .map_err(|_| UserServiceError::NotUpdated)
+            .map_err(UserServiceError::from)
     }
 
     pub async fn delete_user_by_id(
@@ -63,14 +67,39 @@ impl UserService {
         user_repository
             .delete_by_id(db_context, id)
             .await
-            .map_err(|_| UserServiceError::BadDelete)
+            .map_err(UserServiceError::from)
     }
 }
 
+#[derive(Debug, Error)]
 pub enum UserServiceError {
-    AlreadyExists,
-    NotCreated,
-    NotFound,
-    NotUpdated,
-    BadDelete,
+    #[error("USER SERVICE ERROR :: Already Exists :: {0}")]
+    AlreadyExists(String),
+    #[error("USER SERVICE ERROR :: Not Created :: {0}")]
+    NotCreated(String),
+    #[error("USER SERVICE ERROR :: Not Found :: {0}")]
+    NotFound(String),
+    #[error("USER SERVICE ERROR :: Not Updated :: {0}")]
+    NotUpdated(String),
+    #[error("USER SERVICE ERROR :: Not Deleted :: {0}")]
+    NotDeleted(String),
+
+    #[error("USER SERVICE ERROR :: Internal Error :: {0}")]
+    InternalError(String),
+}
+
+impl From<RepositoryError> for UserServiceError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            RepositoryError::QueryFailed(msg, query_error) => match query_error {
+                QueryFailure::AlreadyExists => Self::AlreadyExists(msg),
+                QueryFailure::NotCreated => Self::NotCreated(msg),
+                QueryFailure::NotFound => Self::NotFound(msg),
+                QueryFailure::NotUpdated => Self::NotUpdated(msg),
+                QueryFailure::NotDeleted => Self::NotDeleted(msg),
+            },
+
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }

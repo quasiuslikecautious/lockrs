@@ -2,11 +2,12 @@ use std::sync::Arc;
 
 use base64::{engine::general_purpose, Engine as _};
 use ring::rand::{SecureRandom, SystemRandom};
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
     db::{
-        repositories::{ClientRepository, RedirectUriRepository},
+        repositories::{ClientRepository, QueryFailure, RepositoryError},
         DbContext,
     },
     models::{ClientCreateModel, ClientModel, ClientUpdateModel, RedirectCreateModel},
@@ -18,7 +19,6 @@ impl ClientService {
     pub async fn create_client(
         db_context: &Arc<DbContext>,
         client_repository: &dyn ClientRepository,
-        redirect_repository: &dyn RedirectUriRepository,
         new_client: ClientCreateModel,
     ) -> Result<ClientModel, ClientServiceError> {
         let id = Self::generate_random_string();
@@ -42,13 +42,9 @@ impl ClientService {
         };
 
         client_repository
-            .create(
-                db_context,
-                &client_create,
-                &redirect_create,
-            )
+            .create(db_context, &client_create, &redirect_create)
             .await
-            .map_err(|_| ClientServiceError::NotCreated)
+            .map_err(ClientServiceError::from)
     }
 
     pub async fn get_client_by_id(
@@ -59,7 +55,7 @@ impl ClientService {
         client_repository
             .get_by_id(db_context, id)
             .await
-            .map_err(|_| ClientServiceError::NotFound)
+            .map_err(ClientServiceError::from)
     }
 
     pub async fn get_clients_by_user(
@@ -70,7 +66,7 @@ impl ClientService {
         client_repository
             .get_all_by_user_id(db_context, user_id)
             .await
-            .map_err(|_| ClientServiceError::NotFound)
+            .map_err(ClientServiceError::from)
     }
 
     pub async fn update_client_by_id(
@@ -82,7 +78,7 @@ impl ClientService {
         client_repository
             .update_by_id(db_context, client_id, update_client)
             .await
-            .map_err(|_| ClientServiceError::NotUpdated)
+            .map_err(ClientServiceError::from)
     }
 
     pub async fn delete_client_by_id(
@@ -93,7 +89,7 @@ impl ClientService {
         client_repository
             .delete_by_id(db_context, client_id)
             .await
-            .map_err(|_| ClientServiceError::BadDelete)
+            .map_err(ClientServiceError::from)
     }
 
     pub fn generate_random_string() -> String {
@@ -104,10 +100,39 @@ impl ClientService {
     }
 }
 
+#[derive(Debug, Error)]
 pub enum ClientServiceError {
-    AlreadyExists,
-    NotCreated,
-    NotFound,
-    NotUpdated,
-    BadDelete,
+    #[error("CLIENT SERVICE ERROR :: Already Exists :: {0}")]
+    AlreadyExists(String),
+    #[error("CLIENT SERVICE ERROR :: Not Created :: {0}")]
+    NotCreated(String),
+    #[error("CLIENT SERVICE ERROR :: Not Found :: {0}")]
+    NotFound(String),
+    #[error("CLIENT SERVICE ERROR :: Not Updated :: {0}")]
+    NotUpdated(String),
+    #[error("CLIENT SERVICE ERROR :: Bad Deletion :: {0}")]
+    BadDelete(String),
+
+    #[error("CLIENT SERVICE ERROR :: Internal Error :: {0}")]
+    InternalError(String),
+}
+
+impl From<RepositoryError> for ClientServiceError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            // BL errors
+
+            // CRUD errors
+            RepositoryError::QueryFailed(msg, query_err) => match query_err {
+                QueryFailure::AlreadyExists => Self::AlreadyExists(msg),
+                QueryFailure::NotCreated => Self::NotCreated(msg),
+                QueryFailure::NotFound => Self::NotFound(msg),
+                QueryFailure::NotUpdated => Self::NotUpdated(msg),
+                QueryFailure::NotDeleted => Self::BadDelete(msg),
+            },
+
+            // InternalErrors
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }

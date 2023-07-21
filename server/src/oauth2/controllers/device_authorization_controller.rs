@@ -5,12 +5,16 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
+use log::error;
 use serde::Deserialize;
 
 use crate::{
     oauth2::{
         responses::DeviceAuthorizationResponse,
-        services::{ClientAuthService, DeviceAuthorizationService, ScopeService},
+        services::{
+            ClientAuthService, ClientAuthServiceError, DeviceAuthorizationService,
+            DeviceAuthorizationServiceError, ScopeService,
+        },
     },
     utils::extractors::ExtractClientCredentials,
     AppState,
@@ -39,7 +43,7 @@ impl DeviceAuthorizationController {
             client_credentials.secret.as_deref(),
         )
         .await
-        .map_err(|_| DeviceAuthorizationControllerError::InvalidClient)?;
+        .map_err(DeviceAuthorizationControllerError::from)?;
 
         let scope_repository = &*state.repository_container.as_ref().scope_repository;
         let scopes = ScopeService::get_from_list(db_context, scope_repository, &params.scope)
@@ -58,7 +62,7 @@ impl DeviceAuthorizationController {
             scopes,
         )
         .await
-        .map_err(|_| DeviceAuthorizationControllerError::InternalError)?;
+        .map_err(DeviceAuthorizationControllerError::from)?;
 
         Ok(DeviceAuthorizationResponse::new(
             &device_authorization.user_code,
@@ -68,25 +72,60 @@ impl DeviceAuthorizationController {
 }
 
 pub enum DeviceAuthorizationControllerError {
-    InternalError,
     InvalidClient,
     InvalidScopes,
+
+    BadRequest,
+    InternalError,
 }
 
 impl DeviceAuthorizationControllerError {
+    pub fn error_code(&self) -> StatusCode {
+        match self {
+            Self::InvalidClient => StatusCode::UNAUTHORIZED,
+
+            Self::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+
+            _ => StatusCode::BAD_REQUEST,
+        }
+    }
+
     pub fn error_message(&self) -> &'static str {
         match self {
+            Self::InvalidClient => "The provided client credentials are invalid.",
+            Self::InvalidScopes => "The provided scopes are invalid.",
+
+            Self::BadRequest => "Unable to perform the requested operation.",
             Self::InternalError => {
                 "An error occurred processing your request. Please try again later."
             }
-            Self::InvalidClient => "The provided client credentials are invalid.",
-            Self::InvalidScopes => "The provided scopes are invalid.",
+        }
+    }
+}
+
+impl From<DeviceAuthorizationServiceError> for DeviceAuthorizationControllerError {
+    fn from(err: DeviceAuthorizationServiceError) -> Self {
+        error!("{}", err);
+        match err {
+            DeviceAuthorizationServiceError::NotCreated(_) => Self::BadRequest,
+
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<ClientAuthServiceError> for DeviceAuthorizationControllerError {
+    fn from(err: ClientAuthServiceError) -> Self {
+        error!("{}", err);
+        match err {
+            ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
+            _ => Self::InternalError,
         }
     }
 }
 
 impl IntoResponse for DeviceAuthorizationControllerError {
     fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }

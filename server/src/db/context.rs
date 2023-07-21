@@ -3,7 +3,11 @@ use std::time::Duration;
 use deadpool::managed::Timeouts;
 use deadpool_redis::{Config, PoolConfig};
 use deadpool_runtime::Runtime;
-use diesel_async::pooled_connection::{deadpool::{Object, Pool}, AsyncDieselConnectionManager};
+use diesel_async::pooled_connection::{
+    deadpool::{Object, Pool},
+    AsyncDieselConnectionManager,
+};
+use thiserror::Error;
 
 type AsyncPgPool = Pool<AsyncPgConnection>;
 type AsyncRedisPool = deadpool_redis::Pool;
@@ -61,30 +65,24 @@ impl DbContext {
     }
 
     pub async fn get_pg_connection(&self) -> Result<ManagedAsyncPgConnection, DbContextError> {
-        self.pg_pool
-            .get()
-            .await
-            .map_err(|_| DbContextError::ConnectionFailed)
+        self.pg_pool.get().await.map_err(|_| {
+            let msg = "PG POOL CONNECTION FAILED".to_string();
+            DbContextError::ConnectionFailed(msg)
+        })
     }
 
     pub async fn get_redis_connection(
         &self,
     ) -> Result<ManagedAsyncRedisConnection, DbContextError> {
-        self.redis_pool
-            .get()
-            .await
-            .map_err(|_| DbContextError::ConnectionFailed)
-    } 
-}
-
-#[derive(Debug)]
-pub enum DbContextError {
-    ConnectionFailed,
-    BadTransaction,
-}
-
-impl From<diesel::result::Error> for DbContextError {
-    fn from(_error: diesel::result::Error) -> Self {
-        Self::BadTransaction
+        self.redis_pool.get().await.map_err(|_| {
+            let msg = "REDIS POOL CONNECTION FAILED".to_string();
+            DbContextError::ConnectionFailed(msg)
+        })
     }
+}
+
+#[derive(Debug, Error)]
+pub enum DbContextError {
+    #[error("DB CONTEXT ERROR :: Failed to get connection from connection pool :: {0}")]
+    ConnectionFailed(String),
 }

@@ -1,7 +1,12 @@
 use std::sync::Arc;
 
+use thiserror::Error;
+
 use crate::{
-    db::{repositories::AccessTokenRepository, DbContext},
+    db::{
+        repositories::{AccessTokenRepository, QueryFailure, RepositoryError},
+        DbContext,
+    },
     oauth2::models::{AccessTokenCreateModel, AccessTokenModel},
 };
 
@@ -16,7 +21,7 @@ impl AccessTokenService {
         access_token_repository
             .create(db_context, token_create)
             .await
-            .map_err(|_| AccessTokenServiceError::NotCreated)
+            .map_err(AccessTokenServiceError::from)
     }
 
     pub async fn verify_token(
@@ -27,7 +32,7 @@ impl AccessTokenService {
         access_token_repository
             .get_by_token(db_context, token)
             .await
-            .map_err(|_| AccessTokenServiceError::NotFound)
+            .map_err(AccessTokenServiceError::from)
     }
 
     pub async fn delete_token(
@@ -38,12 +43,35 @@ impl AccessTokenService {
         access_token_repository
             .delete_by_token(db_context, token)
             .await
-            .map_err(|_| AccessTokenServiceError::BadDelete)
+            .map_err(AccessTokenServiceError::from)
     }
 }
 
+#[derive(Debug, Error)]
 pub enum AccessTokenServiceError {
-    NotCreated,
-    NotFound,
-    BadDelete,
+    #[error("ACCESS TOKEN SERVICE ERROR :: Token not created :: {0}")]
+    NotCreated(String),
+    #[error("ACCESS TOKEN SERVICE ERROR :: Token not found :: {0}")]
+    NotFound(String),
+    #[error("ACCESS TOKEN SERVICE ERROR :: Token not deleted :: {0}")]
+    NotDeleted(String),
+
+    #[error("ACCESS TOKEN SERVICE ERROR :: Internal Error :: {0}")]
+    InternalError(String),
+}
+
+impl From<RepositoryError> for AccessTokenServiceError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            RepositoryError::QueryFailed(msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated(msg),
+                QueryFailure::NotFound => Self::NotFound(msg),
+                QueryFailure::NotDeleted => Self::NotDeleted(msg),
+
+                _ => Self::InternalError(msg),
+            },
+
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }

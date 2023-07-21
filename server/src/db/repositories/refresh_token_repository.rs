@@ -3,7 +3,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::{
-    db::DbContext,
+    db::{repositories::RepositoryError, DbContext},
     oauth2::models::{RefreshTokenCreateModel, RefreshTokenModel},
 };
 
@@ -13,28 +13,20 @@ pub trait RefreshTokenRepository: Send + Sync {
         &self,
         db_context: &Arc<DbContext>,
         token_create: &RefreshTokenCreateModel,
-    ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError>;
+    ) -> Result<RefreshTokenModel, RepositoryError>;
     async fn get_by_token(
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError>;
+    ) -> Result<RefreshTokenModel, RepositoryError>;
     async fn use_by_token(
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<RefreshTokenModel, RefreshTokenRepositoryError>;
+    ) -> Result<RefreshTokenModel, RepositoryError>;
     async fn delete_by_token(
         &self,
         db_context: &Arc<DbContext>,
         token: &str,
-    ) -> Result<(), RefreshTokenRepositoryError>;
-}
-
-pub enum RefreshTokenRepositoryError {
-    BadConnection,
-    NotCreated,
-    NotFound,
-    NotUpdated,
-    BadDelete,
+    ) -> Result<(), RepositoryError>;
 }
