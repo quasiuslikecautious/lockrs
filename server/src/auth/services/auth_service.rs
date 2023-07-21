@@ -69,9 +69,7 @@ impl AuthService {
         let valid_password = verify(password, hash).map_err(AuthServiceError::from)?;
 
         if !valid_password {
-            return Err(AuthServiceError::Credentials(format!(
-                "Invalid password supplied"
-            )));
+            return Err(AuthServiceError::Credentials("Invalid password supplied".to_string()));
         }
 
         Ok(())
@@ -102,7 +100,7 @@ impl From<UserServiceError> for AuthServiceError {
             // QueryFailure::NotUpdated => Self::NotUpdated(msg),
             UserServiceError::InternalError(msg) => Self::InternalError(msg),
 
-            _ => Self::InternalError(format!("TODO Error not implemented")),
+            _ => Self::InternalError("TODO Error not implemented".to_string()),
         }
     }
 }

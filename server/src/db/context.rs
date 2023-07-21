@@ -66,7 +66,7 @@ impl DbContext {
 
     pub async fn get_pg_connection(&self) -> Result<ManagedAsyncPgConnection, DbContextError> {
         self.pg_pool.get().await.map_err(|_| {
-            let msg = format!("PG POOL CONNECTION FAILED");
+            let msg = "PG POOL CONNECTION FAILED".to_string();
             DbContextError::ConnectionFailed(msg)
         })
     }
@@ -75,7 +75,7 @@ impl DbContext {
         &self,
     ) -> Result<ManagedAsyncRedisConnection, DbContextError> {
         self.redis_pool.get().await.map_err(|_| {
-            let msg = format!("REDIS POOL CONNECTION FAILED");
+            let msg = "REDIS POOL CONNECTION FAILED".to_string();
             DbContextError::ConnectionFailed(msg)
         })
     }

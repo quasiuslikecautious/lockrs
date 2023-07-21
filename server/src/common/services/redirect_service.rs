@@ -72,7 +72,7 @@ impl From<RepositoryError> for RedirectServiceError {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated(msg),
                 QueryFailure::NotFound => Self::NotFound(msg),
-                _ => Self::InternalError(format!("TODO error not implemented")),
+                _ => Self::InternalError("TODO error not implemented".to_string()),
             },
 
             RepositoryError::InternalError(msg) => Self::InternalError(msg),
