@@ -5,13 +5,14 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
+use log::error;
 use serde::Deserialize;
 use url::Url;
 
 use crate::{
     models::ClientModel,
     oauth2::models::ScopeModel,
-    oauth2::responses::TokenResponse,
+    oauth2::{responses::TokenResponse, services::TokenServiceError},
     oauth2::services::{
         ClientAuthService, RefreshTokenService, RefreshTokenServiceError, ScopeService,
         TokenService,
@@ -120,7 +121,7 @@ impl TokenController {
             scopes,
         )
         .await
-        .map_err(|_| TokenControllerError::InternalError)?;
+        .map_err(TokenControllerError::from)?;
 
         Ok(TokenResponse {
             token_type: token.token_type,
@@ -149,10 +150,7 @@ impl TokenController {
         let refresh_token =
             RefreshTokenService::use_token(db_context, refresh_token_repository, token.as_str())
                 .await
-                .map_err(|err| match err {
-                    RefreshTokenServiceError::NotFound => TokenControllerError::InvalidRefreshToken,
-                    _ => TokenControllerError::InternalError,
-                })?;
+                .map_err(TokenControllerError::from)?;
 
         let access_token_repository = &*state.repository_container.as_ref().access_token_repository;
 
@@ -178,29 +176,63 @@ impl TokenController {
 }
 
 pub enum TokenControllerError {
-    InternalError,
     InvalidClient,
     InvalidGrantType,
     InvalidScopes,
     MissingRefreshToken,
     InvalidRefreshToken,
+
+    BadRequest,
+    InternalError,
 }
 
 impl TokenControllerError {
+    pub fn error_code(&self) -> StatusCode {
+        match self {
+            Self::InvalidClient => StatusCode::UNAUTHORIZED,
+
+            Self::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+
+            _ => StatusCode::BAD_REQUEST,
+        }
+    }
+
     pub fn error_message(&self) -> &'static str {
         match self {
-            Self::InternalError => "An error has occurred while processing your request. Please try again later.",
             Self::InvalidClient => "The provided client is invalid.",
             Self::InvalidGrantType => "The provided grant_type is invalid. This server supports \"authorization_code\", \"urn:ietf:params:oauth:grant-type:device_code\", \"client_credentials\", and \"refresh_token.\"",
             Self::InvalidScopes => "The provided scopes are invalid.",
             Self::MissingRefreshToken => "The request is missing the \"refresh_token\" parameter.",
             Self::InvalidRefreshToken => "The provided refresh_token is invalid.",
+
+            Self::BadRequest => "Unable to perform the requested operation.",
+            Self::InternalError => "An error has occurred while processing your request. Please try again later.",
+        }
+    }
+}
+
+impl From<TokenServiceError> for TokenControllerError {
+    fn from(err: TokenServiceError) -> Self {
+        error!("{}", err);
+        match err {
+            TokenServiceError::NotCreated(_) => Self::BadRequest,
+            TokenServiceError::InternalError(_) => Self::InternalError,
+        }
+    }
+}
+
+impl From<RefreshTokenServiceError> for TokenControllerError {
+    fn from(err: RefreshTokenServiceError) -> Self {
+        error!("{}", err);
+        match err {
+            RefreshTokenServiceError::NotFound(_) => Self::InvalidRefreshToken,
+            _ => Self::InternalError,
         }
     }
 }
 
 impl IntoResponse for TokenControllerError {
     fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }

@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
+use thiserror::Error;
+
 use crate::{
-    db::{repositories::RefreshTokenRepository, DbContext},
+    db::{repositories::{RefreshTokenRepository, RepositoryError, QueryFailure}, DbContext},
     oauth2::models::{RefreshTokenCreateModel, RefreshTokenModel},
 };
 
@@ -16,7 +18,7 @@ impl RefreshTokenService {
         refresh_token_repository
             .create(db_context, token_create)
             .await
-            .map_err(|_| RefreshTokenServiceError::NotCreated)
+            .map_err(RefreshTokenServiceError::from)
     }
 
     pub async fn get_by_token(
@@ -27,7 +29,7 @@ impl RefreshTokenService {
         refresh_token_repository
             .get_by_token(db_context, token)
             .await
-            .map_err(|_| RefreshTokenServiceError::NotFound)
+            .map_err(RefreshTokenServiceError::from)
     }
 
     pub async fn use_token(
@@ -38,7 +40,7 @@ impl RefreshTokenService {
         refresh_token_repository
             .use_by_token(db_context, token)
             .await
-            .map_err(|_| RefreshTokenServiceError::NotUsed)
+            .map_err(RefreshTokenServiceError::from)
     }
 
     pub async fn delete_token(
@@ -49,13 +51,38 @@ impl RefreshTokenService {
         refresh_token_repository
             .delete_by_token(db_context, token)
             .await
-            .map_err(|_| RefreshTokenServiceError::BadDelete)
+            .map_err(RefreshTokenServiceError::from)
     }
 }
 
+#[derive(Debug, Error)]
 pub enum RefreshTokenServiceError {
-    NotCreated,
-    NotFound,
-    NotUsed,
-    BadDelete,
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not created :: {0}")]
+    NotCreated(String),
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not found :: {0}")]
+    NotFound(String),
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not updated :: {0}")]
+    NotUpdated(String),
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not deleted :: {0}")]
+    NotDeleted(String),
+
+    #[error("REFRESH TOKEN SERVICE ERROR :: Internal Error :: {0}")]
+    InternalError(String),
+}
+
+impl From<RepositoryError> for RefreshTokenServiceError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            RepositoryError::QueryFailed(msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated(msg),
+                QueryFailure::NotFound => Self::NotFound(msg),
+                QueryFailure::NotUpdated => Self::NotUpdated(msg),
+                QueryFailure::NotDeleted => Self::NotDeleted(msg),
+
+                _ => Self::InternalError(msg),
+            }
+
+            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }

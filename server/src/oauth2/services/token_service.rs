@@ -3,6 +3,7 @@ use std::sync::Arc;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
 use ring::rand::{SecureRandom, SystemRandom};
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
@@ -10,7 +11,10 @@ use crate::{
         repositories::{AccessTokenRepository, RefreshTokenRepository},
         DbContext,
     },
-    oauth2::models::{AccessTokenCreateModel, RefreshTokenCreateModel, ScopeModel, TokenModel},
+    oauth2::{
+        models::{AccessTokenCreateModel, RefreshTokenCreateModel, ScopeModel, TokenModel},
+        services::{AccessTokenService, AccessTokenServiceError, RefreshTokenService, RefreshTokenServiceError},
+    },
 };
 
 pub struct TokenService;
@@ -34,10 +38,9 @@ impl TokenService {
             scopes: scopes.scopes.clone(),
         };
 
-        let access_token = access_token_repository
-            .create(db_context, &access_token_create)
+        let access_token = AccessTokenService::create_token(db_context, access_token_repository, &access_token_create)
             .await
-            .map_err(|_| TokenServiceError::NotCreated)?;
+            .map_err(TokenServiceError::from)?;
 
         let refresh_expiry = (Utc::now() + Duration::hours(24)).naive_utc();
 
@@ -50,10 +53,9 @@ impl TokenService {
             scopes: scopes.scopes.clone(),
         };
 
-        let refresh_token = refresh_token_repository
-            .create(db_context, &refresh_token_create)
+        let refresh_token = RefreshTokenService::create_token(db_context, refresh_token_repository, &refresh_token_create)
             .await
-            .map_err(|_| TokenServiceError::NotCreated)?;
+            .map_err(TokenServiceError::from)?;
 
         Ok(TokenModel {
             token_type: String::from("Bearer"),
@@ -70,12 +72,41 @@ impl TokenService {
     pub fn generate_opaque_token() -> String {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
-        rng.fill(&mut buffer).unwrap();
+        rng.fill(&mut buffer).map_err(|err| TokenServiceError::InternalError("ring::SystemRandom::fill failed on generate_opaque_token".into()));
         general_purpose::URL_SAFE_NO_PAD.encode(buffer)
     }
 }
 
+#[derive(Debug, Error)]
 pub enum TokenServiceError {
-    NotCreated,
-    NotFound,
+    #[error("TOKEN SERVICE ERROR :: Token Not Created :: {0} ")]
+    NotCreated(String),
+
+    #[error("TOKEN SERVICE ERROR :: Internal Error :: {0}")]
+    InternalError(String),
+}
+
+impl From<AccessTokenServiceError> for TokenServiceError {
+    fn from(err: AccessTokenServiceError) -> Self {
+        match err {
+            AccessTokenServiceError::NotCreated(msg) => Self::NotCreated(msg),
+
+            AccessTokenServiceError::NotFound(msg) => Self::InternalError(msg),
+            AccessTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
+            AccessTokenServiceError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
+}
+
+impl From<RefreshTokenServiceError> for TokenServiceError {
+    fn from(err: RefreshTokenServiceError) -> Self {
+        match err {
+            RefreshTokenServiceError::NotCreated(msg) => Self::NotCreated(msg),
+
+            RefreshTokenServiceError::NotFound(msg) => Self::InternalError(msg),
+            RefreshTokenServiceError::NotUpdated(msg) => Self::InternalError(msg),
+            RefreshTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
+            RefreshTokenServiceError::InternalError(msg) => Self::InternalError(msg),
+        }
+    }
 }
