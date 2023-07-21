@@ -1,6 +1,6 @@
 use diesel::result as DieselResult;
 use diesel::result::Error as DieselError;
-use redis::{RedisError, ErrorKind as RedisErrorKind};
+use redis::{ErrorKind as RedisErrorKind, RedisError};
 use thiserror::Error;
 
 use crate::db::DbContextError;
@@ -86,14 +86,20 @@ impl RepositoryError {
     }
 
     pub fn map_redis_create(err: RedisError) -> Self {
-        let msg = err.detail().unwrap_or("Failed to create entity redis").to_string();
-        
+        let msg = err
+            .detail()
+            .unwrap_or("Failed to create entity redis")
+            .to_string();
+
         Self::InternalError(msg)
     }
 
     pub fn map_redis(err: RedisError) -> Self {
         let kind = err.kind();
-        let msg = err.detail().unwrap_or("Failed to create entity redis").to_string();
+        let msg = err
+            .detail()
+            .unwrap_or("Failed to create entity redis")
+            .to_string();
 
         // assume type error is converting nil to struct. annoying error to debug
         // if it is not but ¯\_(ツ)_/¯, TODO later

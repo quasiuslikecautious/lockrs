@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use bcrypt::{BcryptError, hash, verify, DEFAULT_COST};
+use bcrypt::{hash, verify, BcryptError, DEFAULT_COST};
 use thiserror::Error;
 
 use crate::{
@@ -69,7 +69,9 @@ impl AuthService {
         let valid_password = verify(password, hash).map_err(AuthServiceError::from)?;
 
         if !valid_password {
-            return Err(AuthServiceError::Credentials(format!("Invalid password supplied")));
+            return Err(AuthServiceError::Credentials(format!(
+                "Invalid password supplied"
+            )));
         }
 
         Ok(())
@@ -98,7 +100,6 @@ impl From<UserServiceError> for AuthServiceError {
             UserServiceError::NotCreated(msg) => Self::NotCreated(msg),
             UserServiceError::NotFound(msg) => Self::Credentials(msg),
             // QueryFailure::NotUpdated => Self::NotUpdated(msg),
-
             UserServiceError::InternalError(msg) => Self::InternalError(msg),
 
             _ => Self::InternalError(format!("TODO Error not implemented")),
@@ -110,7 +111,7 @@ impl From<SessionTokenServiceError> for AuthServiceError {
     fn from(err: SessionTokenServiceError) -> Self {
         match err {
             SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
-            
+
             SessionTokenServiceError::NotCreated(msg) => Self::InternalError(msg),
             SessionTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
 

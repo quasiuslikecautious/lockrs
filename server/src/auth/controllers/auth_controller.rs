@@ -55,7 +55,7 @@ impl AuthControllerError {
             Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
-    
+
     pub fn error_message(&self) -> &'static str {
         match self {
             Self::InvalidCredentials => "The provided credentials were invalid or not found.",

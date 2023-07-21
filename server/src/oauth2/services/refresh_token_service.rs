@@ -3,7 +3,10 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::{
-    db::{repositories::{RefreshTokenRepository, RepositoryError, QueryFailure}, DbContext},
+    db::{
+        repositories::{QueryFailure, RefreshTokenRepository, RepositoryError},
+        DbContext,
+    },
     oauth2::models::{RefreshTokenCreateModel, RefreshTokenModel},
 };
 
@@ -80,7 +83,7 @@ impl From<RepositoryError> for RefreshTokenServiceError {
                 QueryFailure::NotDeleted => Self::NotDeleted(msg),
 
                 _ => Self::InternalError(msg),
-            }
+            },
 
             RepositoryError::InternalError(msg) => Self::InternalError(msg),
         }

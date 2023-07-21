@@ -192,7 +192,7 @@ impl From<SessionServiceError> for SessionControllerError {
             SessionServiceError::InternalError(_) => Self::InternalError,
         }
     }
-} 
+}
 
 impl IntoResponse for SessionControllerError {
     fn into_response(self) -> axum::response::Response {

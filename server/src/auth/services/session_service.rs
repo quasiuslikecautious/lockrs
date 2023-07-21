@@ -17,7 +17,6 @@ use crate::{
     },
 };
 
-
 pub struct SessionService;
 
 impl SessionService {
@@ -139,8 +138,8 @@ impl From<RepositoryError> for SessionServiceError {
 impl From<SessionTokenServiceError> for SessionServiceError {
     fn from(err: SessionTokenServiceError) -> Self {
         match err {
-            SessionTokenServiceError::NotFound(msg) => Self::Token(msg), 
-            
+            SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
+
             SessionTokenServiceError::NotCreated(msg) => Self::InternalError(msg),
             SessionTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
             SessionTokenServiceError::InternalError(msg) => Self::InternalError(msg),

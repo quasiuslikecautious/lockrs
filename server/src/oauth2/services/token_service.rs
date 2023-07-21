@@ -13,7 +13,10 @@ use crate::{
     },
     oauth2::{
         models::{AccessTokenCreateModel, RefreshTokenCreateModel, ScopeModel, TokenModel},
-        services::{AccessTokenService, AccessTokenServiceError, RefreshTokenService, RefreshTokenServiceError},
+        services::{
+            AccessTokenService, AccessTokenServiceError, RefreshTokenService,
+            RefreshTokenServiceError,
+        },
     },
 };
 
@@ -31,31 +34,39 @@ impl TokenService {
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
 
         let access_token_create = AccessTokenCreateModel {
-            token: Self::generate_opaque_token(),
+            token: Self::generate_opaque_token()?,
             client_id: client_id.to_string(),
             user_id: user_id.cloned(),
             expires_at: access_expiry,
             scopes: scopes.scopes.clone(),
         };
 
-        let access_token = AccessTokenService::create_token(db_context, access_token_repository, &access_token_create)
-            .await
-            .map_err(TokenServiceError::from)?;
+        let access_token = AccessTokenService::create_token(
+            db_context,
+            access_token_repository,
+            &access_token_create,
+        )
+        .await
+        .map_err(TokenServiceError::from)?;
 
         let refresh_expiry = (Utc::now() + Duration::hours(24)).naive_utc();
 
         let refresh_token_create = RefreshTokenCreateModel {
             access_token_id: access_token.id,
-            token: Self::generate_opaque_token(),
+            token: Self::generate_opaque_token()?,
             client_id: client_id.to_string(),
             user_id: user_id.cloned(),
             expires_at: refresh_expiry,
             scopes: scopes.scopes.clone(),
         };
 
-        let refresh_token = RefreshTokenService::create_token(db_context, refresh_token_repository, &refresh_token_create)
-            .await
-            .map_err(TokenServiceError::from)?;
+        let refresh_token = RefreshTokenService::create_token(
+            db_context,
+            refresh_token_repository,
+            &refresh_token_create,
+        )
+        .await
+        .map_err(TokenServiceError::from)?;
 
         Ok(TokenModel {
             token_type: String::from("Bearer"),
@@ -69,11 +80,15 @@ impl TokenService {
         })
     }
 
-    pub fn generate_opaque_token() -> String {
+    pub fn generate_opaque_token() -> Result<String, TokenServiceError> {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
-        rng.fill(&mut buffer).map_err(|err| TokenServiceError::InternalError("ring::SystemRandom::fill failed on generate_opaque_token".into()));
-        general_purpose::URL_SAFE_NO_PAD.encode(buffer)
+        rng.fill(&mut buffer).map_err(|_| {
+            TokenServiceError::InternalError(
+                "ring::SystemRandom::fill failed on generate_opaque_token".into(),
+            )
+        })?;
+        Ok(general_purpose::URL_SAFE_NO_PAD.encode(buffer))
     }
 }
 

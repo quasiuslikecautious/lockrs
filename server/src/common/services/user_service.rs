@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::{
     db::{
         repositories::{QueryFailure, RepositoryError, UserRepository},
-        DbContext
+        DbContext,
     },
     models::{UserCreateModel, UserModel, UserUpdateModel},
 };

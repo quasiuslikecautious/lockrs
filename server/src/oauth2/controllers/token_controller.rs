@@ -12,11 +12,11 @@ use url::Url;
 use crate::{
     models::ClientModel,
     oauth2::models::ScopeModel,
-    oauth2::{responses::TokenResponse, services::TokenServiceError},
     oauth2::services::{
         ClientAuthService, RefreshTokenService, RefreshTokenServiceError, ScopeService,
         TokenService,
     },
+    oauth2::{responses::TokenResponse, services::TokenServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };

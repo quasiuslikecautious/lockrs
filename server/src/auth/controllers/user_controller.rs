@@ -192,7 +192,7 @@ impl From<UserServiceError> for UserControllerError {
     fn from(err: UserServiceError) -> Self {
         error!("USER CONTROLLER ERROR :: {}", err);
         match err {
-            UserServiceError::AlreadyExists(_) => Self::AlreadyExists, 
+            UserServiceError::AlreadyExists(_) => Self::AlreadyExists,
             UserServiceError::NotFound(_) => Self::NotFound,
 
             UserServiceError::NotCreated(_) => Self::BadRequest,

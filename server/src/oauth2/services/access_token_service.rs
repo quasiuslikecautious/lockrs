@@ -3,7 +3,10 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::{
-    db::{repositories::{AccessTokenRepository, RepositoryError, QueryFailure}, DbContext},
+    db::{
+        repositories::{AccessTokenRepository, QueryFailure, RepositoryError},
+        DbContext,
+    },
     oauth2::models::{AccessTokenCreateModel, AccessTokenModel},
 };
 
