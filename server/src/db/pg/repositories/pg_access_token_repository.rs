@@ -11,7 +11,7 @@ use crate::{
         repositories::{AccessTokenRepository, QueryFailure, RepositoryError},
         DbContext,
     },
-    oauth2::{
+    oauth2::v1::{
         mappers::AccessTokenMapper,
         models::{AccessTokenCreateModel, AccessTokenModel},
     },

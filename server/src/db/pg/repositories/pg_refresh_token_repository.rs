@@ -11,7 +11,7 @@ use crate::{
         repositories::{QueryFailure, RefreshTokenRepository, RepositoryError},
         DbContext,
     },
-    oauth2::{
+    oauth2::v1::{
         mappers::RefreshTokenMapper,
         models::{RefreshTokenCreateModel, RefreshTokenModel},
     },

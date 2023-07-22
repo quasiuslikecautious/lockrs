@@ -7,7 +7,7 @@ use axum::{
 
 use std::sync::Arc;
 
-use crate::{auth::models::SessionModel, utils::extractors::Cookies, AppState};
+use crate::{api::v1::models::SessionModel, utils::extractors::Cookies, AppState};
 
 #[derive(Debug)]
 pub struct SessionJwt(pub SessionModel);

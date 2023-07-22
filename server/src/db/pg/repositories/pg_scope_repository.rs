@@ -10,7 +10,7 @@ use crate::{
         repositories::{RepositoryError, ScopeRepository},
         DbContext,
     },
-    oauth2::models::{ScopeCreateModel, ScopeModel},
+    oauth2::v1::models::{ScopeCreateModel, ScopeModel},
 };
 
 pub struct PgScopeRepository;

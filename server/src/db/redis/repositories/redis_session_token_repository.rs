@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use redis::AsyncCommands;
 
 use crate::{
-    auth::models::SessionTokenModel,
+    api::v1::models::SessionTokenModel,
     db::{
         repositories::{QueryFailure, RepositoryError, SessionTokenRepository},
         DbContext,

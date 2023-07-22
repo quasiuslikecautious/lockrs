@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use crate::{
     db::{repositories::RepositoryError, DbContext},
-    oauth2::models::{AccessTokenCreateModel, AccessTokenModel},
+    oauth2::v1::models::{AccessTokenCreateModel, AccessTokenModel},
 };
 
 #[async_trait]

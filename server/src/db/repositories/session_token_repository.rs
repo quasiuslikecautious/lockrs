@@ -3,7 +3,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::{
-    auth::models::SessionTokenModel,
+    api::v1::models::SessionTokenModel,
     db::{repositories::RepositoryError, DbContext},
 };
 

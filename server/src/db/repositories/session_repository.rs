@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 use crate::{
-    auth::models::SessionModel,
+    api::v1::models::SessionModel,
     db::{repositories::RepositoryError, DbContext},
 };
 

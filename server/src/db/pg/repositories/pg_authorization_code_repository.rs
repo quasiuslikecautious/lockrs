@@ -7,7 +7,7 @@ use crate::{
         repositories::{AuthorizationCodeRepository, RepositoryError},
         DbContext,
     },
-    oauth2::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel},
+    oauth2::v1::models::{AuthorizationCodeCreateModel, AuthorizationCodeModel},
 };
 
 pub struct PgAuthorizationCodeRepository;

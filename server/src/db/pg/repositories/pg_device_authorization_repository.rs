@@ -11,7 +11,7 @@ use crate::{
         repositories::{DeviceAuthorizationRepository, RepositoryError},
         DbContext,
     },
-    oauth2::{
+    oauth2::v1::{
         mappers::DeviceAuthorizationMapper,
         models::{DeviceAuthorizationCreateModel, DeviceAuthorizationModel},
     },
