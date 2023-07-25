@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
+use tracing::{event, Level};
 
 use crate::{
     api::v1::{
@@ -19,6 +20,14 @@ impl AuthController {
         State(state): State<Arc<AppState>>,
         BasicAuth(credentials): BasicAuth,
     ) -> Result<SessionTokenResponse, AuthControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::DEBUG, 
+            "controller" = "AuthController",
+            "method" = "auth",
+            "email" = credentials.public, 
+        );
+
         let auth = AuthModel {
             email: credentials.public,
             password: credentials.private,
@@ -68,6 +77,13 @@ impl AuthControllerError {
 
 impl From<AuthServiceError> for AuthControllerError {
     fn from(err: AuthServiceError) -> Self {
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "AuthController",
+            "error" = %err
+        );
+
         match err {
             AuthServiceError::Credentials(_) => Self::InvalidCredentials,
             _ => Self::Internal,

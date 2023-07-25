@@ -5,6 +5,7 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
+use tracing::{event, Level};
 
 use crate::AppState;
 
@@ -15,6 +16,14 @@ impl RedirectController {
         State(_state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> impl IntoResponse {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "RedirectController",
+            "method" = "read_all",
+            "client_id" = client_id
+        );
+
         (
             StatusCode::NOT_IMPLEMENTED,
             format!("/clients/{}/redirects", client_id),
@@ -22,6 +31,13 @@ impl RedirectController {
     }
 
     pub async fn create(State(_state): State<Arc<AppState>>) -> impl IntoResponse {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "RedirectController",
+            "method" = "create"
+        );
+
         (StatusCode::NOT_IMPLEMENTED, "/redirects".to_string())
     }
 
@@ -29,6 +45,14 @@ impl RedirectController {
         State(_state): State<Arc<AppState>>,
         Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "RedirectController",
+            "method" = "read",
+            "redirect_id" = redirect_id
+        );
+
         (
             StatusCode::NOT_IMPLEMENTED,
             format!("/redirects/{}", redirect_id),
@@ -39,6 +63,14 @@ impl RedirectController {
         State(_state): State<Arc<AppState>>,
         Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "RedirectController",
+            "method" = "update",
+            "redirect_id" = redirect_id
+        );
+
         (
             StatusCode::NOT_IMPLEMENTED,
             format!("/redirects/{}", redirect_id),
@@ -49,6 +81,14 @@ impl RedirectController {
         State(_state): State<Arc<AppState>>,
         Path(redirect_id): Path<String>,
     ) -> impl IntoResponse {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "RedirectController",
+            "method" = "delete",
+            "redirect_id" = redirect_id
+        );
+
         (
             StatusCode::NOT_IMPLEMENTED,
             format!("/redirects/{}", redirect_id),

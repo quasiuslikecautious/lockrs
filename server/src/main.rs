@@ -25,6 +25,7 @@ async fn main() {
         .with_target("tower_http::trace::on_response", tracing::Level::DEBUG)
         .with_target("tower_http::trace::on_request", tracing::Level::DEBUG)
         .with_target("tower_http::trace::make_span", tracing::Level::DEBUG)
+        .with_target("lockrs::trace", tracing::Level::DEBUG)
         .with_default(tracing::Level::INFO);
 
     let tracing_layer = tracing_subscriber::fmt::layer();

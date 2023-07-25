@@ -7,6 +7,7 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
+use tracing::{event, Level};
 use url::Url;
 use uuid::Uuid;
 
@@ -19,7 +20,7 @@ use crate::{
 
 pub struct ClientController;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ClientCreateRequest {
     pub user_id: Uuid,
     pub is_public: bool,
@@ -29,7 +30,7 @@ pub struct ClientCreateRequest {
     pub redirect_url: Url,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ClientUpdateRequest {
     pub name: Option<String>,
     pub description: Option<String>,
@@ -41,6 +42,14 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "ClientController",
+            "method" = "read_all",
+            "user_id" = user_id.to_string()
+        );
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
@@ -65,6 +74,14 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "ClientController",
+            "method" = "create",
+            "params" = ?new_client_request
+        );
+
         let new_client = ClientCreateModel {
             user_id: new_client_request.user_id,
             is_public: new_client_request.is_public,
@@ -93,6 +110,14 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "ClientController",
+            "method" = "read",
+            "user_id" = client_id
+        );
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
@@ -116,6 +141,14 @@ impl ClientController {
         Path(client_id): Path<String>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "ClientController",
+            "method" = "update",
+            "params" = ?update_client_request
+        );
+
         let update_client = ClientUpdateModel {
             name: update_client_request.name,
             description: update_client_request.description,
@@ -149,6 +182,14 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<StatusCode, ClientControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "ClientController",
+            "method" = "delete",
+            "user_id" = client_id
+        );
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
@@ -161,17 +202,17 @@ impl ClientController {
 }
 
 pub enum ClientControllerError {
-    Internal,
     InvalidClient,
+    Internal,
 }
 
 impl ClientControllerError {
     pub fn error_message(&self) -> &'static str {
         match self {
+            Self::InvalidClient => "The provided client is invalid.",
             Self::Internal => {
                 "An error has occurred while processing your request. Please try again later."
             }
-            Self::InvalidClient => "The provided client is invalid.",
         }
     }
 }
