@@ -5,18 +5,18 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Redirect},
 };
-use log::error;
 use serde::Deserialize;
+use tracing::{event, Level};
 use url::Url;
 
 use crate::{
-    oauth2::v1::services::{ClientAuthService, ClientAuthServiceError, ScopeService},
-    services::RedirectService,
+    oauth2::v1::services::{ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError},
+    services::{RedirectService, RedirectServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct AuthorizeRequest {
     pub response_type: String,
     pub redirect_uri: Url,
@@ -33,7 +33,22 @@ impl AuthorizeController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<AuthorizeRequest>,
     ) -> impl IntoResponse {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "AuthorizeController",
+            "method" = "handle",
+            "params" = ?params
+        );
+
         if &params.response_type != "code" {
+            event!(
+                target: "lockrs::trace",
+                Level::ERROR,
+                "controller" = "AuthorizeController",
+                "error" = "Invalid Response Type Requested!"
+            );
+
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
@@ -58,12 +73,12 @@ impl AuthorizeController {
             &params.redirect_uri,
         )
         .await
-        .map_err(|_| AuthorizeControllerError::InvalidRedirectUri)?;
+        .map_err(AuthorizeControllerError::from)?;
 
         let scope_repository = &*state.repository_container.as_ref().scope_repository;
         let _scopes = ScopeService::get_from_list(db_context, scope_repository, &params.scope)
             .await
-            .map_err(|_| AuthorizeControllerError::InvalidScopes)?;
+            .map_err(AuthorizeControllerError::from)?;
 
         let _is_plain = !params.code_challenge_method.eq("S256");
 
@@ -98,9 +113,47 @@ impl AuthorizeControllerError {
 
 impl From<ClientAuthServiceError> for AuthorizeControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
-        error!("{}", err);
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "AuthorizeController",
+            "error" = %err
+        );
+
         match err {
-            ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
+            ClientAuthServiceError::NotFound(_) => Self::InvalidRedirectUri,
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<RedirectServiceError> for AuthorizeControllerError {
+    fn from(err: RedirectServiceError) -> Self {
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "AuthorizeController",
+            "error" = %err
+        );
+
+        match err {
+            RedirectServiceError::NotFound(_) => Self::InvalidClient,
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<ScopeServiceError> for AuthorizeControllerError {
+    fn from(err: ScopeServiceError) -> Self {
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "AuthorizeController",
+            "error" = %err
+        );
+
+        match err {
+            ScopeServiceError::InvalidScopes(_) => Self::InvalidScopes,
             _ => Self::InternalError,
         }
     }

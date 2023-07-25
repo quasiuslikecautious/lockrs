@@ -6,7 +6,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use log::error;
 use serde::Deserialize;
 use tracing::{event, Level};
 use uuid::Uuid;
@@ -221,7 +220,13 @@ impl SessionControllerError {
 
 impl From<SessionServiceError> for SessionControllerError {
     fn from(err: SessionServiceError) -> Self {
-        error!("SESSION CONTROLLER ERROR :: {}", err);
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "SessionController",
+            "error" = %err
+        );
+        
         match err {
             SessionServiceError::Token(_) => Self::SessionToken,
             SessionServiceError::NotFound(_) => Self::NotFound,

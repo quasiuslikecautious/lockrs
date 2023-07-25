@@ -5,8 +5,8 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use log::error;
 use serde::Deserialize;
+use tracing::{event, Level};
 use url::Url;
 
 use crate::{
@@ -14,14 +14,14 @@ use crate::{
     oauth2::v1::models::ScopeModel,
     oauth2::v1::services::{
         ClientAuthService, ClientAuthServiceError, RefreshTokenService, RefreshTokenServiceError,
-        ScopeService, TokenService,
+        ScopeService, TokenService, ScopeServiceError,
     },
     oauth2::v1::{responses::TokenResponse, services::TokenServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct TokenRequest {
     // required
     pub grant_type: String,
@@ -47,6 +47,14 @@ impl TokenController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "TokenController",
+            "method" = "handle",
+            "params" = ?params
+        );
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
@@ -64,7 +72,7 @@ impl TokenController {
         let scopes =
             ScopeService::get_from_list(db_context, scope_repository, params.scope.as_str())
                 .await
-                .map_err(|_| TokenControllerError::InvalidScopes)?;
+                .map_err(TokenControllerError::from)?;
 
         let token: TokenResponse = match params.grant_type.as_str() {
             "authorization_code" => Self::authorization_code_token(state).await,
@@ -73,7 +81,16 @@ impl TokenController {
             }
             "client_credentials" => Self::client_credentials_token(state, client, scopes).await,
             "refresh_token" => Self::refresh_token(state, client, scopes, params).await,
-            _ => Err(TokenControllerError::InvalidGrantType),
+            _ => {
+                event!(
+                    target: "lockrs::trace",
+                    Level::ERROR,
+                    "controller" = "TokenController",
+                    "error" = "Invalid grant type supplied."
+                );
+
+                Err(TokenControllerError::InvalidGrantType)
+            },
         }?;
 
         Ok(token)
@@ -82,6 +99,13 @@ impl TokenController {
     pub async fn authorization_code_token(
         _state: Arc<AppState>,
     ) -> Result<TokenResponse, TokenControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "TokenController",
+            "method" = "authorization_code_token"
+        );
+
         // validate params
         // store/cache param info
         // redirect to frontend login with param info cache in params
@@ -91,6 +115,13 @@ impl TokenController {
     pub async fn device_authorization_token(
         _state: Arc<AppState>,
     ) -> Result<TokenResponse, TokenControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "TokenController",
+            "method" = "device_authorization_token"
+        );
+
         // validate params
         // handle polling
         //     exponential backoff
@@ -103,7 +134,23 @@ impl TokenController {
         client: ClientModel,
         scopes: ScopeModel,
     ) -> Result<TokenResponse, TokenControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "TokenController",
+            "method" = "client_credentials_token",
+            "client" = client.id,
+            "scopes" = ?scopes
+        );
+
         if client.secret.is_none() {
+            event!(
+                target: "lockrs::trace",
+                Level::ERROR,
+                "controller" = "TokenController",
+                "error" = "Missing client secret"
+            );
+
             return Err(TokenControllerError::InvalidClient);
         }
 
@@ -138,8 +185,25 @@ impl TokenController {
         scopes: ScopeModel,
         params: TokenRequest,
     ) -> Result<TokenResponse, TokenControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "TokenController",
+            "method" = "refresh_token",
+            "client" = client.id,
+            "scopes" = ?scopes,
+            "params" = ?params
+        );
+
         let Some(token) = params.refresh_token
         else {
+            event!(
+                target: "lockrs::trace",
+                Level::ERROR,
+                "controller" = "TokenController",
+                "error" = "Missing refresh token in request"
+            );
+
             return Err(TokenControllerError::MissingRefreshToken);
         };
 
@@ -163,7 +227,7 @@ impl TokenController {
             scopes,
         )
         .await
-        .map_err(|_| TokenControllerError::InternalError)?;
+        .map_err(TokenControllerError::from)?;
 
         Ok(TokenResponse {
             token_type: token.token_type,
@@ -213,7 +277,13 @@ impl TokenControllerError {
 
 impl From<TokenServiceError> for TokenControllerError {
     fn from(err: TokenServiceError) -> Self {
-        error!("{}", err);
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "TokenController",
+            "error" = %err
+        );
+
         match err {
             TokenServiceError::NotCreated(_) => Self::BadRequest,
             TokenServiceError::InternalError(_) => Self::InternalError,
@@ -223,7 +293,13 @@ impl From<TokenServiceError> for TokenControllerError {
 
 impl From<RefreshTokenServiceError> for TokenControllerError {
     fn from(err: RefreshTokenServiceError) -> Self {
-        error!("{}", err);
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "TokenController",
+            "error" = %err
+        );
+
         match err {
             RefreshTokenServiceError::NotFound(_) => Self::InvalidRefreshToken,
             _ => Self::InternalError,
@@ -233,9 +309,31 @@ impl From<RefreshTokenServiceError> for TokenControllerError {
 
 impl From<ClientAuthServiceError> for TokenControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
-        error!("{}", err);
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "TokenController",
+            "error" = %err
+        );
+
         match err {
             ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<ScopeServiceError> for TokenControllerError {
+    fn from(err: ScopeServiceError) -> Self {
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "TokenController",
+            "error" = %err
+        );
+
+        match err {
+            ScopeServiceError::InvalidScopes(_) => Self::InvalidClient,
             _ => Self::InternalError,
         }
     }

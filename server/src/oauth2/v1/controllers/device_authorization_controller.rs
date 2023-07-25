@@ -5,22 +5,22 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use log::error;
 use serde::Deserialize;
+use tracing::{event, Level};
 
 use crate::{
     oauth2::v1::{
         responses::DeviceAuthorizationResponse,
         services::{
             ClientAuthService, ClientAuthServiceError, DeviceAuthorizationService,
-            DeviceAuthorizationServiceError, ScopeService,
+            DeviceAuthorizationServiceError, ScopeService, ScopeServiceError,
         },
     },
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct DeviceAuthorizationRequest {
     scope: String,
 }
@@ -33,6 +33,14 @@ impl DeviceAuthorizationController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<DeviceAuthorizationRequest>,
     ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationControllerError> {
+        event!(
+            target: "lockrs::trace",
+            Level::TRACE,
+            "controller" = "DeviceAuthorizationController",
+            "method" = "handle",
+            "params" = ?params
+        );
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
@@ -48,7 +56,7 @@ impl DeviceAuthorizationController {
         let scope_repository = &*state.repository_container.as_ref().scope_repository;
         let scopes = ScopeService::get_from_list(db_context, scope_repository, &params.scope)
             .await
-            .map_err(|_| DeviceAuthorizationControllerError::InvalidScopes)?;
+            .map_err(DeviceAuthorizationControllerError::from)?;
 
         let device_authorization_repository = &*state
             .repository_container
@@ -105,7 +113,13 @@ impl DeviceAuthorizationControllerError {
 
 impl From<DeviceAuthorizationServiceError> for DeviceAuthorizationControllerError {
     fn from(err: DeviceAuthorizationServiceError) -> Self {
-        error!("{}", err);
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "DeviceAuthorizationController",
+            "error" = %err
+        );
+
         match err {
             DeviceAuthorizationServiceError::NotCreated(_) => Self::BadRequest,
 
@@ -116,9 +130,31 @@ impl From<DeviceAuthorizationServiceError> for DeviceAuthorizationControllerErro
 
 impl From<ClientAuthServiceError> for DeviceAuthorizationControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
-        error!("{}", err);
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "DeviceAuthorizationController",
+            "error" = %err
+        );
+
         match err {
             ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<ScopeServiceError> for DeviceAuthorizationControllerError {
+    fn from(err: ScopeServiceError) -> Self {
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "DeviceAuthorizationController",
+            "error" = %err
+        );
+
+        match err {
+            ScopeServiceError::InvalidScopes(_) => Self::InvalidScopes,
             _ => Self::InternalError,
         }
     }

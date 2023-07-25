@@ -22,7 +22,6 @@ diesel-async = { version = "0.2.2", features = ["postgres", "deadpool"] }
 dotenvy = "0.15.6"
 hyper = "0.14.26"
 jsonwebtoken = "8.3.0"
-log = "0.4.19"
 rand = "0.8.5"
 redis = { version = "0.23.0", features = ["aio"] }
 ring = "0.16.20"

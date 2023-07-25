@@ -6,7 +6,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use log::error;
 use serde::Deserialize;
 use tracing::{event, Level};
 use uuid::Uuid;
@@ -92,7 +91,13 @@ impl UserController {
         let user = UserService::get_user_by_id(db_context, user_repository, &user_id)
             .await
             .map_err(|err| {
-                error!("USER CONTROLLER ERROR :: Read :: {}", err);
+                event!(
+                    target: "lockrs::trace",
+                    Level::ERROR, 
+                    "controller" = "UserController",
+                    "error" = "", 
+                );
+
                 match err {
                     UserServiceError::NotFound(_) => UserControllerError::NotFound,
                     _ => UserControllerError::Internal,
@@ -133,13 +138,7 @@ impl UserController {
         let user =
             UserService::update_user_by_id(db_context, user_repository, &user_id, &update_user)
                 .await
-                .map_err(|err| {
-                    error!("USER CONTROLLER ERROR :: Update :: {}", err);
-                    match err {
-                        UserServiceError::NotFound(_) => UserControllerError::NotFound,
-                        _ => UserControllerError::Internal,
-                    }
-                })?;
+                .map_err(UserControllerError::from)?;
 
         Ok(UserResponse {
             id: user.id,
