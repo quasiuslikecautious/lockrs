@@ -55,7 +55,7 @@ impl ClientController {
 
         let clients = ClientService::get_clients_by_user(db_context, client_repository, &user_id)
             .await
-            .map_err(|_| ClientControllerError::Internal)?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(ClientListResponse {
             clients: clients
@@ -96,7 +96,7 @@ impl ClientController {
 
         let client = ClientService::create_client(db_context, client_repository, new_client)
             .await
-            .map_err(|_| ClientControllerError::Internal)?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -123,10 +123,7 @@ impl ClientController {
 
         let client = ClientService::get_client_by_id(db_context, client_repository, &client_id)
             .await
-            .map_err(|err| match err {
-                ClientServiceError::NotFound(_) => ClientControllerError::InvalidClient,
-                _ => ClientControllerError::Internal,
-            })?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -165,10 +162,7 @@ impl ClientController {
             &update_client,
         )
         .await
-        .map_err(|err| match err {
-            ClientServiceError::NotFound(_) => ClientControllerError::InvalidClient,
-            _ => ClientControllerError::Internal,
-        })?;
+        .map_err(ClientControllerError::from)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -195,7 +189,7 @@ impl ClientController {
 
         ClientService::delete_client_by_id(db_context, client_repository, &client_id)
             .await
-            .map_err(|_| ClientControllerError::Internal)?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(StatusCode::NO_CONTENT)
     }
@@ -203,13 +197,26 @@ impl ClientController {
 
 pub enum ClientControllerError {
     InvalidClient,
+
+    BadRequest,
     Internal,
 }
 
 impl ClientControllerError {
+    pub fn error_code(&self) -> StatusCode {
+        match self {
+            Self::InvalidClient => StatusCode::BAD_REQUEST,
+
+            Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+            _ => StatusCode::BAD_REQUEST,
+        }
+    }
+
     pub fn error_message(&self) -> &'static str {
         match self {
             Self::InvalidClient => "The provided client is invalid.",
+
+            Self::BadRequest => "Unable to perform the requested operation.",
             Self::Internal => {
                 "An error has occurred while processing your request. Please try again later."
             }
@@ -217,8 +224,26 @@ impl ClientControllerError {
     }
 }
 
+impl From<ClientServiceError> for ClientControllerError {
+    fn from(err: ClientServiceError) -> Self {
+        event!(
+            target: "lockrs::trace",
+            Level::ERROR,
+            "controller" = "ClientController",
+            "error" = %err
+        );
+
+        match err {
+            ClientServiceError::NotFound(_) => Self::InvalidClient,
+            ClientServiceError::InternalError(_) => Self::Internal,
+
+            _ => Self::BadRequest,
+        }
+    }
+}
+
 impl IntoResponse for ClientControllerError {
     fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }
