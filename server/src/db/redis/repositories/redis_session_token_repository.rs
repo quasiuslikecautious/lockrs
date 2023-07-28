@@ -26,6 +26,10 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &SessionTokenModel,
     ) -> Result<SessionTokenModel, RepositoryError> {
+        tracing::trace!(
+            method = "create"
+        );
+
         let key = Self::into_redis_key(token.token.as_str());
         let value = serde_json::to_string(token).unwrap();
 
@@ -52,6 +56,10 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<SessionTokenModel, RepositoryError> {
+        tracing::trace!(
+            method = "get_by_token"
+        );
+
         let key = Self::into_redis_key(token);
 
         let conn = &mut db_context
@@ -79,6 +87,10 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
+        tracing::trace!(
+            method = "delete_by_token"
+        );
+
         let key = Self::into_redis_key(token);
 
         let conn = &mut db_context
@@ -98,6 +110,8 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
                 "Expected 1 row to be affected by delete, but found {}",
                 deleted
             );
+
+            tracing::error!(error = msg);
             return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
         }
 

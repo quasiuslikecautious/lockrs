@@ -30,6 +30,10 @@ impl SessionRepository for RedisSessionRepository {
         db_context: &Arc<DbContext>,
         session: &SessionModel,
     ) -> Result<SessionModel, RepositoryError> {
+        tracing::trace!(
+            method = "create"
+        );
+
         let user_id = &session.user_id;
         let user_key = Self::into_user_key(user_id);
 
@@ -65,6 +69,10 @@ impl SessionRepository for RedisSessionRepository {
         session_id: &str,
         user_id: &Uuid,
     ) -> Result<SessionModel, RepositoryError> {
+        tracing::trace!(
+            method = "get_by_hash"
+        );
+
         let user_key = Self::into_user_key(user_id);
         let session_key = Self::into_session_key(session_id);
 
@@ -95,6 +103,10 @@ impl SessionRepository for RedisSessionRepository {
         db_context: &Arc<DbContext>,
         session: &SessionModel,
     ) -> Result<SessionModel, RepositoryError> {
+        tracing::trace!(
+            method = "update"
+        );
+
         let user_key = Self::into_user_key(&session.user_id);
         let session_key = Self::into_session_key(session.id.as_str());
         let expires_at = &session.expires_at;
@@ -125,6 +137,11 @@ impl SessionRepository for RedisSessionRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<(), RepositoryError> {
+        tracing::trace!(
+            method = "delete_by_user_id",
+            ?id
+        );
+
         let key = Self::into_user_key(id);
 
         let conn = &mut db_context
