@@ -24,6 +24,11 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         user_create: &UserCreateModel,
     ) -> Result<UserModel, RepositoryError> {
+        tracing::trace!(
+            method = "create",
+            email = user_create.email
+        );
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -47,6 +52,11 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<UserModel, RepositoryError> {
+        tracing::trace!(
+            method = "get_by_id",
+            ?id
+        );
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -67,6 +77,11 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         email: &str,
     ) -> Result<UserModel, RepositoryError> {
+        tracing::trace!(
+            method = "get_by_email",
+            email
+        );
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -88,6 +103,11 @@ impl UserRepository for PgUserRepository {
         id: &Uuid,
         update_user: &UserUpdateModel,
     ) -> Result<UserModel, RepositoryError> {
+        tracing::trace!(
+            method = "update_by_id",
+            ?id
+        );
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -109,6 +129,11 @@ impl UserRepository for PgUserRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<(), RepositoryError> {
+        tracing::trace!(
+            method = "delete_by_id",
+            ?id
+        );
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -125,6 +150,8 @@ impl UserRepository for PgUserRepository {
                 "Expected 1 row to be affected by delete, but found {}",
                 rows_affected
             );
+
+            tracing::error!(error = msg);
             return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
         }
 

@@ -22,6 +22,10 @@ impl ScopeRepository for PgScopeRepository {
         _db_context: &Arc<DbContext>,
         _scope_create: &ScopeCreateModel,
     ) -> Result<ScopeModel, RepositoryError> {
+        tracing::trace!(
+            method = "create"
+        );
+
         todo!();
     }
 
@@ -30,6 +34,11 @@ impl ScopeRepository for PgScopeRepository {
         db_context: &Arc<DbContext>,
         scopes_list: &Vec<String>,
     ) -> Result<ScopeModel, RepositoryError> {
+        tracing::trace!(
+            method = "get_from_list",
+            scopes = ?scopes_list
+        );
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -51,6 +60,10 @@ impl ScopeRepository for PgScopeRepository {
         _db_context: &Arc<DbContext>,
         _id: &str,
     ) -> Result<(), RepositoryError> {
+        tracing::trace!(
+            method = "delete_by_name",
+        );
+
         todo!();
     }
 }

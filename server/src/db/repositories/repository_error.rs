@@ -31,6 +31,8 @@ pub enum RepositoryError {
 impl RepositoryError {
     pub fn map_diesel_create(err: DieselError) -> Self {
         let err_msg = format!("{}", &err);
+        tracing::error!(error = %err);
+
         match err {
             DieselError::DatabaseError(db_err, _) => match db_err {
                 DieselResult::DatabaseErrorKind::UniqueViolation => {
@@ -50,6 +52,7 @@ impl RepositoryError {
 
     pub fn map_diesel_found(err: DieselError) -> Self {
         let err_msg = format!("{}", &err);
+        tracing::error!(error = %err);
         match err {
             DieselError::NotFound => Self::QueryFailed(err_msg, QueryFailure::NotFound),
             _ => Self::InternalError(format!("{}", err)),
@@ -58,6 +61,7 @@ impl RepositoryError {
 
     pub fn map_diesel_update(err: DieselError) -> Self {
         let err_msg = format!("{}", &err);
+        tracing::error!(error = %err);
         match err {
             DieselError::NotFound => Self::QueryFailed(err_msg, QueryFailure::NotUpdated),
 
@@ -79,6 +83,7 @@ impl RepositoryError {
 
     pub fn map_diesel_delete(err: DieselError) -> Self {
         let err_msg = format!("{}", &err);
+        tracing::error!(error = %err);
         match err {
             DieselError::NotFound => Self::QueryFailed(err_msg, QueryFailure::NotDeleted),
             _ => Self::InternalError(err_msg),
@@ -91,6 +96,8 @@ impl RepositoryError {
             .unwrap_or("Failed to create entity redis")
             .to_string();
 
+        tracing::error!(error = msg);
+
         Self::InternalError(msg)
     }
 
@@ -100,6 +107,8 @@ impl RepositoryError {
             .detail()
             .unwrap_or("Failed to create entity redis")
             .to_string();
+
+        tracing::error!(error = msg);
 
         // assume type error is converting nil to struct. annoying error to debug
         // if it is not but ¯\_(ツ)_/¯, TODO later
@@ -112,6 +121,8 @@ impl RepositoryError {
 
 impl From<DbContextError> for RepositoryError {
     fn from(err: DbContextError) -> Self {
+        tracing::error!(eror = %err);
+
         let err_msg = format!("{}", &err);
         Self::InternalError(err_msg)
     }
