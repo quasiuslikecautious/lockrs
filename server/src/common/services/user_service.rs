@@ -19,6 +19,11 @@ impl UserService {
         user_repository: &dyn UserRepository,
         new_user: &UserCreateModel,
     ) -> Result<UserModel, UserServiceError> {
+        tracing::trace!(
+            method = "create_user",
+            user = new_user.email
+        );
+
         user_repository
             .create(db_context, new_user)
             .await
@@ -30,6 +35,11 @@ impl UserService {
         user_repository: &dyn UserRepository,
         id: &Uuid,
     ) -> Result<UserModel, UserServiceError> {
+        tracing::trace!(
+            method = "get_user_by_id",
+            ?id
+        );
+
         user_repository
             .get_by_id(db_context, id)
             .await
@@ -41,6 +51,11 @@ impl UserService {
         user_repository: &dyn UserRepository,
         email: &str,
     ) -> Result<UserModel, UserServiceError> {
+        tracing::trace!(
+            method = "get_user_by_email",
+            email
+        );
+
         user_repository
             .get_by_email(db_context, email)
             .await
@@ -53,6 +68,12 @@ impl UserService {
         id: &Uuid,
         update_user: &UserUpdateModel,
     ) -> Result<UserModel, UserServiceError> {
+        tracing::trace!(
+            method = "update_user_by_id",
+            ?id,
+            user = ?update_user
+        );
+
         user_repository
             .update_by_id(db_context, id, update_user)
             .await
@@ -64,6 +85,11 @@ impl UserService {
         user_repository: &dyn UserRepository,
         id: &Uuid,
     ) -> Result<(), UserServiceError> {
+        tracing::trace!(
+            method = "delete_user_by_id",
+            ?id
+        );
+
         user_repository
             .delete_by_id(db_context, id)
             .await
@@ -90,6 +116,8 @@ pub enum UserServiceError {
 
 impl From<RepositoryError> for UserServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_error) => match query_error {
                 QueryFailure::AlreadyExists => Self::AlreadyExists(msg),

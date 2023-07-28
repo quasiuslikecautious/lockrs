@@ -20,6 +20,7 @@ pub struct ClientAuthModel {
     pub secret: Option<String>,
 }
 
+#[derive(Debug)]
 pub struct ClientCreateModel {
     pub user_id: Uuid,
     pub is_public: bool,
@@ -29,7 +30,7 @@ pub struct ClientCreateModel {
     pub redirect_url: Url,
 }
 
-#[derive(AsChangeset)]
+#[derive(AsChangeset, Debug)]
 #[diesel(table_name = clients)]
 pub struct ClientUpdateModel {
     pub name: Option<String>,

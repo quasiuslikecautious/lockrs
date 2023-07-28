@@ -27,6 +27,10 @@ impl AuthService {
         session_token_repository: &dyn SessionTokenRepository,
         user_auth: &AuthModel,
     ) -> Result<SessionTokenModel, AuthServiceError> {
+        tracing::trace!(
+            method = "login",
+        );
+
         let user = UserService::get_user_by_email(db_context, user_repository, &user_auth.email)
             .await
             .map_err(AuthServiceError::from)?;
@@ -49,6 +53,10 @@ impl AuthService {
         user_repository: &dyn UserRepository,
         register_user: &RegisterModel,
     ) -> Result<UserModel, AuthServiceError> {
+        tracing::trace!(
+            method = "register_user",
+        );
+
         let password_hash = Self::hash_password(register_user.password.as_str())?;
 
         let create_user = UserCreateModel {
@@ -95,6 +103,8 @@ pub enum AuthServiceError {
 
 impl From<UserServiceError> for AuthServiceError {
     fn from(err: UserServiceError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             UserServiceError::AlreadyExists(msg) => Self::AlreadyExists(msg),
             UserServiceError::NotCreated(msg) => Self::NotCreated(msg),
@@ -109,6 +119,8 @@ impl From<UserServiceError> for AuthServiceError {
 
 impl From<SessionTokenServiceError> for AuthServiceError {
     fn from(err: SessionTokenServiceError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
 
@@ -122,6 +134,8 @@ impl From<SessionTokenServiceError> for AuthServiceError {
 
 impl From<BcryptError> for AuthServiceError {
     fn from(err: BcryptError) -> Self {
+        tracing::error!(error = ?err);
+
         Self::InternalError(format!("{:?}", err))
     }
 }

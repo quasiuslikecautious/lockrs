@@ -31,6 +31,13 @@ impl TokenService {
         user_id: Option<&Uuid>,
         scopes: ScopeModel,
     ) -> Result<TokenModel, TokenServiceError> {
+        tracing::trace!(
+            method = "create_token",
+            client_id,
+            ?user_id,
+            ?scopes
+        );
+
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
 
         let access_token_create = AccessTokenCreateModel {
@@ -84,9 +91,10 @@ impl TokenService {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
         rng.fill(&mut buffer).map_err(|_| {
-            TokenServiceError::InternalError(
-                "ring::SystemRandom::fill failed on generate_opaque_token".into(),
-            )
+            let msg = "ring::SystemRandom::fill failed on generate_opaque_token";
+
+            tracing::error!(error = msg);
+            TokenServiceError::InternalError(msg.into())
         })?;
         Ok(general_purpose::URL_SAFE_NO_PAD.encode(buffer))
     }
@@ -103,6 +111,8 @@ pub enum TokenServiceError {
 
 impl From<AccessTokenServiceError> for TokenServiceError {
     fn from(err: AccessTokenServiceError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             AccessTokenServiceError::NotCreated(msg) => Self::NotCreated(msg),
 
@@ -115,6 +125,8 @@ impl From<AccessTokenServiceError> for TokenServiceError {
 
 impl From<RefreshTokenServiceError> for TokenServiceError {
     fn from(err: RefreshTokenServiceError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RefreshTokenServiceError::NotCreated(msg) => Self::NotCreated(msg),
 

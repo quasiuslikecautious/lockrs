@@ -18,6 +18,11 @@ impl ScopeService {
         scope_repository: &dyn ScopeRepository,
         scope: &str,
     ) -> Result<ScopeModel, ScopeServiceError> {
+        tracing::trace!(
+            method = "get_from_list",
+            scope
+        );
+
         let scopes_list = scope
             .split(' ')
             .map(|s| s.to_string())
@@ -41,6 +46,8 @@ pub enum ScopeServiceError {
 
 impl From<RepositoryError> for ScopeServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotFound => Self::InvalidScopes(msg),

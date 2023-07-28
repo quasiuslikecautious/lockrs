@@ -18,6 +18,10 @@ impl AuthorizationCodeService {
         _authorization_code_repository: &dyn AuthorizationCodeRepository,
         _new_code: AuthorizationCodeCreateModel,
     ) -> AuthorizationCodeModel {
+        tracing::trace!(
+            method = "create"
+        );
+
         todo!();
     }
 }
@@ -33,6 +37,8 @@ pub enum AuthorizationCodeServiceError {
 
 impl From<RepositoryError> for AuthorizationCodeServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated(msg),

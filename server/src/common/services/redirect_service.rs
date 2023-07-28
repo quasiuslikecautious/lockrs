@@ -20,6 +20,12 @@ impl RedirectService {
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectServiceError> {
+        tracing::trace!(
+            method = "create_redirect",
+            client_id,
+            %uri
+        );
+
         let redirect_create = RedirectCreateModel {
             client_id: client_id.to_string(),
             uri: uri.clone(),
@@ -37,6 +43,12 @@ impl RedirectService {
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RedirectServiceError> {
+        tracing::trace!(
+            method = "verify_redirect",
+            client_id,
+            %uri
+        );
+
         redirect_repository
             .get_by_uri(db_context, client_id, uri)
             .await
@@ -48,6 +60,11 @@ impl RedirectService {
         redirect_repository: &dyn RedirectUriRepository,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RedirectServiceError> {
+        tracing::trace!(
+            method = "get_redirects_from_client",
+            client_id,
+        );
+
         redirect_repository
             .get_all_by_client_id(db_context, client_id)
             .await
@@ -68,6 +85,8 @@ pub enum RedirectServiceError {
 
 impl From<RepositoryError> for RedirectServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated(msg),

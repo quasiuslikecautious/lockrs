@@ -18,6 +18,10 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token_create: &RefreshTokenCreateModel,
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
+        tracing::trace!(
+            method = "create_token",
+        );
+
         refresh_token_repository
             .create(db_context, token_create)
             .await
@@ -29,6 +33,10 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token: &str,
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
+        tracing::trace!(
+            method = "get_by_token",
+        );
+
         refresh_token_repository
             .get_by_token(db_context, token)
             .await
@@ -40,6 +48,10 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token: &str,
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
+        tracing::trace!(
+            method = "use_token",
+        );
+
         refresh_token_repository
             .use_by_token(db_context, token)
             .await
@@ -51,6 +63,10 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token: &str,
     ) -> Result<(), RefreshTokenServiceError> {
+        tracing::trace!(
+            method = "delete_token",
+        );
+
         refresh_token_repository
             .delete_by_token(db_context, token)
             .await
@@ -75,6 +91,8 @@ pub enum RefreshTokenServiceError {
 
 impl From<RepositoryError> for RefreshTokenServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated(msg),

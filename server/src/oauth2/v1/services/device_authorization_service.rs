@@ -22,6 +22,12 @@ impl DeviceAuthorizationService {
         client_id: &str,
         scopes_model: ScopeModel,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
+        tracing::trace!(
+            method = "create_device_authorization",
+            client_id,
+            scopes = ?scopes_model
+        );
+
         let expires_at = (Utc::now() + Duration::minutes(5)).naive_utc();
 
         let device_authorization_create = DeviceAuthorizationCreateModel {
@@ -43,6 +49,10 @@ impl DeviceAuthorizationService {
         device_authorization_repository: &dyn DeviceAuthorizationRepository,
         device_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
+        tracing::trace!(
+            method = "get_from_device_code",
+        );
+
         device_authorization_repository
             .get_by_device_code(db_context, device_code)
             .await
@@ -54,6 +64,10 @@ impl DeviceAuthorizationService {
         device_authorization_repository: &dyn DeviceAuthorizationRepository,
         user_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
+        tracing::trace!(
+            method = "get_from_user",
+        );
+
         device_authorization_repository
             .get_by_user_code(db_context, user_code)
             .await
@@ -110,6 +124,8 @@ pub enum DeviceAuthorizationServiceError {
 
 impl From<RepositoryError> for DeviceAuthorizationServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated(msg),

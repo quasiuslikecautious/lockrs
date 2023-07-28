@@ -19,6 +19,11 @@ impl ClientAuthService {
         id: &str,
         secret: Option<&str>,
     ) -> Result<ClientModel, ClientAuthServiceError> {
+        tracing::trace!(
+            method = "verify_credentials",
+            id
+        );
+
         client_repository
             .get_by_credentials(db_context, id, secret)
             .await
@@ -37,6 +42,8 @@ pub enum ClientAuthServiceError {
 
 impl From<RepositoryError> for ClientAuthServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotFound => Self::NotFound(msg),

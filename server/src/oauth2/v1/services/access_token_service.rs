@@ -18,6 +18,10 @@ impl AccessTokenService {
         access_token_repository: &dyn AccessTokenRepository,
         token_create: &AccessTokenCreateModel,
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
+        tracing::trace!(
+            method = "create_token",
+        );
+
         access_token_repository
             .create(db_context, token_create)
             .await
@@ -29,6 +33,10 @@ impl AccessTokenService {
         access_token_repository: &dyn AccessTokenRepository,
         token: &str,
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
+        tracing::trace!(
+            method = "verify_token",
+        );
+
         access_token_repository
             .get_by_token(db_context, token)
             .await
@@ -40,6 +48,10 @@ impl AccessTokenService {
         access_token_repository: &dyn AccessTokenRepository,
         token: &str,
     ) -> Result<(), AccessTokenServiceError> {
+        tracing::trace!(
+            method = "delete_token",
+        );
+
         access_token_repository
             .delete_by_token(db_context, token)
             .await
@@ -62,6 +74,8 @@ pub enum AccessTokenServiceError {
 
 impl From<RepositoryError> for AccessTokenServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated(msg),

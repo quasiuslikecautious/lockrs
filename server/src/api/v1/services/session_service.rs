@@ -27,6 +27,11 @@ impl SessionService {
         token: &SessionCreateModel,
         session_duration: &Duration,
     ) -> Result<SessionModel, SessionServiceError> {
+        tracing::trace!(
+            method = "create_session",
+            session_duration = session_duration.num_milliseconds()
+        );
+
         let token = SessionTokenService::validate_session_token(
             db_context,
             session_token_repository,
@@ -52,6 +57,12 @@ impl SessionService {
         user_id: &Uuid,
         session_id: &str,
     ) -> Result<SessionModel, SessionServiceError> {
+        tracing::trace!(
+            method = "get_session",
+            ?user_id,
+            session_id
+        );
+
         session_repository
             .get_by_hash(db_context, session_id, user_id)
             .await
@@ -66,6 +77,14 @@ impl SessionService {
         update_model: &SessionUpdateModel,
         session_duration: &Duration,
     ) -> Result<SessionModel, SessionServiceError> {
+        tracing::trace!(
+            method = "update_session",
+            ?user_id,
+            session_id,
+            session = ?update_model,
+            duration = session_duration.num_milliseconds()
+        );
+
         let mut session =
             Self::get_session(db_context, session_repository, user_id, session_id).await?;
 
@@ -87,6 +106,11 @@ impl SessionService {
         session_repository: &dyn SessionRepository,
         user_id: &Uuid,
     ) -> Result<(), SessionServiceError> {
+        tracing::trace!(
+            method = "delete_session",
+            ?user_id,
+        );
+
         session_repository
             .delete_by_user_id(db_context, user_id)
             .await
@@ -120,6 +144,8 @@ pub enum SessionServiceError {
 
 impl From<RepositoryError> for SessionServiceError {
     fn from(err: RepositoryError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             RepositoryError::QueryFailed(msg, query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated(msg),
@@ -137,6 +163,8 @@ impl From<RepositoryError> for SessionServiceError {
 
 impl From<SessionTokenServiceError> for SessionServiceError {
     fn from(err: SessionTokenServiceError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
             SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
 
