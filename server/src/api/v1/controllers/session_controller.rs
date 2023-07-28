@@ -7,7 +7,6 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
-use tracing::{event, Level};
 use uuid::Uuid;
 
 use crate::{
@@ -32,12 +31,9 @@ impl SessionController {
         State(_state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> impl IntoResponse {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "SessionController",
-            "method" = "read_all",
-            "user_id" = user_id.to_string()
+        tracing::trace!(
+            method = "read_all",
+            user_id = user_id.to_string()
         );
 
         (
@@ -50,11 +46,8 @@ impl SessionController {
         State(state): State<Arc<AppState>>,
         BearerAuth(session_token): BearerAuth,
     ) -> Result<NewSessionResponse, SessionControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "SessionController",
-            "method" = "create"
+        tracing::trace!(
+            method = "create"
         );
 
         let db_context = &state.as_ref().db_context;
@@ -91,12 +84,9 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "SessionController",
-            "method" = "read",
-            "session_id" = session_id
+        tracing::trace!(
+            method = "read",
+            session_id = session_id
         );
 
         let db_context = &state.as_ref().db_context;
@@ -124,13 +114,10 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "SessionController",
-            "method" = "update",
-            "session_id" = session_id,
-            "params" = ?session_update_request
+        tracing::trace!(
+            method = "update",
+            session_id = session_id,
+            params = ?session_update_request
         );
 
         let db_context = &state.as_ref().db_context;
@@ -163,17 +150,14 @@ impl SessionController {
         SessionJwt(jwt): SessionJwt,
         Path(session_id): Path<String>,
     ) -> Result<EndSessionResponse, SessionControllerError> {
+        tracing::trace!(
+            method = "delete",
+            session_id = session_id
+        );
+
         if jwt.id != session_id {
             return Err(SessionControllerError::Jwt);
         }
-
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "SessionController",
-            "method" = "delete",
-            "session_id" = session_id
-        );
 
         let db_context = &state.as_ref().db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
@@ -220,12 +204,7 @@ impl SessionControllerError {
 
 impl From<SessionServiceError> for SessionControllerError {
     fn from(err: SessionServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "SessionController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
         
         match err {
             SessionServiceError::Token(_) => Self::SessionToken,

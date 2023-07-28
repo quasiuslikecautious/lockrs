@@ -7,7 +7,6 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
-use tracing::{event, Level};
 use url::Url;
 use uuid::Uuid;
 
@@ -42,12 +41,9 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "ClientController",
-            "method" = "read_all",
-            "user_id" = user_id.to_string()
+        tracing::trace!(
+            method = "read_all",
+            user_id = user_id.to_string()
         );
 
         let db_context = &state.as_ref().db_context;
@@ -74,12 +70,9 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "ClientController",
-            "method" = "create",
-            "params" = ?new_client_request
+        tracing::trace!(
+            method = "create",
+            params = ?new_client_request
         );
 
         let new_client = ClientCreateModel {
@@ -110,12 +103,9 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "ClientController",
-            "method" = "read",
-            "user_id" = client_id
+        tracing::trace!(
+            method = "read",
+            user_id = client_id
         );
 
         let db_context = &state.as_ref().db_context;
@@ -138,12 +128,9 @@ impl ClientController {
         Path(client_id): Path<String>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "ClientController",
-            "method" = "update",
-            "params" = ?update_client_request
+        tracing::trace!(
+            method = "update",
+            params = ?update_client_request
         );
 
         let update_client = ClientUpdateModel {
@@ -176,12 +163,9 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<StatusCode, ClientControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "ClientController",
-            "method" = "delete",
-            "user_id" = client_id
+        tracing::trace!(
+            method = "delete",
+            user_id = client_id
         );
 
         let db_context = &state.as_ref().db_context;
@@ -226,12 +210,7 @@ impl ClientControllerError {
 
 impl From<ClientServiceError> for ClientControllerError {
     fn from(err: ClientServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "ClientController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             ClientServiceError::NotFound(_) => Self::InvalidClient,

@@ -6,7 +6,6 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use serde::Deserialize;
-use tracing::{event, Level};
 use url::Url;
 
 use crate::{
@@ -33,22 +32,13 @@ impl AuthorizeController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<AuthorizeRequest>,
     ) -> impl IntoResponse {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "AuthorizeController",
-            "method" = "handle",
-            "params" = ?params
+        tracing::trace!(
+            method = "handle",
+            params = ?params
         );
 
         if &params.response_type != "code" {
-            event!(
-                target: "lockrs::trace",
-                Level::ERROR,
-                "controller" = "AuthorizeController",
-                "error" = "Invalid Response Type Requested!"
-            );
-
+            tracing::error!(error = "Invalid Response Type Requested!");
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
@@ -99,26 +89,30 @@ pub enum AuthorizeControllerError {
 }
 
 impl AuthorizeControllerError {
+    pub fn error_code(&self) -> StatusCode {
+        match self {
+            Self::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+
+            _ => StatusCode::BAD_REQUEST,
+        }
+    }
+
     pub fn error_message(&self) -> &'static str {
         match self {
-            Self::InternalError => "An error occurred processing your request. Please try again later.",
             Self::InvalidResponseType => "The requested response type is invalid. Only the \"code\" response type is supported on this server.",
             Self::InvalidClient => "The provided client credentials are invalid.",
             Self::InvalidRedirectUri => "The provided redirect uri is not recognized by the server for the provided client.",
             Self::InvalidScopes => "The provided scopes are invalid.",
             Self::InvalidCodeChallengeMethod => "The provided code challenge method is unsupported. Only \"plain\" or \"S256\" code challenge methods are supported by this server",
+
+            Self::InternalError => "An error occurred processing your request. Please try again later.",
         }
     }
 }
 
 impl From<ClientAuthServiceError> for AuthorizeControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "AuthorizeController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             ClientAuthServiceError::NotFound(_) => Self::InvalidRedirectUri,
@@ -129,12 +123,7 @@ impl From<ClientAuthServiceError> for AuthorizeControllerError {
 
 impl From<RedirectServiceError> for AuthorizeControllerError {
     fn from(err: RedirectServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "AuthorizeController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             RedirectServiceError::NotFound(_) => Self::InvalidClient,
@@ -145,12 +134,7 @@ impl From<RedirectServiceError> for AuthorizeControllerError {
 
 impl From<ScopeServiceError> for AuthorizeControllerError {
     fn from(err: ScopeServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "AuthorizeController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             ScopeServiceError::InvalidScopes(_) => Self::InvalidScopes,
@@ -161,6 +145,6 @@ impl From<ScopeServiceError> for AuthorizeControllerError {
 
 impl IntoResponse for AuthorizeControllerError {
     fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }

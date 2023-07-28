@@ -6,7 +6,6 @@ use axum::{
     response::IntoResponse,
 };
 use serde::Deserialize;
-use tracing::{event, Level};
 use url::Url;
 
 use crate::{
@@ -47,12 +46,9 @@ impl TokenController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "TokenController",
-            "method" = "handle",
-            "params" = ?params
+        tracing::trace!(
+            method = "handle",
+            params = ?params
         );
 
         let db_context = &state.as_ref().db_context;
@@ -82,13 +78,7 @@ impl TokenController {
             "client_credentials" => Self::client_credentials_token(state, client, scopes).await,
             "refresh_token" => Self::refresh_token(state, client, scopes, params).await,
             _ => {
-                event!(
-                    target: "lockrs::trace",
-                    Level::ERROR,
-                    "controller" = "TokenController",
-                    "error" = "Invalid grant type supplied."
-                );
-
+                tracing::error!(error = "Invalid grant type supplied.");
                 Err(TokenControllerError::InvalidGrantType)
             },
         }?;
@@ -99,11 +89,8 @@ impl TokenController {
     pub async fn authorization_code_token(
         _state: Arc<AppState>,
     ) -> Result<TokenResponse, TokenControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "TokenController",
-            "method" = "authorization_code_token"
+        tracing::trace!(
+            method = "authorization_code_token"
         );
 
         // validate params
@@ -115,11 +102,8 @@ impl TokenController {
     pub async fn device_authorization_token(
         _state: Arc<AppState>,
     ) -> Result<TokenResponse, TokenControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "TokenController",
-            "method" = "device_authorization_token"
+        tracing::trace!(
+            method = "device_authorization_token"
         );
 
         // validate params
@@ -134,23 +118,14 @@ impl TokenController {
         client: ClientModel,
         scopes: ScopeModel,
     ) -> Result<TokenResponse, TokenControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "TokenController",
-            "method" = "client_credentials_token",
-            "client" = client.id,
-            "scopes" = ?scopes
+        tracing::trace!(
+            method = "client_credentials_token",
+            client = client.id,
+            scopes = ?scopes
         );
 
         if client.secret.is_none() {
-            event!(
-                target: "lockrs::trace",
-                Level::ERROR,
-                "controller" = "TokenController",
-                "error" = "Missing client secret"
-            );
-
+            tracing::error!(error = "Missing client secret");
             return Err(TokenControllerError::InvalidClient);
         }
 
@@ -185,25 +160,16 @@ impl TokenController {
         scopes: ScopeModel,
         params: TokenRequest,
     ) -> Result<TokenResponse, TokenControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "TokenController",
-            "method" = "refresh_token",
-            "client" = client.id,
-            "scopes" = ?scopes,
-            "params" = ?params
+        tracing::trace!(
+            method = "refresh_token",
+            client = client.id,
+            scopes = ?scopes,
+            params = ?params
         );
 
         let Some(token) = params.refresh_token
         else {
-            event!(
-                target: "lockrs::trace",
-                Level::ERROR,
-                "controller" = "TokenController",
-                "error" = "Missing refresh token in request"
-            );
-
+            tracing::error!(error = "Missing refresh token in request");
             return Err(TokenControllerError::MissingRefreshToken);
         };
 
@@ -277,12 +243,7 @@ impl TokenControllerError {
 
 impl From<TokenServiceError> for TokenControllerError {
     fn from(err: TokenServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "TokenController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             TokenServiceError::NotCreated(_) => Self::BadRequest,
@@ -293,12 +254,7 @@ impl From<TokenServiceError> for TokenControllerError {
 
 impl From<RefreshTokenServiceError> for TokenControllerError {
     fn from(err: RefreshTokenServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "TokenController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             RefreshTokenServiceError::NotFound(_) => Self::InvalidRefreshToken,
@@ -309,12 +265,7 @@ impl From<RefreshTokenServiceError> for TokenControllerError {
 
 impl From<ClientAuthServiceError> for TokenControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "TokenController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
@@ -325,12 +276,7 @@ impl From<ClientAuthServiceError> for TokenControllerError {
 
 impl From<ScopeServiceError> for TokenControllerError {
     fn from(err: ScopeServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "TokenController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             ScopeServiceError::InvalidScopes(_) => Self::InvalidClient,

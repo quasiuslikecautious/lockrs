@@ -7,7 +7,6 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
-use tracing::{event, Level};
 use uuid::Uuid;
 
 use crate::{
@@ -41,12 +40,9 @@ impl UserController {
         State(state): State<Arc<AppState>>,
         Json(register_request): Json<RegisterRequest>,
     ) -> Result<UserResponse, UserControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE, 
-            "controller" = "UserController",
-            "method" = "create",
-            "email" = register_request.email, 
+        tracing::trace!(
+            method = "create",
+            email = register_request.email, 
         );
 
         let registration = RegisterModel {
@@ -74,29 +70,21 @@ impl UserController {
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<UserResponse, UserControllerError> {
+        tracing::trace!(
+            method = "read",
+            id = user_id.to_string(), 
+        );
+
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
         }
-
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE, 
-            "controller" = "UserController",
-            "method" = "read",
-            "id" = user_id.to_string(), 
-        );
 
         let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
         let user = UserService::get_user_by_id(db_context, user_repository, &user_id)
             .await
             .map_err(|err| {
-                event!(
-                    target: "lockrs::trace",
-                    Level::ERROR, 
-                    "controller" = "UserController",
-                    "error" = "", 
-                );
+                tracing::error!(error = %err);
 
                 match err {
                     UserServiceError::NotFound(_) => UserControllerError::NotFound,
@@ -116,18 +104,15 @@ impl UserController {
         Path(user_id): Path<Uuid>,
         Json(update_user_request): Json<UserUpdateRequest>,
     ) -> Result<UserResponse, UserControllerError> {
+        tracing::trace!(
+            method = "update",
+            id = user_id.to_string(), 
+            data = ?update_user_request,
+        );
+
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
         }
-
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE, 
-            "controller" = "UserController",
-            "method" = "update",
-            "id" = user_id.to_string(), 
-            "data" = ?update_user_request,
-        );
 
         let update_user = UserUpdateModel {
             email: update_user_request.email,
@@ -151,29 +136,21 @@ impl UserController {
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<StatusCode, UserControllerError> {
+        tracing::trace!(
+            method = "delete",
+            id = user_id.to_string()
+        );
+
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
         }
-
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE, 
-            "controller" = "UserController",
-            "method" = "delete",
-            "id" = user_id.to_string()
-        );
 
         let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
         UserService::delete_user_by_id(db_context, user_repository, &user_id)
             .await
             .map_err(|err| {
-                event!(
-                    target: "lockrs::trace",
-                    Level::ERROR,
-                    "controller" = "UserController",
-                    "error" = %err
-                );
+                tracing::error!(error = %err);
 
                 match err {
                     UserServiceError::NotFound(_) => UserControllerError::NotFound,
@@ -219,12 +196,7 @@ impl UserControllerError {
 
 impl From<AuthServiceError> for UserControllerError {
     fn from(err: AuthServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "UserController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             AuthServiceError::AlreadyExists(_) => Self::AlreadyExists,
@@ -235,12 +207,7 @@ impl From<AuthServiceError> for UserControllerError {
 
 impl From<UserServiceError> for UserControllerError {
     fn from(err: UserServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "UserController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             UserServiceError::AlreadyExists(_) => Self::AlreadyExists,

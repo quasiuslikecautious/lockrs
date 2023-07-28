@@ -6,7 +6,6 @@ use axum::{
     response::IntoResponse,
 };
 use serde::Deserialize;
-use tracing::{event, Level};
 
 use crate::{
     oauth2::v1::{
@@ -33,12 +32,9 @@ impl DeviceAuthorizationController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<DeviceAuthorizationRequest>,
     ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationControllerError> {
-        event!(
-            target: "lockrs::trace",
-            Level::TRACE,
-            "controller" = "DeviceAuthorizationController",
-            "method" = "handle",
-            "params" = ?params
+        tracing::trace!(
+            method = "handle",
+            params = ?params
         );
 
         let db_context = &state.as_ref().db_context;
@@ -113,12 +109,7 @@ impl DeviceAuthorizationControllerError {
 
 impl From<DeviceAuthorizationServiceError> for DeviceAuthorizationControllerError {
     fn from(err: DeviceAuthorizationServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "DeviceAuthorizationController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             DeviceAuthorizationServiceError::NotCreated(_) => Self::BadRequest,
@@ -130,12 +121,7 @@ impl From<DeviceAuthorizationServiceError> for DeviceAuthorizationControllerErro
 
 impl From<ClientAuthServiceError> for DeviceAuthorizationControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "DeviceAuthorizationController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
@@ -146,12 +132,7 @@ impl From<ClientAuthServiceError> for DeviceAuthorizationControllerError {
 
 impl From<ScopeServiceError> for DeviceAuthorizationControllerError {
     fn from(err: ScopeServiceError) -> Self {
-        event!(
-            target: "lockrs::trace",
-            Level::ERROR,
-            "controller" = "DeviceAuthorizationController",
-            "error" = %err
-        );
+        tracing::error!(error = %err);
 
         match err {
             ScopeServiceError::InvalidScopes(_) => Self::InvalidScopes,
