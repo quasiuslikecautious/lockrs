@@ -17,7 +17,7 @@ pub trait ScopeRepository: Send + Sync {
     async fn get_from_list(
         &self,
         db_context: &Arc<DbContext>,
-        scopes_list: &Vec<String>,
+        scopes_list: &[String],
     ) -> Result<ScopeModel, RepositoryError>;
     async fn delete_by_name(
         &self,

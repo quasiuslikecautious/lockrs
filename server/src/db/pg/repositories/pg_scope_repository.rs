@@ -30,7 +30,7 @@ impl ScopeRepository for PgScopeRepository {
     async fn get_from_list(
         &self,
         db_context: &Arc<DbContext>,
-        scopes_list: &Vec<String>,
+        scopes_list: &[String],
     ) -> Result<ScopeModel, RepositoryError> {
         tracing::trace!(
             method = "get_from_list",

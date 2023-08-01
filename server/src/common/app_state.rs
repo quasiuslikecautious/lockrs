@@ -16,7 +16,7 @@ pub struct AppState {
 
 impl AppState {
     pub async fn new() -> Self {
-        let config = Arc::new(AppConfig::new());
+        let config = Arc::new(AppConfig::default());
 
         let key_duration = config.as_ref().key_interval;
         let overlap_duration = config.as_ref().auth_interval;
