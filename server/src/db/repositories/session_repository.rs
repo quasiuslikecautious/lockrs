@@ -8,8 +8,6 @@ use crate::{
     db::{repositories::RepositoryError, DbContext},
 };
 
-pub type SessionRepositoryArc = Arc<Box<dyn SessionRepository>>;
-
 #[async_trait]
 pub trait SessionRepository: Send + Sync {
     async fn create(
