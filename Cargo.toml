@@ -1,5 +1,5 @@
 [workspace]
-members = ["server", "frontend"]
+members = ["lockrs_server", "lockrs_frontend"]
 
 [workspace.package]
 name = "lockrs"
