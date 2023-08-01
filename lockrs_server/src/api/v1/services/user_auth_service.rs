@@ -5,15 +5,15 @@ use thiserror::Error;
 
 use crate::{
     api::v1::{
-        models::{AuthModel, RegisterModel, SessionTokenModel},
+        mappers::UserAuthMapper,
+        models::{SessionTokenModel, UserLoginCredentials, UserRegisterModel, UserRegistration},
         services::SessionTokenServiceError,
     },
     db::{
-        repositories::{SessionTokenRepository, UserRepository},
+        repositories::{QueryFailure, RepositoryError, SessionTokenRepository, UserAuthRepository},
         DbContext,
     },
-    models::{UserCreateModel, UserModel},
-    services::{UserService, UserServiceError},
+    models::UserModel,
 };
 
 use super::SessionTokenService;
@@ -21,15 +21,44 @@ use super::SessionTokenService;
 pub struct UserAuthService;
 
 impl UserAuthService {
+    pub async fn register_user(
+        db_context: &Arc<DbContext>,
+        user_auth_repository: &dyn UserAuthRepository,
+        register_user: &UserRegistration,
+    ) -> Result<UserModel, UserAuthServiceError> {
+        tracing::trace!(method = "register_user",);
+
+        let password_hash = Self::hash_password(register_user.password.as_str())?;
+
+        let create_user = UserRegisterModel {
+            email: register_user.email.clone(),
+            password_hash,
+        };
+
+        let user = user_auth_repository
+            .create(db_context, &create_user)
+            .await
+            .map_err(UserAuthServiceError::from)?;
+
+        tracing::info!(
+            "User created: {{ id: {}, email: {} }}",
+            user.id.to_string(),
+            user.email,
+        );
+
+        Ok(UserAuthMapper::into_user(user))
+    }
+
     pub async fn login(
         db_context: &Arc<DbContext>,
-        user_repository: &dyn UserRepository,
+        user_auth_repository: &dyn UserAuthRepository,
         session_token_repository: &dyn SessionTokenRepository,
-        user_auth: &AuthModel,
+        user_auth: &UserLoginCredentials,
     ) -> Result<SessionTokenModel, UserAuthServiceError> {
         tracing::trace!(method = "login",);
 
-        let user = UserService::get_user_by_email(db_context, user_repository, &user_auth.email)
+        let user = user_auth_repository
+            .get_by_email(db_context, user_auth.email.as_str())
             .await
             .map_err(UserAuthServiceError::from)?;
 
@@ -49,32 +78,6 @@ impl UserAuthService {
         );
 
         Ok(session_token)
-    }
-
-    pub async fn register_user(
-        db_context: &Arc<DbContext>,
-        user_repository: &dyn UserRepository,
-        register_user: &RegisterModel,
-    ) -> Result<UserModel, UserAuthServiceError> {
-        tracing::trace!(method = "register_user",);
-
-        let password_hash = Self::hash_password(register_user.password.as_str())?;
-
-        let create_user = UserCreateModel {
-            email: register_user.email.clone(),
-            password_hash,
-        };
-
-        let user = UserService::create_user(db_context, user_repository, &create_user)
-            .await
-            .map_err(UserAuthServiceError::from)?;
-
-        tracing::info!(
-            "New user successfully registered with ID: {}",
-            user.id.to_string()
-        );
-
-        Ok(user)
     }
 
     fn hash_password(password: &str) -> Result<String, UserAuthServiceError> {
@@ -109,18 +112,20 @@ pub enum UserAuthServiceError {
     InternalError,
 }
 
-impl From<UserServiceError> for UserAuthServiceError {
-    fn from(err: UserServiceError) -> Self {
+impl From<RepositoryError> for UserAuthServiceError {
+    fn from(err: RepositoryError) -> Self {
         tracing::error!(error = %err);
 
         match err {
-            UserServiceError::AlreadyExists => Self::AlreadyExists,
-            UserServiceError::NotCreated => Self::NotCreated,
-            UserServiceError::NotFound => Self::Credentials,
-            // QueryFailure::NotUpdated => Self::NotUpdated(msg),
-            UserServiceError::InternalError => Self::InternalError,
+            RepositoryError::QueryFailed(query_err) => match query_err {
+                QueryFailure::AlreadyExists => Self::AlreadyExists,
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::Credentials,
 
-            _ => Self::InternalError,
+                _ => Self::InternalError,
+            },
+
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

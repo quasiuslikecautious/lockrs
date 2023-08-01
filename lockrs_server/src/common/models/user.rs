@@ -7,13 +7,6 @@ use crate::db::pg::schema::users;
 pub struct UserModel {
     pub id: Uuid,
     pub email: String,
-    pub password_hash: String,
-}
-
-#[derive(Debug)]
-pub struct UserCreateModel {
-    pub email: String,
-    pub password_hash: String,
 }
 
 #[derive(Debug, AsChangeset)]

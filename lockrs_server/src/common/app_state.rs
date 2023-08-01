@@ -36,6 +36,7 @@ impl AppState {
             scope_repository: Box::new(PgScopeRepository),
             session_repository: Box::new(RedisSessionRepository),
             session_token_repository: Box::new(RedisSessionTokenRepository),
+            user_auth_repository: Box::new(PgUserAuthRepository),
             user_repository: Box::new(PgUserRepository),
         };
 

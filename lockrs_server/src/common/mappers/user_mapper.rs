@@ -7,15 +7,14 @@ impl UserMapper {
         UserModel {
             id: pg_user.id,
             email: pg_user.email,
-            password_hash: pg_user.password_hash,
         }
     }
 
-    pub fn into_pg(user: UserModel) -> PgUser {
+    pub fn into_pg(user: UserModel, password_hash: String) -> PgUser {
         PgUser {
             id: user.id,
             email: user.email,
-            password_hash: user.password_hash,
+            password_hash,
         }
     }
 }
@@ -35,16 +34,12 @@ mod tests {
         let pg_user = PgUser {
             id,
             email: email.clone(),
-            password_hash: password_hash.clone(),
+            password_hash,
         };
 
         let actual_user = UserMapper::from_pg(pg_user);
 
-        let expected_user = UserModel {
-            id,
-            email,
-            password_hash,
-        };
+        let expected_user = UserModel { id, email };
 
         assert_eq!(actual_user, expected_user);
     }

@@ -10,22 +10,12 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    api::v1::{
-        models::RegisterModel,
-        responses::UserResponse,
-        services::{UserAuthService, UserAuthServiceError},
-    },
+    api::v1::responses::UserResponse,
     models::UserUpdateModel,
     services::{UserService, UserServiceError},
     utils::extractors::SessionJwt,
     AppState,
 };
-
-#[derive(Deserialize)]
-pub struct RegisterRequest {
-    pub email: String,
-    pub password: String,
-}
 
 #[derive(Debug, Deserialize)]
 pub struct UserUpdateRequest {
@@ -36,32 +26,6 @@ pub struct UserUpdateRequest {
 pub struct UserController;
 
 impl UserController {
-    pub async fn create(
-        State(state): State<Arc<AppState>>,
-        Json(register_request): Json<RegisterRequest>,
-    ) -> Result<UserResponse, UserControllerError> {
-        tracing::trace!(method = "create", email = register_request.email,);
-
-        let registration = RegisterModel {
-            email: register_request.email,
-            password: register_request.password,
-        };
-
-        let db_context = &state.as_ref().db_context;
-        let user_repository = &*state.repository_container.as_ref().user_repository;
-
-        let user = UserAuthService::register_user(db_context, user_repository, &registration)
-            .await
-            .map_err(UserControllerError::from)?;
-
-        let user_response = UserResponse {
-            id: user.id,
-            email: user.email,
-        };
-
-        Ok(user_response)
-    }
-
     pub async fn read(
         State(state): State<Arc<AppState>>,
         SessionJwt(jwt): SessionJwt,
@@ -181,17 +145,6 @@ impl UserControllerError {
 
             Self::BadRequest => "Unable to perform the operation as requested.",
             Self::Internal => "An error occurred while processing your request. Please try again later.",
-        }
-    }
-}
-
-impl From<UserAuthServiceError> for UserControllerError {
-    fn from(err: UserAuthServiceError) -> Self {
-        tracing::error!(error = %err);
-
-        match err {
-            UserAuthServiceError::AlreadyExists => Self::AlreadyExists,
-            _ => Self::Internal,
         }
     }
 }

@@ -10,5 +10,6 @@ pub struct RepositoryContainer {
     pub scope_repository: Box<dyn ScopeRepository>,
     pub session_repository: Box<dyn SessionRepository>,
     pub session_token_repository: Box<dyn SessionTokenRepository>,
+    pub user_auth_repository: Box<dyn UserAuthRepository>,
     pub user_repository: Box<dyn UserRepository>,
 }

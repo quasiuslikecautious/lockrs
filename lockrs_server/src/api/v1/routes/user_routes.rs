@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{delete, get, post, put},
+    routing::{delete, get, put},
     Router,
 };
 
@@ -10,7 +10,6 @@ use crate::{api::v1::controllers::UserController, AppState};
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/", post(UserController::create))
         .route("/:user_id", get(UserController::read))
         .route("/:user_id", put(UserController::update))
         .route("/:user_id", delete(UserController::delete))

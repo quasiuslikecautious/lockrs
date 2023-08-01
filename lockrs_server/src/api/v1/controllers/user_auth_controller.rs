@@ -1,40 +1,81 @@
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse};
+use axum::{
+    extract::{Json, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
+use serde::Deserialize;
 
 use crate::{
     api::v1::{
-        models::AuthModel,
-        responses::SessionTokenResponse,
+        models::{UserLoginCredentials, UserRegistration},
+        responses::{SessionTokenResponse, UserResponse},
         services::{UserAuthService, UserAuthServiceError},
     },
     utils::extractors::BasicAuth,
     AppState,
 };
 
+#[derive(Deserialize)]
+pub struct RegisterRequest {
+    pub email: String,
+    pub password: String,
+}
+
 pub struct UserAuthController;
 
 impl UserAuthController {
-    pub async fn auth(
+    pub async fn register(
+        State(state): State<Arc<AppState>>,
+        Json(register_request): Json<RegisterRequest>,
+    ) -> Result<UserResponse, UserAuthControllerError> {
+        tracing::trace!(method = "register_user", email = register_request.email,);
+
+        let registration = UserRegistration {
+            email: register_request.email,
+            password: register_request.password,
+        };
+
+        let db_context = &state.as_ref().db_context;
+        let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
+
+        let user = UserAuthService::register_user(db_context, user_auth_repository, &registration)
+            .await
+            .map_err(UserAuthControllerError::from)?;
+
+        let user_response = UserResponse {
+            id: user.id,
+            email: user.email,
+        };
+
+        Ok(user_response)
+    }
+
+    pub async fn authenticate(
         State(state): State<Arc<AppState>>,
         BasicAuth(credentials): BasicAuth,
     ) -> Result<SessionTokenResponse, UserAuthControllerError> {
-        tracing::trace!(method = "auth", email = credentials.public,);
+        tracing::trace!(method = "verify_credentials", email = credentials.public,);
 
-        let auth = AuthModel {
+        let auth = UserLoginCredentials {
             email: credentials.public,
             password: credentials.private,
         };
 
         let db_context = &state.as_ref().db_context;
-        let user_repository = &*state.repository_container.as_ref().user_repository;
+        let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
         let session_token_repository =
             &*state.repository_container.as_ref().session_token_repository;
 
-        let session_token =
-            UserAuthService::login(db_context, user_repository, session_token_repository, &auth)
-                .await
-                .map_err(UserAuthControllerError::from)?;
+        let session_token = UserAuthService::login(
+            db_context,
+            user_auth_repository,
+            session_token_repository,
+            &auth,
+        )
+        .await
+        .map_err(UserAuthControllerError::from)?;
 
         let token_response = SessionTokenResponse {
             session_token: session_token.token,

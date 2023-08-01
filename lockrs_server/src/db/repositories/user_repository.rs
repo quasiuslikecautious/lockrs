@@ -5,16 +5,11 @@ use uuid::Uuid;
 
 use crate::{
     db::{repositories::RepositoryError, DbContext},
-    models::{UserCreateModel, UserModel, UserUpdateModel},
+    models::{UserModel, UserUpdateModel},
 };
 
 #[async_trait]
 pub trait UserRepository: Send + Sync {
-    async fn create(
-        &self,
-        db_context: &Arc<DbContext>,
-        user_create: &UserCreateModel,
-    ) -> Result<UserModel, RepositoryError>;
     async fn get_by_id(
         &self,
         db_context: &Arc<DbContext>,

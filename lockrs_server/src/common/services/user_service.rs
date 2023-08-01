@@ -8,33 +8,12 @@ use crate::{
         repositories::{QueryFailure, RepositoryError, UserRepository},
         DbContext,
     },
-    models::{UserCreateModel, UserModel, UserUpdateModel},
+    models::{UserModel, UserUpdateModel},
 };
 
 pub struct UserService {}
 
 impl UserService {
-    pub async fn create_user(
-        db_context: &Arc<DbContext>,
-        user_repository: &dyn UserRepository,
-        new_user: &UserCreateModel,
-    ) -> Result<UserModel, UserServiceError> {
-        tracing::trace!(method = "create_user", user = new_user.email);
-
-        let user = user_repository
-            .create(db_context, new_user)
-            .await
-            .map_err(UserServiceError::from)?;
-
-        tracing::info!(
-            "User created: {{ id: {}, email: {} }}",
-            user.id.to_string(),
-            user.email,
-        );
-
-        Ok(user)
-    }
-
     pub async fn get_user_by_id(
         db_context: &Arc<DbContext>,
         user_repository: &dyn UserRepository,
