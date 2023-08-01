@@ -38,10 +38,19 @@ impl DeviceAuthorizationService {
             scopes: scopes_model.scopes,
         };
 
-        device_authorization_repository
+        let auth = device_authorization_repository
             .create(db_context, &device_authorization_create)
             .await
-            .map_err(DeviceAuthorizationServiceError::from)
+            .map_err(DeviceAuthorizationServiceError::from)?;
+
+        tracing::info!(
+            "Device Authorization created: {{ client_id: {}, expires_at: {}, scopes: {:?} }}",
+            client_id,
+            auth.expires_at.timestamp(),
+            auth.scopes
+        );
+
+        Ok(auth)
     }
 
     pub async fn get_from_device_code(

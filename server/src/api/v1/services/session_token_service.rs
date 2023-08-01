@@ -33,10 +33,17 @@ impl SessionTokenService {
             expires_at,
         };
 
-        session_token_repository
+        let token = session_token_repository
             .create(db_context, &token_data)
             .await
-            .map_err(SessionTokenServiceError::from)
+            .map_err(SessionTokenServiceError::from)?;
+
+        tracing::info!(
+            "Session token created for user with ID: {}",
+            user_id.to_string(),
+        );
+
+        Ok(token)
     }
 
     fn generate_session_token() -> String {
@@ -60,6 +67,11 @@ impl SessionTokenService {
 
         Self::delete_session_token(db_context, session_token_repository, token.token.as_str())
             .await?;
+
+        tracing::debug!(
+            "Session token validated for user with ID: {}",
+            token.user_id.to_string(),
+        );
 
         Ok(token)
     }

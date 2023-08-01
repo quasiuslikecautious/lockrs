@@ -21,10 +21,18 @@ impl UserService {
     ) -> Result<UserModel, UserServiceError> {
         tracing::trace!(method = "create_user", user = new_user.email);
 
-        user_repository
+        let user = user_repository
             .create(db_context, new_user)
             .await
-            .map_err(UserServiceError::from)
+            .map_err(UserServiceError::from)?;
+
+        tracing::info!(
+            "User created: {{ id: {}, email: {} }}",
+            user.id.to_string(),
+            user.email,
+        );
+
+        Ok(user)
     }
 
     pub async fn get_user_by_id(
@@ -65,10 +73,18 @@ impl UserService {
             user = ?update_user
         );
 
-        user_repository
+        let user = user_repository
             .update_by_id(db_context, id, update_user)
             .await
-            .map_err(UserServiceError::from)
+            .map_err(UserServiceError::from)?;
+
+        tracing::info!(
+            "User updated: {{ id: {}, update_model: {:?} }}",
+            id,
+            update_user
+        );
+
+        Ok(user)
     }
 
     pub async fn delete_user_by_id(
@@ -81,7 +97,11 @@ impl UserService {
         user_repository
             .delete_by_id(db_context, id)
             .await
-            .map_err(UserServiceError::from)
+            .map_err(UserServiceError::from)?;
+
+        tracing::info!("User deleted: {{ id: {} }}", id);
+
+        Ok(())
     }
 }
 

@@ -20,10 +20,19 @@ impl AccessTokenService {
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
         tracing::trace!(method = "create_token",);
 
-        access_token_repository
+        let token = access_token_repository
             .create(db_context, token_create)
             .await
-            .map_err(AccessTokenServiceError::from)
+            .map_err(AccessTokenServiceError::from)?;
+
+        tracing::info!(
+            "Access Token created: {{ client_id: {}, expires_at: {}, scopes: {:?} }}",
+            &token.client_id,
+            &token.expires_at.timestamp(),
+            &token.scopes
+        );
+
+        Ok(token)
     }
 
     pub async fn verify_token(
@@ -33,10 +42,19 @@ impl AccessTokenService {
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
         tracing::trace!(method = "verify_token",);
 
-        access_token_repository
+        let access_token = access_token_repository
             .get_by_token(db_context, token)
             .await
-            .map_err(AccessTokenServiceError::from)
+            .map_err(AccessTokenServiceError::from)?;
+
+        tracing::info!(
+            "Access Token verified: {{ client_id: {}, expires_at: {}, scopes: {:?} }}",
+            &access_token.client_id,
+            &access_token.expires_at.timestamp(),
+            &access_token.scopes
+        );
+
+        Ok(access_token)
     }
 
     pub async fn delete_token(
@@ -49,7 +67,9 @@ impl AccessTokenService {
         access_token_repository
             .delete_by_token(db_context, token)
             .await
-            .map_err(AccessTokenServiceError::from)
+            .map_err(AccessTokenServiceError::from)?;
+
+        Ok(())
     }
 }
 

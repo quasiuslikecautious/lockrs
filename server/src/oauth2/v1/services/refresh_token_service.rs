@@ -20,10 +20,19 @@ impl RefreshTokenService {
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
         tracing::trace!(method = "create_token",);
 
-        refresh_token_repository
+        let token = refresh_token_repository
             .create(db_context, token_create)
             .await
-            .map_err(RefreshTokenServiceError::from)
+            .map_err(RefreshTokenServiceError::from)?;
+
+        tracing::info!(
+            "Refresh Token created: {{ client_id: {}, expires_at: {}, scopes: {:?} }}",
+            &token.client_id,
+            &token.expires_at.timestamp(),
+            &token.scopes
+        );
+
+        Ok(token)
     }
 
     pub async fn get_by_token(
@@ -46,10 +55,19 @@ impl RefreshTokenService {
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
         tracing::trace!(method = "use_token",);
 
-        refresh_token_repository
+        let token = refresh_token_repository
             .use_by_token(db_context, token)
             .await
-            .map_err(RefreshTokenServiceError::from)
+            .map_err(RefreshTokenServiceError::from)?;
+
+        tracing::trace!(
+            "Refresh Token used: {{ client_id: {}, expired_at: {}, scopes: {:?} }}",
+            &token.client_id,
+            &token.expires_at.timestamp(),
+            &token.scopes
+        );
+
+        Ok(token)
     }
 
     pub async fn delete_token(
@@ -62,7 +80,9 @@ impl RefreshTokenService {
         refresh_token_repository
             .delete_by_token(db_context, token)
             .await
-            .map_err(RefreshTokenServiceError::from)
+            .map_err(RefreshTokenServiceError::from)?;
+
+        Ok(())
     }
 }
 

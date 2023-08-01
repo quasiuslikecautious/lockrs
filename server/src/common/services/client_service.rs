@@ -46,10 +46,18 @@ impl ClientService {
             uri: new_client.redirect_url,
         };
 
-        client_repository
+        let client = client_repository
             .create(db_context, &client_create, &redirect_create)
             .await
-            .map_err(ClientServiceError::from)
+            .map_err(ClientServiceError::from)?;
+
+        tracing::info!(
+            "Client created: {{ id: {}, name: {} }}",
+            client.id,
+            client.name,
+        );
+
+        Ok(client)
     }
 
     pub async fn get_client_by_id(
@@ -90,10 +98,18 @@ impl ClientService {
             client = ?update_client,
         );
 
-        client_repository
+        let client = client_repository
             .update_by_id(db_context, id, update_client)
             .await
-            .map_err(ClientServiceError::from)
+            .map_err(ClientServiceError::from)?;
+
+        tracing::info!(
+            "Client updated: {{ id: {}, update_model: {:?} }}",
+            id,
+            update_client,
+        );
+
+        Ok(client)
     }
 
     pub async fn delete_client_by_id(
@@ -106,7 +122,11 @@ impl ClientService {
         client_repository
             .delete_by_id(db_context, id)
             .await
-            .map_err(ClientServiceError::from)
+            .map_err(ClientServiceError::from)?;
+
+        tracing::info!("Client deleted: {}", id);
+
+        Ok(())
     }
 
     pub fn generate_random_string() -> String {

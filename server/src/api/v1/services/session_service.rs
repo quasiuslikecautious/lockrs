@@ -45,10 +45,17 @@ impl SessionService {
         let expires_at = (Utc::now() + *session_duration).timestamp_millis();
 
         let session_data = SessionModel::new(&session_id, &user_id, &expires_at);
-        session_repository
+        let session = session_repository
             .create(db_context, &session_data)
             .await
-            .map_err(SessionServiceError::from)
+            .map_err(SessionServiceError::from)?;
+
+        tracing::info!(
+            "Session created: {:?}",
+            session
+        );
+
+        Ok(session)
     }
 
     pub async fn get_session(
@@ -84,17 +91,23 @@ impl SessionService {
         let mut session =
             Self::get_session(db_context, session_repository, user_id, session_id).await?;
 
-        if !update_model.refresh {
-            return Ok(session);
+        if update_model.refresh {
+            let expires_at = (Utc::now() + *session_duration).timestamp_millis();
+            session.expires_at = expires_at;
+
+            session = session_repository
+                .update(db_context, &session)
+                .await
+                .map_err(SessionServiceError::from)?;
         }
 
-        let expires_at = (Utc::now() + *session_duration).timestamp_millis();
-        session.expires_at = expires_at;
+        tracing::info!(
+            "Session updated: {{ id: {}, update_model: {:?} }}",
+            session_id,
+            update_model,
+        );
 
-        session_repository
-            .update(db_context, &session)
-            .await
-            .map_err(SessionServiceError::from)
+        Ok(session)
     }
 
     pub async fn delete_session(
@@ -104,10 +117,17 @@ impl SessionService {
     ) -> Result<(), SessionServiceError> {
         tracing::trace!(method = "delete_session", ?user_id,);
 
-        session_repository
+        let session = session_repository
             .delete_by_user_id(db_context, user_id)
             .await
-            .map_err(SessionServiceError::from)
+            .map_err(SessionServiceError::from)?;
+
+        tracing::info!(
+            "Session deleted: {{ user_id: {} }}",
+            user_id.to_string()
+        );
+
+        Ok(())
     }
 
     fn generate_session_id() -> String {

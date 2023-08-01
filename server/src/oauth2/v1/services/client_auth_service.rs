@@ -21,10 +21,17 @@ impl ClientAuthService {
     ) -> Result<ClientModel, ClientAuthServiceError> {
         tracing::trace!(method = "verify_credentials", id);
 
-        client_repository
+        let client = client_repository
             .get_by_credentials(db_context, id, secret)
             .await
-            .map_err(ClientAuthServiceError::from)
+            .map_err(ClientAuthServiceError::from)?;
+
+        tracing::info!(
+            "Client authenticated with ID: {}",
+            id
+        );
+
+        Ok(client)
     }
 }
 

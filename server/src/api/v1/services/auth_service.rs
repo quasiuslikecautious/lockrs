@@ -43,6 +43,11 @@ impl AuthService {
         .await
         .map_err(AuthServiceError::from)?;
 
+        tracing::info!(
+            "User successfully authenticated with ID: {}",
+            session_token.user_id.to_string()
+        );
+
         Ok(session_token)
     }
 
@@ -60,9 +65,16 @@ impl AuthService {
             password_hash,
         };
 
-        UserService::create_user(db_context, user_repository, &create_user)
+        let user = UserService::create_user(db_context, user_repository, &create_user)
             .await
-            .map_err(AuthServiceError::from)
+            .map_err(AuthServiceError::from)?;
+
+        tracing::info!(
+            "New user successfully registered with ID: {}",
+            user.id.to_string()
+        );
+
+        Ok(user)
     }
 
     fn hash_password(password: &str) -> Result<String, AuthServiceError> {

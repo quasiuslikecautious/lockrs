@@ -70,7 +70,7 @@ impl TokenService {
         .await
         .map_err(TokenServiceError::from)?;
 
-        Ok(TokenModel {
+        let token = TokenModel {
             token_type: String::from("Bearer"),
             expires_in: 5000,
             access_token: access_token.token,
@@ -79,7 +79,15 @@ impl TokenService {
                 .scopes
                 .into_iter()
                 .fold(String::new(), |c, s| format!("{} {}", c, s)),
-        })
+        };
+
+        tracing::info!(
+            "Token created: {{ client_id: {}, scopes: {:?} }}",
+            client_id,
+            &token.scopes
+        );
+
+        Ok(token)
     }
 
     pub fn generate_opaque_token() -> Result<String, TokenServiceError> {

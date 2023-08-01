@@ -31,10 +31,19 @@ impl RedirectService {
             uri: uri.clone(),
         };
 
-        redirect_repository
+        let redirect = redirect_repository
             .create(db_context, &redirect_create)
             .await
-            .map_err(RedirectServiceError::from)
+            .map_err(RedirectServiceError::from)?;
+
+        tracing::info!(
+            "Redirect Uri created: {{ id: {}, uri: {}, client_id: {} }}",
+            redirect.id,
+            uri.to_string(),
+            client_id,
+        );
+
+        Ok(redirect)
     }
 
     pub async fn verify_redirect(
@@ -49,10 +58,19 @@ impl RedirectService {
             %uri
         );
 
-        redirect_repository
+        let redirect = redirect_repository
             .get_by_uri(db_context, client_id, uri)
             .await
-            .map_err(RedirectServiceError::from)
+            .map_err(RedirectServiceError::from)?;
+
+        tracing::debug!(
+            "Redirect verified: {{ id: {}, uri: {}, client_id: {} }}",
+            redirect.id,
+            uri.to_string(),
+            client_id
+        );
+
+        Ok(redirect)
     }
 
     pub async fn get_redirects_from_client(
