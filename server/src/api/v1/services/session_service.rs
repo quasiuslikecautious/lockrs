@@ -50,10 +50,7 @@ impl SessionService {
             .await
             .map_err(SessionServiceError::from)?;
 
-        tracing::info!(
-            "Session created: {:?}",
-            session
-        );
+        tracing::info!("Session created: {:?}", session);
 
         Ok(session)
     }
@@ -117,15 +114,12 @@ impl SessionService {
     ) -> Result<(), SessionServiceError> {
         tracing::trace!(method = "delete_session", ?user_id,);
 
-        let session = session_repository
+        session_repository
             .delete_by_user_id(db_context, user_id)
             .await
             .map_err(SessionServiceError::from)?;
 
-        tracing::info!(
-            "Session deleted: {{ user_id: {} }}",
-            user_id.to_string()
-        );
+        tracing::info!("Session deleted: {{ user_id: {} }}", user_id.to_string());
 
         Ok(())
     }

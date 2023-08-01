@@ -26,10 +26,7 @@ impl ClientAuthService {
             .await
             .map_err(ClientAuthServiceError::from)?;
 
-        tracing::info!(
-            "Client authenticated with ID: {}",
-            id
-        );
+        tracing::info!("Client authenticated with ID: {}", id);
 
         Ok(client)
     }
