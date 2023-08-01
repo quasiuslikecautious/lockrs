@@ -96,14 +96,14 @@ impl From<RepositoryError> for SessionTokenServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(_, query_err) => match query_err {
+            RepositoryError::QueryFailed(query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated,
                 QueryFailure::NotFound => Self::NotFound,
                 QueryFailure::NotDeleted => Self::NotDeleted,
 
                 _ => Self::InternalError,
             },
-            RepositoryError::InternalError(_) => Self::InternalError,
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

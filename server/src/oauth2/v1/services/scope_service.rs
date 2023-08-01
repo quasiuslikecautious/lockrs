@@ -46,13 +46,13 @@ impl From<RepositoryError> for ScopeServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+            RepositoryError::QueryFailed(query_err) => match query_err {
                 QueryFailure::NotFound => Self::InvalidScopes,
 
                 _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(_msg) => Self::InternalError,
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

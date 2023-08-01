@@ -38,12 +38,12 @@ impl From<RepositoryError> for AuthorizationCodeServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(_, query_err) => match query_err {
+            RepositoryError::QueryFailed(query_err) => match query_err {
                 QueryFailure::NotCreated => Self::NotCreated,
                 _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(_) => Self::InternalError,
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

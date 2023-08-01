@@ -74,7 +74,10 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
                 "Invalid JSON data format for data stored at token {}",
                 token
             );
-            RepositoryError::InternalError(msg)
+
+            tracing::error!(error = msg);
+
+            RepositoryError::InternalError
         })
     }
 
@@ -106,7 +109,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
             );
 
             tracing::error!(error = msg);
-            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
+            return Err(RepositoryError::QueryFailed(QueryFailure::NotDeleted));
         }
 
         Ok(())

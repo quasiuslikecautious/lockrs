@@ -142,7 +142,7 @@ impl From<RepositoryError> for ClientServiceError {
             // BL errors
 
             // CRUD errors
-            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+            RepositoryError::QueryFailed(query_err) => match query_err {
                 QueryFailure::AlreadyExists => Self::AlreadyExists,
                 QueryFailure::NotCreated => Self::NotCreated,
                 QueryFailure::NotFound => Self::NotFound,
@@ -151,7 +151,7 @@ impl From<RepositoryError> for ClientServiceError {
             },
 
             // InternalErrors
-            RepositoryError::InternalError(_msg) => Self::InternalError,
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

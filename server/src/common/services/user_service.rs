@@ -107,7 +107,7 @@ impl From<RepositoryError> for UserServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(_msg, query_error) => match query_error {
+            RepositoryError::QueryFailed(query_error) => match query_error {
                 QueryFailure::AlreadyExists => Self::AlreadyExists,
                 QueryFailure::NotCreated => Self::NotCreated,
                 QueryFailure::NotFound => Self::NotFound,
@@ -115,7 +115,7 @@ impl From<RepositoryError> for UserServiceError {
                 QueryFailure::NotDeleted => Self::NotDeleted,
             },
 
-            RepositoryError::InternalError(_msg) => Self::InternalError,
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

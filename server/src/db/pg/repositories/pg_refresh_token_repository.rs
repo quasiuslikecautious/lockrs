@@ -130,7 +130,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
             );
 
             tracing::error!(error = msg);
-            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
+            return Err(RepositoryError::QueryFailed(QueryFailure::NotDeleted));
         }
 
         Ok(())
