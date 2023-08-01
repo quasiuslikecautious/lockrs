@@ -30,7 +30,7 @@ pub enum RepositoryError {
 
 impl RepositoryError {
     pub fn map_diesel_create(err: DieselError) -> Self {
-        let err_msg = format!("{}", &err);
+        let _err_msg = format!("{}", &err);
         tracing::error!(error = %err);
 
         match err {
@@ -51,7 +51,7 @@ impl RepositoryError {
     }
 
     pub fn map_diesel_found(err: DieselError) -> Self {
-        let err_msg = format!("{}", &err);
+        let _err_msg = format!("{}", &err);
         tracing::error!(error = %err);
         match err {
             DieselError::NotFound => Self::QueryFailed(QueryFailure::NotFound),
@@ -60,7 +60,7 @@ impl RepositoryError {
     }
 
     pub fn map_diesel_update(err: DieselError) -> Self {
-        let err_msg = format!("{}", &err);
+        let _err_msg = format!("{}", &err);
         tracing::error!(error = %err);
         match err {
             DieselError::NotFound => Self::QueryFailed(QueryFailure::NotUpdated),
@@ -82,7 +82,7 @@ impl RepositoryError {
     }
 
     pub fn map_diesel_delete(err: DieselError) -> Self {
-        let err_msg = format!("{}", &err);
+        let _err_msg = format!("{}", &err);
         tracing::error!(error = %err);
         match err {
             DieselError::NotFound => Self::QueryFailed(QueryFailure::NotDeleted),
@@ -123,7 +123,7 @@ impl From<DbContextError> for RepositoryError {
     fn from(err: DbContextError) -> Self {
         tracing::error!(eror = %err);
 
-        let err_msg = format!("{}", &err);
+        let _err_msg = format!("{}", &err);
         Self::InternalError
     }
 }
