@@ -112,7 +112,7 @@ impl From<DeviceAuthorizationServiceError> for DeviceAuthorizationControllerErro
         tracing::error!(error = %err);
 
         match err {
-            DeviceAuthorizationServiceError::NotCreated(_) => Self::BadRequest,
+            DeviceAuthorizationServiceError::NotCreated => Self::BadRequest,
 
             _ => Self::InternalError,
         }
@@ -124,7 +124,7 @@ impl From<ClientAuthServiceError> for DeviceAuthorizationControllerError {
         tracing::error!(error = %err);
 
         match err {
-            ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
+            ClientAuthServiceError::NotFound => Self::InvalidClient,
             _ => Self::InternalError,
         }
     }
@@ -135,7 +135,7 @@ impl From<ScopeServiceError> for DeviceAuthorizationControllerError {
         tracing::error!(error = %err);
 
         match err {
-            ScopeServiceError::InvalidScopes(_) => Self::InvalidScopes,
+            ScopeServiceError::InvalidScopes => Self::InvalidScopes,
             _ => Self::InternalError,
         }
     }

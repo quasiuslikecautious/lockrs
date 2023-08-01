@@ -57,10 +57,7 @@ impl ClientService {
         client_repository: &dyn ClientRepository,
         id: &str,
     ) -> Result<ClientModel, ClientServiceError> {
-        tracing::trace!(
-            method = "get_client_by_id",
-            id
-        );
+        tracing::trace!(method = "get_client_by_id", id);
 
         client_repository
             .get_by_id(db_context, id)
@@ -73,10 +70,7 @@ impl ClientService {
         client_repository: &dyn ClientRepository,
         user_id: &Uuid,
     ) -> Result<Vec<ClientModel>, ClientServiceError> {
-        tracing::trace!(
-            method = "get_clients_by_user",
-            ?user_id,
-        );
+        tracing::trace!(method = "get_clients_by_user", ?user_id,);
 
         client_repository
             .get_all_by_user_id(db_context, user_id)
@@ -107,10 +101,7 @@ impl ClientService {
         client_repository: &dyn ClientRepository,
         id: &str,
     ) -> Result<(), ClientServiceError> {
-        tracing::trace!(
-            method = "create_client",
-            id
-        );
+        tracing::trace!(method = "create_client", id);
 
         client_repository
             .delete_by_id(db_context, id)
@@ -128,19 +119,19 @@ impl ClientService {
 
 #[derive(Debug, Error)]
 pub enum ClientServiceError {
-    #[error("CLIENT SERVICE ERROR :: Already Exists :: {0}")]
-    AlreadyExists(String),
-    #[error("CLIENT SERVICE ERROR :: Not Created :: {0}")]
-    NotCreated(String),
-    #[error("CLIENT SERVICE ERROR :: Not Found :: {0}")]
-    NotFound(String),
-    #[error("CLIENT SERVICE ERROR :: Not Updated :: {0}")]
-    NotUpdated(String),
-    #[error("CLIENT SERVICE ERROR :: Bad Deletion :: {0}")]
-    BadDelete(String),
+    #[error("CLIENT SERVICE ERROR :: Already Exists")]
+    AlreadyExists,
+    #[error("CLIENT SERVICE ERROR :: Not Created")]
+    NotCreated,
+    #[error("CLIENT SERVICE ERROR :: Not Found")]
+    NotFound,
+    #[error("CLIENT SERVICE ERROR :: Not Updated")]
+    NotUpdated,
+    #[error("CLIENT SERVICE ERROR :: Bad Deletion")]
+    BadDelete,
 
-    #[error("CLIENT SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("CLIENT SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for ClientServiceError {
@@ -151,16 +142,16 @@ impl From<RepositoryError> for ClientServiceError {
             // BL errors
 
             // CRUD errors
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::AlreadyExists => Self::AlreadyExists(msg),
-                QueryFailure::NotCreated => Self::NotCreated(msg),
-                QueryFailure::NotFound => Self::NotFound(msg),
-                QueryFailure::NotUpdated => Self::NotUpdated(msg),
-                QueryFailure::NotDeleted => Self::BadDelete(msg),
+            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+                QueryFailure::AlreadyExists => Self::AlreadyExists,
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::NotFound,
+                QueryFailure::NotUpdated => Self::NotUpdated,
+                QueryFailure::NotDeleted => Self::BadDelete,
             },
 
             // InternalErrors
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError(_msg) => Self::InternalError,
         }
     }
 }

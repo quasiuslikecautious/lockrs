@@ -53,11 +53,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_uri",
-            client_id,
-            ?uri
-        );
+        tracing::trace!(method = "get_by_uri", client_id, ?uri);
 
         let conn = &mut db_context
             .as_ref()
@@ -80,10 +76,7 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         db_context: &Arc<DbContext>,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RepositoryError> {
-        tracing::trace!(
-            method = "get_all_by_client_id",
-            client_id,
-        );
+        tracing::trace!(method = "get_all_by_client_id", client_id,);
 
         let conn = &mut db_context
             .as_ref()

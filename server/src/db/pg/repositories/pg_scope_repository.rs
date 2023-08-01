@@ -22,9 +22,7 @@ impl ScopeRepository for PgScopeRepository {
         _db_context: &Arc<DbContext>,
         _scope_create: &ScopeCreateModel,
     ) -> Result<ScopeModel, RepositoryError> {
-        tracing::trace!(
-            method = "create"
-        );
+        tracing::trace!(method = "create");
 
         todo!();
     }
@@ -60,9 +58,7 @@ impl ScopeRepository for PgScopeRepository {
         _db_context: &Arc<DbContext>,
         _id: &str,
     ) -> Result<(), RepositoryError> {
-        tracing::trace!(
-            method = "delete_by_name",
-        );
+        tracing::trace!(method = "delete_by_name",);
 
         todo!();
     }

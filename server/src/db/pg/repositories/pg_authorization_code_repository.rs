@@ -19,9 +19,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         _db_context: &Arc<DbContext>,
         _auth_code_create: &AuthorizationCodeCreateModel,
     ) -> Result<AuthorizationCodeModel, RepositoryError> {
-        tracing::trace!(
-            method = "create"
-        );
+        tracing::trace!(method = "create");
 
         todo!();
     }
@@ -31,9 +29,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         _db_context: &Arc<DbContext>,
         _id: &str,
     ) -> Result<AuthorizationCodeModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_id"
-        );
+        tracing::trace!(method = "get_by_id");
 
         todo!();
     }
@@ -43,9 +39,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         _db_context: &Arc<DbContext>,
         _code: &str,
     ) -> Result<AuthorizationCodeModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_code"
-        );
+        tracing::trace!(method = "get_by_code");
 
         todo!();
     }
@@ -55,9 +49,7 @@ impl AuthorizationCodeRepository for PgAuthorizationCodeRepository {
         _db_context: &Arc<DbContext>,
         _id: &str,
     ) -> Result<AuthorizationCodeModel, RepositoryError> {
-        tracing::trace!(
-            method = "delete_by_id"
-        );
+        tracing::trace!(method = "delete_by_id");
 
         todo!();
     }

@@ -31,10 +31,7 @@ impl SessionController {
         State(_state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> impl IntoResponse {
-        tracing::trace!(
-            method = "read_all",
-            user_id = user_id.to_string()
-        );
+        tracing::trace!(method = "read_all", user_id = user_id.to_string());
 
         (
             StatusCode::NOT_IMPLEMENTED,
@@ -46,9 +43,7 @@ impl SessionController {
         State(state): State<Arc<AppState>>,
         BearerAuth(session_token): BearerAuth,
     ) -> Result<NewSessionResponse, SessionControllerError> {
-        tracing::trace!(
-            method = "create"
-        );
+        tracing::trace!(method = "create");
 
         let db_context = &state.as_ref().db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
@@ -84,10 +79,7 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        tracing::trace!(
-            method = "read",
-            session_id = session_id
-        );
+        tracing::trace!(method = "read", session_id = session_id);
 
         let db_context = &state.as_ref().db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
@@ -150,10 +142,7 @@ impl SessionController {
         SessionJwt(jwt): SessionJwt,
         Path(session_id): Path<String>,
     ) -> Result<EndSessionResponse, SessionControllerError> {
-        tracing::trace!(
-            method = "delete",
-            session_id = session_id
-        );
+        tracing::trace!(method = "delete", session_id = session_id);
 
         if jwt.id != session_id {
             return Err(SessionControllerError::Jwt);
@@ -205,16 +194,16 @@ impl SessionControllerError {
 impl From<SessionServiceError> for SessionControllerError {
     fn from(err: SessionServiceError) -> Self {
         tracing::error!(error = %err);
-        
+
         match err {
-            SessionServiceError::Token(_) => Self::SessionToken,
-            SessionServiceError::NotFound(_) => Self::NotFound,
+            SessionServiceError::Token => Self::SessionToken,
+            SessionServiceError::NotFound => Self::NotFound,
 
-            SessionServiceError::NotCreated(_) => Self::BadRequest,
-            SessionServiceError::NotUpdated(_) => Self::BadRequest,
-            SessionServiceError::NotDeleted(_) => Self::BadRequest,
+            SessionServiceError::NotCreated => Self::BadRequest,
+            SessionServiceError::NotUpdated => Self::BadRequest,
+            SessionServiceError::NotDeleted => Self::BadRequest,
 
-            SessionServiceError::InternalError(_) => Self::InternalError,
+            SessionServiceError::InternalError => Self::InternalError,
         }
     }
 }

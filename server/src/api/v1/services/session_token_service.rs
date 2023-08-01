@@ -22,10 +22,7 @@ impl SessionTokenService {
         session_token_repository: &dyn SessionTokenRepository,
         user_id: &Uuid,
     ) -> Result<SessionTokenModel, SessionTokenServiceError> {
-        tracing::trace!(
-            method = "create_session_token",
-            ?user_id
-        );
+        tracing::trace!(method = "create_session_token", ?user_id);
 
         let ttl = Duration::minutes(5);
         let expires_at = (Utc::now() + ttl).timestamp_millis();
@@ -54,9 +51,7 @@ impl SessionTokenService {
         session_token_repository: &dyn SessionTokenRepository,
         token: &str,
     ) -> Result<SessionTokenModel, SessionTokenServiceError> {
-        tracing::trace!(
-            method = "validate_session_token",
-        );
+        tracing::trace!(method = "validate_session_token",);
 
         let token = session_token_repository
             .get_by_token(db_context, token)
@@ -74,9 +69,7 @@ impl SessionTokenService {
         session_token_repository: &dyn SessionTokenRepository,
         token: &str,
     ) -> Result<(), SessionTokenServiceError> {
-        tracing::trace!(
-            method = "delete_session_token",
-        );
+        tracing::trace!(method = "delete_session_token",);
 
         session_token_repository
             .delete_by_token(db_context, token)
@@ -87,15 +80,15 @@ impl SessionTokenService {
 
 #[derive(Debug, Error)]
 pub enum SessionTokenServiceError {
-    #[error("SESSION TOKEN SERVICE ERROR :: Not Created :: {0}")]
-    NotCreated(String),
-    #[error("SESSION TOKEN SERVICE ERROR :: Not Found :: {0}")]
-    NotFound(String),
-    #[error("SESSION TOKEN SERVICE ERROR :: Not Deleted :: {0}")]
-    NotDeleted(String),
+    #[error("SESSION TOKEN SERVICE ERROR :: Not Created")]
+    NotCreated,
+    #[error("SESSION TOKEN SERVICE ERROR :: Not Found")]
+    NotFound,
+    #[error("SESSION TOKEN SERVICE ERROR :: Not Deleted")]
+    NotDeleted,
 
-    #[error("SESSION TOKEN SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("SESSION TOKEN SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for SessionTokenServiceError {
@@ -103,14 +96,14 @@ impl From<RepositoryError> for SessionTokenServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotCreated => Self::NotCreated(msg),
-                QueryFailure::NotFound => Self::NotFound(msg),
-                QueryFailure::NotDeleted => Self::NotDeleted(msg),
+            RepositoryError::QueryFailed(_, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::NotFound,
+                QueryFailure::NotDeleted => Self::NotDeleted,
 
-                _ => Self::InternalError(msg),
+                _ => Self::InternalError,
             },
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError(_) => Self::InternalError,
         }
     }
 }

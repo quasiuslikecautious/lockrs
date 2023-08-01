@@ -26,9 +26,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token_create: &RefreshTokenCreateModel,
     ) -> Result<RefreshTokenModel, RepositoryError> {
-        tracing::trace!(
-            method = "create",
-        );
+        tracing::trace!(method = "create",);
 
         let conn = &mut db_context
             .as_ref()
@@ -56,9 +54,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<RefreshTokenModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_token",
-        );
+        tracing::trace!(method = "get_by_token",);
 
         let conn = &mut db_context
             .as_ref()
@@ -85,9 +81,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<RefreshTokenModel, RepositoryError> {
-        tracing::trace!(
-            method = "use_by_token",
-        );
+        tracing::trace!(method = "use_by_token",);
 
         let conn = &mut db_context
             .as_ref()
@@ -115,9 +109,7 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
-        tracing::trace!(
-            method = "delete_by_token",
-        );
+        tracing::trace!(method = "delete_by_token",);
 
         let conn = &mut db_context
             .as_ref()

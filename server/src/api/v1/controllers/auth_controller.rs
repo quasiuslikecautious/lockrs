@@ -19,10 +19,7 @@ impl AuthController {
         State(state): State<Arc<AppState>>,
         BasicAuth(credentials): BasicAuth,
     ) -> Result<SessionTokenResponse, AuthControllerError> {
-        tracing::trace!(
-            method = "auth",
-            email = credentials.public, 
-        );
+        tracing::trace!(method = "auth", email = credentials.public,);
 
         let auth = AuthModel {
             email: credentials.public,
@@ -76,7 +73,7 @@ impl From<AuthServiceError> for AuthControllerError {
         tracing::error!(error = %err);
 
         match err {
-            AuthServiceError::Credentials(_) => Self::InvalidCredentials,
+            AuthServiceError::Credentials => Self::InvalidCredentials,
             _ => Self::Internal,
         }
     }

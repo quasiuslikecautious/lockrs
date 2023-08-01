@@ -31,12 +31,7 @@ impl TokenService {
         user_id: Option<&Uuid>,
         scopes: ScopeModel,
     ) -> Result<TokenModel, TokenServiceError> {
-        tracing::trace!(
-            method = "create_token",
-            client_id,
-            ?user_id,
-            ?scopes
-        );
+        tracing::trace!(method = "create_token", client_id, ?user_id, ?scopes);
 
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
 
@@ -94,7 +89,7 @@ impl TokenService {
             let msg = "ring::SystemRandom::fill failed on generate_opaque_token";
 
             tracing::error!(error = msg);
-            TokenServiceError::InternalError(msg.into())
+            TokenServiceError::InternalError
         })?;
         Ok(general_purpose::URL_SAFE_NO_PAD.encode(buffer))
     }
@@ -102,11 +97,11 @@ impl TokenService {
 
 #[derive(Debug, Error)]
 pub enum TokenServiceError {
-    #[error("TOKEN SERVICE ERROR :: Token Not Created :: {0} ")]
-    NotCreated(String),
+    #[error("TOKEN SERVICE ERROR :: Token Not Created")]
+    NotCreated,
 
-    #[error("TOKEN SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("TOKEN SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<AccessTokenServiceError> for TokenServiceError {
@@ -114,11 +109,11 @@ impl From<AccessTokenServiceError> for TokenServiceError {
         tracing::error!(error = %err);
 
         match err {
-            AccessTokenServiceError::NotCreated(msg) => Self::NotCreated(msg),
+            AccessTokenServiceError::NotCreated => Self::NotCreated,
 
-            AccessTokenServiceError::NotFound(msg) => Self::InternalError(msg),
-            AccessTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
-            AccessTokenServiceError::InternalError(msg) => Self::InternalError(msg),
+            AccessTokenServiceError::NotFound => Self::InternalError,
+            AccessTokenServiceError::NotDeleted => Self::InternalError,
+            AccessTokenServiceError::InternalError => Self::InternalError,
         }
     }
 }
@@ -128,12 +123,12 @@ impl From<RefreshTokenServiceError> for TokenServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RefreshTokenServiceError::NotCreated(msg) => Self::NotCreated(msg),
+            RefreshTokenServiceError::NotCreated => Self::NotCreated,
 
-            RefreshTokenServiceError::NotFound(msg) => Self::InternalError(msg),
-            RefreshTokenServiceError::NotUpdated(msg) => Self::InternalError(msg),
-            RefreshTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
-            RefreshTokenServiceError::InternalError(msg) => Self::InternalError(msg),
+            RefreshTokenServiceError::NotFound => Self::InternalError,
+            RefreshTokenServiceError::NotUpdated => Self::InternalError,
+            RefreshTokenServiceError::NotDeleted => Self::InternalError,
+            RefreshTokenServiceError::InternalError => Self::InternalError,
         }
     }
 }

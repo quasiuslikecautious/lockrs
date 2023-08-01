@@ -60,10 +60,7 @@ impl RedirectService {
         redirect_repository: &dyn RedirectUriRepository,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RedirectServiceError> {
-        tracing::trace!(
-            method = "get_redirects_from_client",
-            client_id,
-        );
+        tracing::trace!(method = "get_redirects_from_client", client_id,);
 
         redirect_repository
             .get_all_by_client_id(db_context, client_id)
@@ -74,13 +71,13 @@ impl RedirectService {
 
 #[derive(Debug, Error)]
 pub enum RedirectServiceError {
-    #[error("REDIRECT SERVICE ERROR :: Redirect not created :: {0}")]
-    NotCreated(String),
-    #[error("REDIRECT SERVICE ERROR :: Redirect not found :: {0}")]
-    NotFound(String),
+    #[error("REDIRECT SERVICE ERROR :: Redirect not created")]
+    NotCreated,
+    #[error("REDIRECT SERVICE ERROR :: Redirect not found")]
+    NotFound,
 
-    #[error("REDIRECT SERVICE ERROR :: Internal error :: {0}")]
-    InternalError(String),
+    #[error("REDIRECT SERVICE ERROR :: Internal error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for RedirectServiceError {
@@ -88,13 +85,13 @@ impl From<RepositoryError> for RedirectServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotCreated => Self::NotCreated(msg),
-                QueryFailure::NotFound => Self::NotFound(msg),
-                _ => Self::InternalError("TODO error not implemented".to_string()),
+            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::NotFound,
+                _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError(_msg) => Self::InternalError,
         }
     }
 }

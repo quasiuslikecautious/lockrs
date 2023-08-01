@@ -26,9 +26,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &SessionTokenModel,
     ) -> Result<SessionTokenModel, RepositoryError> {
-        tracing::trace!(
-            method = "create"
-        );
+        tracing::trace!(method = "create");
 
         let key = Self::into_redis_key(token.token.as_str());
         let value = serde_json::to_string(token).unwrap();
@@ -56,9 +54,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<SessionTokenModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_token"
-        );
+        tracing::trace!(method = "get_by_token");
 
         let key = Self::into_redis_key(token);
 
@@ -87,9 +83,7 @@ impl SessionTokenRepository for RedisSessionTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
-        tracing::trace!(
-            method = "delete_by_token"
-        );
+        tracing::trace!(method = "delete_by_token");
 
         let key = Self::into_redis_key(token);
 

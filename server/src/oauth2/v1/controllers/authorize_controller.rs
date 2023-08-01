@@ -9,7 +9,9 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    oauth2::v1::services::{ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError},
+    oauth2::v1::services::{
+        ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError,
+    },
     services::{RedirectService, RedirectServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
@@ -115,7 +117,7 @@ impl From<ClientAuthServiceError> for AuthorizeControllerError {
         tracing::error!(error = %err);
 
         match err {
-            ClientAuthServiceError::NotFound(_) => Self::InvalidRedirectUri,
+            ClientAuthServiceError::NotFound => Self::InvalidRedirectUri,
             _ => Self::InternalError,
         }
     }
@@ -126,7 +128,7 @@ impl From<RedirectServiceError> for AuthorizeControllerError {
         tracing::error!(error = %err);
 
         match err {
-            RedirectServiceError::NotFound(_) => Self::InvalidClient,
+            RedirectServiceError::NotFound => Self::InvalidClient,
             _ => Self::InternalError,
         }
     }
@@ -137,7 +139,7 @@ impl From<ScopeServiceError> for AuthorizeControllerError {
         tracing::error!(error = %err);
 
         match err {
-            ScopeServiceError::InvalidScopes(_) => Self::InvalidScopes,
+            ScopeServiceError::InvalidScopes => Self::InvalidScopes,
             _ => Self::InternalError,
         }
     }

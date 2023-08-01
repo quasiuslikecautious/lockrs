@@ -49,9 +49,7 @@ impl DeviceAuthorizationService {
         device_authorization_repository: &dyn DeviceAuthorizationRepository,
         device_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
-        tracing::trace!(
-            method = "get_from_device_code",
-        );
+        tracing::trace!(method = "get_from_device_code",);
 
         device_authorization_repository
             .get_by_device_code(db_context, device_code)
@@ -64,9 +62,7 @@ impl DeviceAuthorizationService {
         device_authorization_repository: &dyn DeviceAuthorizationRepository,
         user_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
-        tracing::trace!(
-            method = "get_from_user",
-        );
+        tracing::trace!(method = "get_from_user",);
 
         device_authorization_repository
             .get_by_user_code(db_context, user_code)
@@ -83,9 +79,9 @@ impl DeviceAuthorizationService {
         let rng = SystemRandom::new();
 
         rng.fill(&mut buffer).map_err(|_| {
-            DeviceAuthorizationServiceError::InternalError(
-                "Filling SystemRandom failed on generate_user_code.".into(),
-            )
+            tracing::error!(error = "Filling SystemRandom failed on generate_user_code.",);
+
+            DeviceAuthorizationServiceError::InternalError
         })?;
 
         for byte in buffer.iter() {
@@ -101,9 +97,9 @@ impl DeviceAuthorizationService {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
         rng.fill(&mut buffer).map_err(|_| {
-            DeviceAuthorizationServiceError::InternalError(
-                "Filling SystemRandom failed on generate_device_code".into(),
-            )
+            tracing::error!(error = "Filling SystemRandom failed on generate_device_code",);
+
+            DeviceAuthorizationServiceError::InternalError
         })?;
         let code = general_purpose::URL_SAFE_NO_PAD.encode(buffer);
 
@@ -113,13 +109,13 @@ impl DeviceAuthorizationService {
 
 #[derive(Debug, Error)]
 pub enum DeviceAuthorizationServiceError {
-    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not created :: {0}")]
-    NotCreated(String),
-    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not found :: {0}")]
-    NotFound(String),
+    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not created")]
+    NotCreated,
+    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not found")]
+    NotFound,
 
-    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for DeviceAuthorizationServiceError {
@@ -127,14 +123,14 @@ impl From<RepositoryError> for DeviceAuthorizationServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotCreated => Self::NotCreated(msg),
-                QueryFailure::NotFound => Self::NotFound(msg),
+            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::NotFound,
 
-                _ => Self::InternalError(msg),
+                _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError(_msg) => Self::InternalError,
         }
     }
 }

@@ -81,10 +81,7 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
     ) -> Result<ClientModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_id",
-            id
-        );
+        tracing::trace!(method = "get_by_id", id);
 
         let conn = &mut db_context
             .as_ref()
@@ -107,10 +104,7 @@ impl ClientRepository for PgClientRepository {
         id: &str,
         secret: Option<&str>,
     ) -> Result<ClientModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_credentials",
-            id
-        );
+        tracing::trace!(method = "get_by_credentials", id);
 
         let mut query = clients::table
             .into_boxed()
@@ -140,10 +134,7 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<Vec<ClientModel>, RepositoryError> {
-        tracing::trace!(
-            method = "get_all_by_user_id",
-            ?id
-        );
+        tracing::trace!(method = "get_all_by_user_id", ?id);
 
         let conn = &mut db_context
             .as_ref()
@@ -196,10 +187,7 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
     ) -> Result<(), RepositoryError> {
-        tracing::trace!(
-            method = "delete_by_id",
-            id
-        );
+        tracing::trace!(method = "delete_by_id", id);
 
         let conn = &mut db_context
             .as_ref()

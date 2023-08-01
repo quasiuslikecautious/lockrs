@@ -18,9 +18,7 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token_create: &RefreshTokenCreateModel,
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
-        tracing::trace!(
-            method = "create_token",
-        );
+        tracing::trace!(method = "create_token",);
 
         refresh_token_repository
             .create(db_context, token_create)
@@ -33,9 +31,7 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token: &str,
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
-        tracing::trace!(
-            method = "get_by_token",
-        );
+        tracing::trace!(method = "get_by_token",);
 
         refresh_token_repository
             .get_by_token(db_context, token)
@@ -48,9 +44,7 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token: &str,
     ) -> Result<RefreshTokenModel, RefreshTokenServiceError> {
-        tracing::trace!(
-            method = "use_token",
-        );
+        tracing::trace!(method = "use_token",);
 
         refresh_token_repository
             .use_by_token(db_context, token)
@@ -63,9 +57,7 @@ impl RefreshTokenService {
         refresh_token_repository: &dyn RefreshTokenRepository,
         token: &str,
     ) -> Result<(), RefreshTokenServiceError> {
-        tracing::trace!(
-            method = "delete_token",
-        );
+        tracing::trace!(method = "delete_token",);
 
         refresh_token_repository
             .delete_by_token(db_context, token)
@@ -76,17 +68,17 @@ impl RefreshTokenService {
 
 #[derive(Debug, Error)]
 pub enum RefreshTokenServiceError {
-    #[error("REFRESH TOKEN SERVICE ERROR :: Token not created :: {0}")]
-    NotCreated(String),
-    #[error("REFRESH TOKEN SERVICE ERROR :: Token not found :: {0}")]
-    NotFound(String),
-    #[error("REFRESH TOKEN SERVICE ERROR :: Token not updated :: {0}")]
-    NotUpdated(String),
-    #[error("REFRESH TOKEN SERVICE ERROR :: Token not deleted :: {0}")]
-    NotDeleted(String),
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not created")]
+    NotCreated,
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not found")]
+    NotFound,
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not updated")]
+    NotUpdated,
+    #[error("REFRESH TOKEN SERVICE ERROR :: Token not deleted")]
+    NotDeleted,
 
-    #[error("REFRESH TOKEN SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("REFRESH TOKEN SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for RefreshTokenServiceError {
@@ -94,16 +86,16 @@ impl From<RepositoryError> for RefreshTokenServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotCreated => Self::NotCreated(msg),
-                QueryFailure::NotFound => Self::NotFound(msg),
-                QueryFailure::NotUpdated => Self::NotUpdated(msg),
-                QueryFailure::NotDeleted => Self::NotDeleted(msg),
+            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::NotFound,
+                QueryFailure::NotUpdated => Self::NotUpdated,
+                QueryFailure::NotDeleted => Self::NotDeleted,
 
-                _ => Self::InternalError(msg),
+                _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError(_msg) => Self::InternalError,
         }
     }
 }

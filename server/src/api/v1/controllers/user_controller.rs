@@ -40,10 +40,7 @@ impl UserController {
         State(state): State<Arc<AppState>>,
         Json(register_request): Json<RegisterRequest>,
     ) -> Result<UserResponse, UserControllerError> {
-        tracing::trace!(
-            method = "create",
-            email = register_request.email, 
-        );
+        tracing::trace!(method = "create", email = register_request.email,);
 
         let registration = RegisterModel {
             email: register_request.email,
@@ -70,10 +67,7 @@ impl UserController {
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<UserResponse, UserControllerError> {
-        tracing::trace!(
-            method = "read",
-            id = user_id.to_string(), 
-        );
+        tracing::trace!(method = "read", id = user_id.to_string(),);
 
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
@@ -87,7 +81,7 @@ impl UserController {
                 tracing::error!(error = %err);
 
                 match err {
-                    UserServiceError::NotFound(_) => UserControllerError::NotFound,
+                    UserServiceError::NotFound => UserControllerError::NotFound,
                     _ => UserControllerError::Internal,
                 }
             })?;
@@ -106,7 +100,7 @@ impl UserController {
     ) -> Result<UserResponse, UserControllerError> {
         tracing::trace!(
             method = "update",
-            id = user_id.to_string(), 
+            id = user_id.to_string(),
             data = ?update_user_request,
         );
 
@@ -136,10 +130,7 @@ impl UserController {
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<StatusCode, UserControllerError> {
-        tracing::trace!(
-            method = "delete",
-            id = user_id.to_string()
-        );
+        tracing::trace!(method = "delete", id = user_id.to_string());
 
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
@@ -153,7 +144,7 @@ impl UserController {
                 tracing::error!(error = %err);
 
                 match err {
-                    UserServiceError::NotFound(_) => UserControllerError::NotFound,
+                    UserServiceError::NotFound => UserControllerError::NotFound,
                     _ => UserControllerError::Internal,
                 }
             })?;
@@ -199,7 +190,7 @@ impl From<AuthServiceError> for UserControllerError {
         tracing::error!(error = %err);
 
         match err {
-            AuthServiceError::AlreadyExists(_) => Self::AlreadyExists,
+            AuthServiceError::AlreadyExists => Self::AlreadyExists,
             _ => Self::Internal,
         }
     }
@@ -210,14 +201,12 @@ impl From<UserServiceError> for UserControllerError {
         tracing::error!(error = %err);
 
         match err {
-            UserServiceError::AlreadyExists(_) => Self::AlreadyExists,
-            UserServiceError::NotFound(_) => Self::NotFound,
+            UserServiceError::AlreadyExists => Self::AlreadyExists,
+            UserServiceError::NotFound => Self::NotFound,
 
-            UserServiceError::NotCreated(_) => Self::BadRequest,
-            UserServiceError::NotUpdated(_) => Self::BadRequest,
-            UserServiceError::NotDeleted(_) => Self::BadRequest,
+            UserServiceError::InternalError => Self::Internal,
 
-            UserServiceError::InternalError(_) => Self::Internal,
+            _ => Self::BadRequest,
         }
     }
 }

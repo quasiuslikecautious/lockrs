@@ -27,9 +27,7 @@ impl AuthService {
         session_token_repository: &dyn SessionTokenRepository,
         user_auth: &AuthModel,
     ) -> Result<SessionTokenModel, AuthServiceError> {
-        tracing::trace!(
-            method = "login",
-        );
+        tracing::trace!(method = "login",);
 
         let user = UserService::get_user_by_email(db_context, user_repository, &user_auth.email)
             .await
@@ -53,9 +51,7 @@ impl AuthService {
         user_repository: &dyn UserRepository,
         register_user: &RegisterModel,
     ) -> Result<UserModel, AuthServiceError> {
-        tracing::trace!(
-            method = "register_user",
-        );
+        tracing::trace!(method = "register_user",);
 
         let password_hash = Self::hash_password(register_user.password.as_str())?;
 
@@ -77,9 +73,9 @@ impl AuthService {
         let valid_password = verify(password, hash).map_err(AuthServiceError::from)?;
 
         if !valid_password {
-            return Err(AuthServiceError::Credentials(
-                "Invalid password supplied".to_string(),
-            ));
+            let msg = "Invalid password supplied";
+            tracing::error!(error = msg);
+            return Err(AuthServiceError::Credentials);
         }
 
         Ok(())
@@ -88,17 +84,17 @@ impl AuthService {
 
 #[derive(Debug, Error)]
 pub enum AuthServiceError {
-    #[error("AUTH SERVICE ERROR :: Invalid token :: {0}")]
-    Token(String),
-    #[error("AUTH SERVICE ERROR :: Invalid credentials :: {0}")]
-    Credentials(String),
-    #[error("AUTH SERVICE ERROR :: User already exists :: {0}")]
-    AlreadyExists(String),
-    #[error("AUTH SERVICE ERROR :: User not created :: {0}")]
-    NotCreated(String),
+    #[error("AUTH SERVICE ERROR :: Invalid token")]
+    Token,
+    #[error("AUTH SERVICE ERROR :: Invalid credentials")]
+    Credentials,
+    #[error("AUTH SERVICE ERROR :: User already exists")]
+    AlreadyExists,
+    #[error("AUTH SERVICE ERROR :: User not created")]
+    NotCreated,
 
-    #[error("AUTH SERVICE ERROR :: Internal error :: {0}")]
-    InternalError(String),
+    #[error("AUTH SERVICE ERROR :: Internal error")]
+    InternalError,
 }
 
 impl From<UserServiceError> for AuthServiceError {
@@ -106,13 +102,13 @@ impl From<UserServiceError> for AuthServiceError {
         tracing::error!(error = %err);
 
         match err {
-            UserServiceError::AlreadyExists(msg) => Self::AlreadyExists(msg),
-            UserServiceError::NotCreated(msg) => Self::NotCreated(msg),
-            UserServiceError::NotFound(msg) => Self::Credentials(msg),
+            UserServiceError::AlreadyExists => Self::AlreadyExists,
+            UserServiceError::NotCreated => Self::NotCreated,
+            UserServiceError::NotFound => Self::Credentials,
             // QueryFailure::NotUpdated => Self::NotUpdated(msg),
-            UserServiceError::InternalError(msg) => Self::InternalError(msg),
+            UserServiceError::InternalError => Self::InternalError,
 
-            _ => Self::InternalError("TODO Error not implemented".to_string()),
+            _ => Self::InternalError,
         }
     }
 }
@@ -122,12 +118,12 @@ impl From<SessionTokenServiceError> for AuthServiceError {
         tracing::error!(error = %err);
 
         match err {
-            SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
+            SessionTokenServiceError::NotFound => Self::Token,
 
-            SessionTokenServiceError::NotCreated(msg) => Self::InternalError(msg),
-            SessionTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
+            SessionTokenServiceError::NotCreated => Self::InternalError,
+            SessionTokenServiceError::NotDeleted => Self::InternalError,
 
-            SessionTokenServiceError::InternalError(msg) => Self::InternalError(msg),
+            SessionTokenServiceError::InternalError => Self::InternalError,
         }
     }
 }
@@ -136,6 +132,6 @@ impl From<BcryptError> for AuthServiceError {
     fn from(err: BcryptError) -> Self {
         tracing::error!(error = ?err);
 
-        Self::InternalError(format!("{:?}", err))
+        Self::InternalError
     }
 }

@@ -19,10 +19,7 @@ impl ClientAuthService {
         id: &str,
         secret: Option<&str>,
     ) -> Result<ClientModel, ClientAuthServiceError> {
-        tracing::trace!(
-            method = "verify_credentials",
-            id
-        );
+        tracing::trace!(method = "verify_credentials", id);
 
         client_repository
             .get_by_credentials(db_context, id, secret)
@@ -33,11 +30,11 @@ impl ClientAuthService {
 
 #[derive(Debug, Error)]
 pub enum ClientAuthServiceError {
-    #[error("CLIENT AUTH SERVICE ERROR :: Not found :: {0}")]
-    NotFound(String),
+    #[error("CLIENT AUTH SERVICE ERROR :: Not found")]
+    NotFound,
 
-    #[error("CLIENT AUTH SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("CLIENT AUTH SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for ClientAuthServiceError {
@@ -45,13 +42,13 @@ impl From<RepositoryError> for ClientAuthServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotFound => Self::NotFound(msg),
+            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+                QueryFailure::NotFound => Self::NotFound,
 
-                _ => Self::InternalError(msg),
+                _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError(_msg) => Self::InternalError,
         }
     }
 }

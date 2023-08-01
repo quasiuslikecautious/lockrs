@@ -26,9 +26,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token_create: &AccessTokenCreateModel,
     ) -> Result<AccessTokenModel, RepositoryError> {
-        tracing::trace!(
-            method = "create"
-        );
+        tracing::trace!(method = "create");
 
         let conn = &mut db_context
             .as_ref()
@@ -56,9 +54,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<AccessTokenModel, RepositoryError> {
-        tracing::trace!(
-            method = "get_by_token"
-        );
+        tracing::trace!(method = "get_by_token");
 
         let conn = &mut db_context
             .as_ref()
@@ -84,9 +80,7 @@ impl AccessTokenRepository for PgAccessTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
-        tracing::trace!(
-            method = "delete_by_token"
-        );
+        tracing::trace!(method = "delete_by_token");
 
         let conn = &mut db_context
             .as_ref()

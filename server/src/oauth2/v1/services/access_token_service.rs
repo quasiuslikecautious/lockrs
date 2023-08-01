@@ -18,9 +18,7 @@ impl AccessTokenService {
         access_token_repository: &dyn AccessTokenRepository,
         token_create: &AccessTokenCreateModel,
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
-        tracing::trace!(
-            method = "create_token",
-        );
+        tracing::trace!(method = "create_token",);
 
         access_token_repository
             .create(db_context, token_create)
@@ -33,9 +31,7 @@ impl AccessTokenService {
         access_token_repository: &dyn AccessTokenRepository,
         token: &str,
     ) -> Result<AccessTokenModel, AccessTokenServiceError> {
-        tracing::trace!(
-            method = "verify_token",
-        );
+        tracing::trace!(method = "verify_token",);
 
         access_token_repository
             .get_by_token(db_context, token)
@@ -48,9 +44,7 @@ impl AccessTokenService {
         access_token_repository: &dyn AccessTokenRepository,
         token: &str,
     ) -> Result<(), AccessTokenServiceError> {
-        tracing::trace!(
-            method = "delete_token",
-        );
+        tracing::trace!(method = "delete_token",);
 
         access_token_repository
             .delete_by_token(db_context, token)
@@ -61,15 +55,15 @@ impl AccessTokenService {
 
 #[derive(Debug, Error)]
 pub enum AccessTokenServiceError {
-    #[error("ACCESS TOKEN SERVICE ERROR :: Token not created :: {0}")]
-    NotCreated(String),
-    #[error("ACCESS TOKEN SERVICE ERROR :: Token not found :: {0}")]
-    NotFound(String),
-    #[error("ACCESS TOKEN SERVICE ERROR :: Token not deleted :: {0}")]
-    NotDeleted(String),
+    #[error("ACCESS TOKEN SERVICE ERROR :: Token not created")]
+    NotCreated,
+    #[error("ACCESS TOKEN SERVICE ERROR :: Token not found")]
+    NotFound,
+    #[error("ACCESS TOKEN SERVICE ERROR :: Token not deleted")]
+    NotDeleted,
 
-    #[error("ACCESS TOKEN SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("ACCESS TOKEN SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for AccessTokenServiceError {
@@ -77,15 +71,15 @@ impl From<RepositoryError> for AccessTokenServiceError {
         tracing::error!(error = %err);
 
         match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotCreated => Self::NotCreated(msg),
-                QueryFailure::NotFound => Self::NotFound(msg),
-                QueryFailure::NotDeleted => Self::NotDeleted(msg),
+            RepositoryError::QueryFailed(_msg, query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::NotFound,
+                QueryFailure::NotDeleted => Self::NotDeleted,
 
-                _ => Self::InternalError(msg),
+                _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError(_msg) => Self::InternalError,
         }
     }
 }

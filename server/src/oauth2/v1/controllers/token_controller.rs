@@ -13,7 +13,7 @@ use crate::{
     oauth2::v1::models::ScopeModel,
     oauth2::v1::services::{
         ClientAuthService, ClientAuthServiceError, RefreshTokenService, RefreshTokenServiceError,
-        ScopeService, TokenService, ScopeServiceError,
+        ScopeService, ScopeServiceError, TokenService,
     },
     oauth2::v1::{responses::TokenResponse, services::TokenServiceError},
     utils::extractors::ExtractClientCredentials,
@@ -80,7 +80,7 @@ impl TokenController {
             _ => {
                 tracing::error!(error = "Invalid grant type supplied.");
                 Err(TokenControllerError::InvalidGrantType)
-            },
+            }
         }?;
 
         Ok(token)
@@ -89,9 +89,7 @@ impl TokenController {
     pub async fn authorization_code_token(
         _state: Arc<AppState>,
     ) -> Result<TokenResponse, TokenControllerError> {
-        tracing::trace!(
-            method = "authorization_code_token"
-        );
+        tracing::trace!(method = "authorization_code_token");
 
         // validate params
         // store/cache param info
@@ -102,9 +100,7 @@ impl TokenController {
     pub async fn device_authorization_token(
         _state: Arc<AppState>,
     ) -> Result<TokenResponse, TokenControllerError> {
-        tracing::trace!(
-            method = "device_authorization_token"
-        );
+        tracing::trace!(method = "device_authorization_token");
 
         // validate params
         // handle polling
@@ -246,8 +242,8 @@ impl From<TokenServiceError> for TokenControllerError {
         tracing::error!(error = %err);
 
         match err {
-            TokenServiceError::NotCreated(_) => Self::BadRequest,
-            TokenServiceError::InternalError(_) => Self::InternalError,
+            TokenServiceError::NotCreated => Self::BadRequest,
+            TokenServiceError::InternalError => Self::InternalError,
         }
     }
 }
@@ -257,7 +253,7 @@ impl From<RefreshTokenServiceError> for TokenControllerError {
         tracing::error!(error = %err);
 
         match err {
-            RefreshTokenServiceError::NotFound(_) => Self::InvalidRefreshToken,
+            RefreshTokenServiceError::NotFound => Self::InvalidRefreshToken,
             _ => Self::InternalError,
         }
     }
@@ -268,7 +264,7 @@ impl From<ClientAuthServiceError> for TokenControllerError {
         tracing::error!(error = %err);
 
         match err {
-            ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
+            ClientAuthServiceError::NotFound => Self::InvalidClient,
             _ => Self::InternalError,
         }
     }
@@ -279,7 +275,7 @@ impl From<ScopeServiceError> for TokenControllerError {
         tracing::error!(error = %err);
 
         match err {
-            ScopeServiceError::InvalidScopes(_) => Self::InvalidClient,
+            ScopeServiceError::InvalidScopes => Self::InvalidClient,
             _ => Self::InternalError,
         }
     }
