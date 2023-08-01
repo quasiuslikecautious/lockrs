@@ -26,6 +26,8 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         db_context: &Arc<DbContext>,
         device_authorization_create: &DeviceAuthorizationCreateModel,
     ) -> Result<DeviceAuthorizationModel, RepositoryError> {
+        tracing::trace!(method = "create");
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -52,6 +54,8 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         db_context: &Arc<DbContext>,
         code: &str,
     ) -> Result<DeviceAuthorizationModel, RepositoryError> {
+        tracing::trace!(method = "get_by_user_code");
+
         let now = Utc::now().naive_utc();
 
         let conn = &mut db_context
@@ -76,6 +80,8 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         db_context: &Arc<DbContext>,
         code: &str,
     ) -> Result<DeviceAuthorizationModel, RepositoryError> {
+        tracing::trace!(method = "get_by_device_code");
+
         let now = Utc::now().naive_utc();
 
         let conn = &mut db_context
@@ -100,6 +106,8 @@ impl DeviceAuthorizationRepository for PgDeviceAuthorizationRepository {
         _db_context: &Arc<DbContext>,
         _id: &str,
     ) -> Result<(), RepositoryError> {
+        tracing::trace!(method = "delete_by_device_code");
+
         todo!();
     }
 }

@@ -19,7 +19,7 @@ use crate::{
 
 pub struct ClientController;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ClientCreateRequest {
     pub user_id: Uuid,
     pub is_public: bool,
@@ -29,7 +29,7 @@ pub struct ClientCreateRequest {
     pub redirect_url: Url,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ClientUpdateRequest {
     pub name: Option<String>,
     pub description: Option<String>,
@@ -41,12 +41,14 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
+        tracing::trace!(method = "read_all", user_id = user_id.to_string());
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let clients = ClientService::get_clients_by_user(db_context, client_repository, &user_id)
             .await
-            .map_err(|_| ClientControllerError::Internal)?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(ClientListResponse {
             clients: clients
@@ -65,6 +67,11 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
+        tracing::trace!(
+            method = "create",
+            params = ?new_client_request
+        );
+
         let new_client = ClientCreateModel {
             user_id: new_client_request.user_id,
             is_public: new_client_request.is_public,
@@ -79,7 +86,7 @@ impl ClientController {
 
         let client = ClientService::create_client(db_context, client_repository, new_client)
             .await
-            .map_err(|_| ClientControllerError::Internal)?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -93,15 +100,14 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
+        tracing::trace!(method = "read", user_id = client_id);
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let client = ClientService::get_client_by_id(db_context, client_repository, &client_id)
             .await
-            .map_err(|err| match err {
-                ClientServiceError::NotFound(_) => ClientControllerError::InvalidClient,
-                _ => ClientControllerError::Internal,
-            })?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -116,6 +122,11 @@ impl ClientController {
         Path(client_id): Path<String>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
+        tracing::trace!(
+            method = "update",
+            params = ?update_client_request
+        );
+
         let update_client = ClientUpdateModel {
             name: update_client_request.name,
             description: update_client_request.description,
@@ -132,10 +143,7 @@ impl ClientController {
             &update_client,
         )
         .await
-        .map_err(|err| match err {
-            ClientServiceError::NotFound(_) => ClientControllerError::InvalidClient,
-            _ => ClientControllerError::Internal,
-        })?;
+        .map_err(ClientControllerError::from)?;
 
         Ok(ClientResponse {
             id: client.id,
@@ -149,35 +157,63 @@ impl ClientController {
         State(state): State<Arc<AppState>>,
         Path(client_id): Path<String>,
     ) -> Result<StatusCode, ClientControllerError> {
+        tracing::trace!(method = "delete", user_id = client_id);
+
         let db_context = &state.as_ref().db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         ClientService::delete_client_by_id(db_context, client_repository, &client_id)
             .await
-            .map_err(|_| ClientControllerError::Internal)?;
+            .map_err(ClientControllerError::from)?;
 
         Ok(StatusCode::NO_CONTENT)
     }
 }
 
 pub enum ClientControllerError {
-    Internal,
     InvalidClient,
+
+    BadRequest,
+    Internal,
 }
 
 impl ClientControllerError {
+    pub fn error_code(&self) -> StatusCode {
+        match self {
+            Self::InvalidClient => StatusCode::BAD_REQUEST,
+
+            Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+            _ => StatusCode::BAD_REQUEST,
+        }
+    }
+
     pub fn error_message(&self) -> &'static str {
         match self {
+            Self::InvalidClient => "The provided client is invalid.",
+
+            Self::BadRequest => "Unable to perform the requested operation.",
             Self::Internal => {
                 "An error has occurred while processing your request. Please try again later."
             }
-            Self::InvalidClient => "The provided client is invalid.",
+        }
+    }
+}
+
+impl From<ClientServiceError> for ClientControllerError {
+    fn from(err: ClientServiceError) -> Self {
+        tracing::error!(error = %err);
+
+        match err {
+            ClientServiceError::NotFound => Self::InvalidClient,
+            ClientServiceError::InternalError => Self::Internal,
+
+            _ => Self::BadRequest,
         }
     }
 }
 
 impl IntoResponse for ClientControllerError {
     fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }

@@ -18,6 +18,8 @@ impl ScopeService {
         scope_repository: &dyn ScopeRepository,
         scope: &str,
     ) -> Result<ScopeModel, ScopeServiceError> {
+        tracing::trace!(method = "get_from_list", scope);
+
         let scopes_list = scope
             .split(' ')
             .map(|s| s.to_string())
@@ -32,23 +34,25 @@ impl ScopeService {
 
 #[derive(Debug, Error)]
 pub enum ScopeServiceError {
-    #[error("SCOPE SERVICE ERROR :: No valid scopes found :: {0}")]
-    InvalidScopes(String),
+    #[error("SCOPE SERVICE ERROR :: No valid scopes found")]
+    InvalidScopes,
 
-    #[error("SCOPE SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("SCOPE SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for ScopeServiceError {
     fn from(err: RepositoryError) -> Self {
-        match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotFound => Self::InvalidScopes(msg),
+        tracing::error!(error = %err);
 
-                _ => Self::InternalError(msg),
+        match err {
+            RepositoryError::QueryFailed(query_err) => match query_err {
+                QueryFailure::NotFound => Self::InvalidScopes,
+
+                _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

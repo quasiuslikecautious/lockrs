@@ -1,21 +1,24 @@
 mod request_id;
 
+use std::time::Duration;
+
 use axum::{
+    body::Body,
     error_handling::HandleErrorLayer,
     http::{
         header::{HeaderName, ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, CONTENT_TYPE},
-        HeaderValue, Method, StatusCode,
+        HeaderValue, Method, Request, Response, StatusCode,
     },
     BoxError, Router,
 };
-use std::time::Duration;
 use tower::{buffer::BufferLayer, limit::RateLimitLayer, timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::{
     cors::CorsLayer,
     request_id::{PropagateRequestIdLayer, SetRequestIdLayer},
-    trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    trace::TraceLayer,
 };
-use tracing::Level;
+use tracing::Span;
+use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
 use request_id::RequestId;
 
@@ -53,10 +56,43 @@ pub fn with_middleware_stack(service: Router) -> Router {
         .layer(TimeoutLayer::new(Duration::from_secs(10)));
 
     // logging
+    let filter = Targets::new()
+        .with_target("server", tracing::Level::TRACE)
+        .with_target("lockrs::trace::http", tracing::Level::TRACE)
+        .with_default(tracing::Level::INFO);
+
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
     let trace_layer = TraceLayer::new_for_http()
-        .make_span_with(DefaultMakeSpan::new().include_headers(true))
-        .on_request(DefaultOnRequest::new().level(Level::INFO))
-        .on_response(DefaultOnResponse::new().level(Level::INFO));
+        .make_span_with(|request: &Request<Body>| {
+            let x_request_id = &request.headers()["x-request-id"];
+
+            tracing::debug_span!(
+                target: "lockrs::trace::http",
+                "http-request",
+                "x-request-id" = ?x_request_id
+            )
+        })
+        .on_request(|request: &Request<Body>, _span: &Span| {
+            tracing::debug!(
+                target: "lockrs::trace::http",
+                "started processing request {} {} -- {:?}",
+                request.method(),
+                request.uri().path(),
+                request.headers()
+            )
+        })
+        .on_response(|response: &Response<_>, latency: Duration, _span: &Span| {
+            tracing::debug!(
+                target: "lockrs::trace::http",
+                "finished processing request in {} ms -- {}",
+                latency.as_millis(),
+                response.status()
+            )
+        });
 
     let x_request_id = HeaderName::from_static("x-request-id");
 

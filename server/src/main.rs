@@ -16,24 +16,10 @@ use axum::{
 };
 use tower::ServiceExt;
 use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
 /// rfc: https://www.rfc-editor.org/rfc/rfc6749#section-4
 #[tokio::main]
 async fn main() {
-    let filter = Targets::new()
-        .with_target("tower_http::trace::on_response", tracing::Level::DEBUG)
-        .with_target("tower_http::trace::on_request", tracing::Level::DEBUG)
-        .with_target("tower_http::trace::make_span", tracing::Level::DEBUG)
-        .with_default(tracing::Level::INFO);
-
-    let tracing_layer = tracing_subscriber::fmt::layer();
-
-    tracing_subscriber::registry()
-        .with(tracing_layer)
-        .with(filter)
-        .init();
-
     let state = Arc::new(AppState::new().await);
 
     let auth_v1_routes = api::v1::routes().with_state(Arc::clone(&state));

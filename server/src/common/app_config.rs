@@ -11,10 +11,26 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub fn new() -> Self {
+    pub fn new(
+        postgres_url: &str,
+        _redis_url: &str,
+        key_interval: &Duration,
+        auth_interval: &Duration,
+    ) -> Self {
+        Self {
+            postgres_url: postgres_url.to_owned(),
+            redis_url: postgres_url.to_owned(),
+            key_interval: key_interval.to_owned(),
+            auth_interval: auth_interval.to_owned(),
+        }
+    }
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
         dotenv().ok();
 
-        let postgres_url = env::var("POSTGRES_URL").expect("POSTGRES_URL must be set!");
+        let postgres_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set!");
 
         let redis_url = env::var("REDIS_URL").expect("REDIS_URL must be set!");
 

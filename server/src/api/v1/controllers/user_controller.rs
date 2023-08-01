@@ -6,7 +6,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use log::error;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -28,7 +27,7 @@ pub struct RegisterRequest {
     pub password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct UserUpdateRequest {
     pub email: Option<String>,
     pub password: Option<String>,
@@ -41,6 +40,8 @@ impl UserController {
         State(state): State<Arc<AppState>>,
         Json(register_request): Json<RegisterRequest>,
     ) -> Result<UserResponse, UserControllerError> {
+        tracing::trace!(method = "create", email = register_request.email,);
+
         let registration = RegisterModel {
             email: register_request.email,
             password: register_request.password,
@@ -66,6 +67,8 @@ impl UserController {
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<UserResponse, UserControllerError> {
+        tracing::trace!(method = "read", id = user_id.to_string(),);
+
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
         }
@@ -75,9 +78,10 @@ impl UserController {
         let user = UserService::get_user_by_id(db_context, user_repository, &user_id)
             .await
             .map_err(|err| {
-                error!("USER CONTROLLER ERROR :: Read :: {}", err);
+                tracing::error!(error = %err);
+
                 match err {
-                    UserServiceError::NotFound(_) => UserControllerError::NotFound,
+                    UserServiceError::NotFound => UserControllerError::NotFound,
                     _ => UserControllerError::Internal,
                 }
             })?;
@@ -94,6 +98,12 @@ impl UserController {
         Path(user_id): Path<Uuid>,
         Json(update_user_request): Json<UserUpdateRequest>,
     ) -> Result<UserResponse, UserControllerError> {
+        tracing::trace!(
+            method = "update",
+            id = user_id.to_string(),
+            data = ?update_user_request,
+        );
+
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
         }
@@ -107,13 +117,7 @@ impl UserController {
         let user =
             UserService::update_user_by_id(db_context, user_repository, &user_id, &update_user)
                 .await
-                .map_err(|err| {
-                    error!("USER CONTROLLER ERROR :: Update :: {}", err);
-                    match err {
-                        UserServiceError::NotFound(_) => UserControllerError::NotFound,
-                        _ => UserControllerError::Internal,
-                    }
-                })?;
+                .map_err(UserControllerError::from)?;
 
         Ok(UserResponse {
             id: user.id,
@@ -126,6 +130,8 @@ impl UserController {
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<StatusCode, UserControllerError> {
+        tracing::trace!(method = "delete", id = user_id.to_string());
+
         if jwt.user_id != user_id {
             return Err(UserControllerError::Jwt);
         }
@@ -135,9 +141,10 @@ impl UserController {
         UserService::delete_user_by_id(db_context, user_repository, &user_id)
             .await
             .map_err(|err| {
-                error!("USER CONTROLLER ERROR :: Update :: {}", err);
+                tracing::error!(error = %err);
+
                 match err {
-                    UserServiceError::NotFound(_) => UserControllerError::NotFound,
+                    UserServiceError::NotFound => UserControllerError::NotFound,
                     _ => UserControllerError::Internal,
                 }
             })?;
@@ -180,9 +187,10 @@ impl UserControllerError {
 
 impl From<AuthServiceError> for UserControllerError {
     fn from(err: AuthServiceError) -> Self {
-        error!("USER CONTROLLER ERROR :: {}", err);
+        tracing::error!(error = %err);
+
         match err {
-            AuthServiceError::AlreadyExists(_) => Self::AlreadyExists,
+            AuthServiceError::AlreadyExists => Self::AlreadyExists,
             _ => Self::Internal,
         }
     }
@@ -190,16 +198,15 @@ impl From<AuthServiceError> for UserControllerError {
 
 impl From<UserServiceError> for UserControllerError {
     fn from(err: UserServiceError) -> Self {
-        error!("USER CONTROLLER ERROR :: {}", err);
+        tracing::error!(error = %err);
+
         match err {
-            UserServiceError::AlreadyExists(_) => Self::AlreadyExists,
-            UserServiceError::NotFound(_) => Self::NotFound,
+            UserServiceError::AlreadyExists => Self::AlreadyExists,
+            UserServiceError::NotFound => Self::NotFound,
 
-            UserServiceError::NotCreated(_) => Self::BadRequest,
-            UserServiceError::NotUpdated(_) => Self::BadRequest,
-            UserServiceError::NotDeleted(_) => Self::BadRequest,
+            UserServiceError::InternalError => Self::Internal,
 
-            UserServiceError::InternalError(_) => Self::Internal,
+            _ => Self::BadRequest,
         }
     }
 }

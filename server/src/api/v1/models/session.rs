@@ -23,6 +23,7 @@ pub struct SessionCreateModel {
     pub session_token: String,
 }
 
+#[derive(Debug)]
 pub struct SessionUpdateModel {
     pub refresh: bool,
 }

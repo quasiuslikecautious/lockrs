@@ -5,18 +5,19 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Redirect},
 };
-use log::error;
 use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    oauth2::v1::services::{ClientAuthService, ClientAuthServiceError, ScopeService},
-    services::RedirectService,
+    oauth2::v1::services::{
+        ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError,
+    },
+    services::{RedirectService, RedirectServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct AuthorizeRequest {
     pub response_type: String,
     pub redirect_uri: Url,
@@ -33,7 +34,13 @@ impl AuthorizeController {
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<AuthorizeRequest>,
     ) -> impl IntoResponse {
+        tracing::trace!(
+            method = "handle",
+            params = ?params
+        );
+
         if &params.response_type != "code" {
+            tracing::error!(error = "Invalid Response Type Requested!");
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
@@ -58,12 +65,12 @@ impl AuthorizeController {
             &params.redirect_uri,
         )
         .await
-        .map_err(|_| AuthorizeControllerError::InvalidRedirectUri)?;
+        .map_err(AuthorizeControllerError::from)?;
 
         let scope_repository = &*state.repository_container.as_ref().scope_repository;
         let _scopes = ScopeService::get_from_list(db_context, scope_repository, &params.scope)
             .await
-            .map_err(|_| AuthorizeControllerError::InvalidScopes)?;
+            .map_err(AuthorizeControllerError::from)?;
 
         let _is_plain = !params.code_challenge_method.eq("S256");
 
@@ -84,23 +91,55 @@ pub enum AuthorizeControllerError {
 }
 
 impl AuthorizeControllerError {
+    pub fn error_code(&self) -> StatusCode {
+        match self {
+            Self::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+
+            _ => StatusCode::BAD_REQUEST,
+        }
+    }
+
     pub fn error_message(&self) -> &'static str {
         match self {
-            Self::InternalError => "An error occurred processing your request. Please try again later.",
             Self::InvalidResponseType => "The requested response type is invalid. Only the \"code\" response type is supported on this server.",
             Self::InvalidClient => "The provided client credentials are invalid.",
             Self::InvalidRedirectUri => "The provided redirect uri is not recognized by the server for the provided client.",
             Self::InvalidScopes => "The provided scopes are invalid.",
             Self::InvalidCodeChallengeMethod => "The provided code challenge method is unsupported. Only \"plain\" or \"S256\" code challenge methods are supported by this server",
+
+            Self::InternalError => "An error occurred processing your request. Please try again later.",
         }
     }
 }
 
 impl From<ClientAuthServiceError> for AuthorizeControllerError {
     fn from(err: ClientAuthServiceError) -> Self {
-        error!("{}", err);
+        tracing::error!(error = %err);
+
         match err {
-            ClientAuthServiceError::NotFound(_) => Self::InvalidClient,
+            ClientAuthServiceError::NotFound => Self::InvalidRedirectUri,
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<RedirectServiceError> for AuthorizeControllerError {
+    fn from(err: RedirectServiceError) -> Self {
+        tracing::error!(error = %err);
+
+        match err {
+            RedirectServiceError::NotFound => Self::InvalidClient,
+            _ => Self::InternalError,
+        }
+    }
+}
+
+impl From<ScopeServiceError> for AuthorizeControllerError {
+    fn from(err: ScopeServiceError) -> Self {
+        tracing::error!(error = %err);
+
+        match err {
+            ScopeServiceError::InvalidScopes => Self::InvalidScopes,
             _ => Self::InternalError,
         }
     }
@@ -108,6 +147,6 @@ impl From<ClientAuthServiceError> for AuthorizeControllerError {
 
 impl IntoResponse for AuthorizeControllerError {
     fn into_response(self) -> axum::response::Response {
-        (StatusCode::BAD_REQUEST, self.error_message()).into_response()
+        (self.error_code(), self.error_message()).into_response()
     }
 }

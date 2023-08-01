@@ -22,6 +22,12 @@ impl DeviceAuthorizationService {
         client_id: &str,
         scopes_model: ScopeModel,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
+        tracing::trace!(
+            method = "create_device_authorization",
+            client_id,
+            scopes = ?scopes_model
+        );
+
         let expires_at = (Utc::now() + Duration::minutes(5)).naive_utc();
 
         let device_authorization_create = DeviceAuthorizationCreateModel {
@@ -32,10 +38,19 @@ impl DeviceAuthorizationService {
             scopes: scopes_model.scopes,
         };
 
-        device_authorization_repository
+        let auth = device_authorization_repository
             .create(db_context, &device_authorization_create)
             .await
-            .map_err(DeviceAuthorizationServiceError::from)
+            .map_err(DeviceAuthorizationServiceError::from)?;
+
+        tracing::info!(
+            "Device Authorization created: {{ client_id: {}, expires_at: {}, scopes: {:?} }}",
+            client_id,
+            auth.expires_at.timestamp(),
+            auth.scopes
+        );
+
+        Ok(auth)
     }
 
     pub async fn get_from_device_code(
@@ -43,6 +58,8 @@ impl DeviceAuthorizationService {
         device_authorization_repository: &dyn DeviceAuthorizationRepository,
         device_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
+        tracing::trace!(method = "get_from_device_code",);
+
         device_authorization_repository
             .get_by_device_code(db_context, device_code)
             .await
@@ -54,6 +71,8 @@ impl DeviceAuthorizationService {
         device_authorization_repository: &dyn DeviceAuthorizationRepository,
         user_code: &str,
     ) -> Result<DeviceAuthorizationModel, DeviceAuthorizationServiceError> {
+        tracing::trace!(method = "get_from_user",);
+
         device_authorization_repository
             .get_by_user_code(db_context, user_code)
             .await
@@ -69,9 +88,9 @@ impl DeviceAuthorizationService {
         let rng = SystemRandom::new();
 
         rng.fill(&mut buffer).map_err(|_| {
-            DeviceAuthorizationServiceError::InternalError(
-                "Filling SystemRandom failed on generate_user_code.".into(),
-            )
+            tracing::error!(error = "Filling SystemRandom failed on generate_user_code.",);
+
+            DeviceAuthorizationServiceError::InternalError
         })?;
 
         for byte in buffer.iter() {
@@ -87,9 +106,9 @@ impl DeviceAuthorizationService {
         let mut buffer = [0u8; 32];
         let rng = SystemRandom::new();
         rng.fill(&mut buffer).map_err(|_| {
-            DeviceAuthorizationServiceError::InternalError(
-                "Filling SystemRandom failed on generate_device_code".into(),
-            )
+            tracing::error!(error = "Filling SystemRandom failed on generate_device_code",);
+
+            DeviceAuthorizationServiceError::InternalError
         })?;
         let code = general_purpose::URL_SAFE_NO_PAD.encode(buffer);
 
@@ -99,26 +118,28 @@ impl DeviceAuthorizationService {
 
 #[derive(Debug, Error)]
 pub enum DeviceAuthorizationServiceError {
-    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not created :: {0}")]
-    NotCreated(String),
-    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not found :: {0}")]
-    NotFound(String),
+    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not created")]
+    NotCreated,
+    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Not found")]
+    NotFound,
 
-    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Internal Error :: {0}")]
-    InternalError(String),
+    #[error("DEVICE AUTHORIZATION SERVICE ERROR :: Internal Error")]
+    InternalError,
 }
 
 impl From<RepositoryError> for DeviceAuthorizationServiceError {
     fn from(err: RepositoryError) -> Self {
-        match err {
-            RepositoryError::QueryFailed(msg, query_err) => match query_err {
-                QueryFailure::NotCreated => Self::NotCreated(msg),
-                QueryFailure::NotFound => Self::NotFound(msg),
+        tracing::error!(error = %err);
 
-                _ => Self::InternalError(msg),
+        match err {
+            RepositoryError::QueryFailed(query_err) => match query_err {
+                QueryFailure::NotCreated => Self::NotCreated,
+                QueryFailure::NotFound => Self::NotFound,
+
+                _ => Self::InternalError,
             },
 
-            RepositoryError::InternalError(msg) => Self::InternalError(msg),
+            RepositoryError::InternalError => Self::InternalError,
         }
     }
 }

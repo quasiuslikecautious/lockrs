@@ -26,6 +26,8 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token_create: &RefreshTokenCreateModel,
     ) -> Result<RefreshTokenModel, RepositoryError> {
+        tracing::trace!(method = "create",);
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -52,6 +54,8 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<RefreshTokenModel, RepositoryError> {
+        tracing::trace!(method = "get_by_token",);
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -77,6 +81,8 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<RefreshTokenModel, RepositoryError> {
+        tracing::trace!(method = "use_by_token",);
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -103,6 +109,8 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
         db_context: &Arc<DbContext>,
         token: &str,
     ) -> Result<(), RepositoryError> {
+        tracing::trace!(method = "delete_by_token",);
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -120,7 +128,9 @@ impl RefreshTokenRepository for PgRefreshTokenRepository {
                 "Expected 1 row to be affected by delete, but found {}",
                 affected_rows
             );
-            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
+
+            tracing::error!(error = msg);
+            return Err(RepositoryError::QueryFailed(QueryFailure::NotDeleted));
         }
 
         Ok(())

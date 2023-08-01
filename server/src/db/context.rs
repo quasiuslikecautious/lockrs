@@ -13,7 +13,6 @@ type AsyncPgPool = Pool<AsyncPgConnection>;
 type AsyncRedisPool = deadpool_redis::Pool;
 
 pub type AsyncPgConnection = diesel_async::AsyncPgConnection;
-pub type AsyncRedisConnection = deadpool_redis::redis::aio::Connection;
 
 pub type ManagedAsyncPgConnection = Object<AsyncPgConnection>;
 pub type ManagedAsyncRedisConnection = deadpool_redis::Connection;
@@ -66,8 +65,10 @@ impl DbContext {
 
     pub async fn get_pg_connection(&self) -> Result<ManagedAsyncPgConnection, DbContextError> {
         self.pg_pool.get().await.map_err(|_| {
-            let msg = "PG POOL CONNECTION FAILED".to_string();
-            DbContextError::ConnectionFailed(msg)
+            let msg = "PG POOL CONNECTION FAILED";
+            tracing::error!(error = msg);
+
+            DbContextError::ConnectionFailed
         })
     }
 
@@ -75,14 +76,16 @@ impl DbContext {
         &self,
     ) -> Result<ManagedAsyncRedisConnection, DbContextError> {
         self.redis_pool.get().await.map_err(|_| {
-            let msg = "REDIS POOL CONNECTION FAILED".to_string();
-            DbContextError::ConnectionFailed(msg)
+            let msg = "REDIS POOL CONNECTION FAILED";
+            tracing::error!(error = msg);
+
+            DbContextError::ConnectionFailed
         })
     }
 }
 
 #[derive(Debug, Error)]
 pub enum DbContextError {
-    #[error("DB CONTEXT ERROR :: Failed to get connection from connection pool :: {0}")]
-    ConnectionFailed(String),
+    #[error("DB CONTEXT ERROR :: Failed to get connection from connection pool")]
+    ConnectionFailed,
 }

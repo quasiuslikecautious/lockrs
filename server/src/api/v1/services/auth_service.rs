@@ -27,6 +27,8 @@ impl AuthService {
         session_token_repository: &dyn SessionTokenRepository,
         user_auth: &AuthModel,
     ) -> Result<SessionTokenModel, AuthServiceError> {
+        tracing::trace!(method = "login",);
+
         let user = UserService::get_user_by_email(db_context, user_repository, &user_auth.email)
             .await
             .map_err(AuthServiceError::from)?;
@@ -41,6 +43,11 @@ impl AuthService {
         .await
         .map_err(AuthServiceError::from)?;
 
+        tracing::info!(
+            "User successfully authenticated with ID: {}",
+            session_token.user_id.to_string()
+        );
+
         Ok(session_token)
     }
 
@@ -49,6 +56,8 @@ impl AuthService {
         user_repository: &dyn UserRepository,
         register_user: &RegisterModel,
     ) -> Result<UserModel, AuthServiceError> {
+        tracing::trace!(method = "register_user",);
+
         let password_hash = Self::hash_password(register_user.password.as_str())?;
 
         let create_user = UserCreateModel {
@@ -56,9 +65,16 @@ impl AuthService {
             password_hash,
         };
 
-        UserService::create_user(db_context, user_repository, &create_user)
+        let user = UserService::create_user(db_context, user_repository, &create_user)
             .await
-            .map_err(AuthServiceError::from)
+            .map_err(AuthServiceError::from)?;
+
+        tracing::info!(
+            "New user successfully registered with ID: {}",
+            user.id.to_string()
+        );
+
+        Ok(user)
     }
 
     fn hash_password(password: &str) -> Result<String, AuthServiceError> {
@@ -69,9 +85,9 @@ impl AuthService {
         let valid_password = verify(password, hash).map_err(AuthServiceError::from)?;
 
         if !valid_password {
-            return Err(AuthServiceError::Credentials(
-                "Invalid password supplied".to_string(),
-            ));
+            let msg = "Invalid password supplied";
+            tracing::error!(error = msg);
+            return Err(AuthServiceError::Credentials);
         }
 
         Ok(())
@@ -80,48 +96,54 @@ impl AuthService {
 
 #[derive(Debug, Error)]
 pub enum AuthServiceError {
-    #[error("AUTH SERVICE ERROR :: Invalid token :: {0}")]
-    Token(String),
-    #[error("AUTH SERVICE ERROR :: Invalid credentials :: {0}")]
-    Credentials(String),
-    #[error("AUTH SERVICE ERROR :: User already exists :: {0}")]
-    AlreadyExists(String),
-    #[error("AUTH SERVICE ERROR :: User not created :: {0}")]
-    NotCreated(String),
+    #[error("AUTH SERVICE ERROR :: Invalid token")]
+    Token,
+    #[error("AUTH SERVICE ERROR :: Invalid credentials")]
+    Credentials,
+    #[error("AUTH SERVICE ERROR :: User already exists")]
+    AlreadyExists,
+    #[error("AUTH SERVICE ERROR :: User not created")]
+    NotCreated,
 
-    #[error("AUTH SERVICE ERROR :: Internal error :: {0}")]
-    InternalError(String),
+    #[error("AUTH SERVICE ERROR :: Internal error")]
+    InternalError,
 }
 
 impl From<UserServiceError> for AuthServiceError {
     fn from(err: UserServiceError) -> Self {
-        match err {
-            UserServiceError::AlreadyExists(msg) => Self::AlreadyExists(msg),
-            UserServiceError::NotCreated(msg) => Self::NotCreated(msg),
-            UserServiceError::NotFound(msg) => Self::Credentials(msg),
-            // QueryFailure::NotUpdated => Self::NotUpdated(msg),
-            UserServiceError::InternalError(msg) => Self::InternalError(msg),
+        tracing::error!(error = %err);
 
-            _ => Self::InternalError("TODO Error not implemented".to_string()),
+        match err {
+            UserServiceError::AlreadyExists => Self::AlreadyExists,
+            UserServiceError::NotCreated => Self::NotCreated,
+            UserServiceError::NotFound => Self::Credentials,
+            // QueryFailure::NotUpdated => Self::NotUpdated(msg),
+            UserServiceError::InternalError => Self::InternalError,
+
+            _ => Self::InternalError,
         }
     }
 }
 
 impl From<SessionTokenServiceError> for AuthServiceError {
     fn from(err: SessionTokenServiceError) -> Self {
+        tracing::error!(error = %err);
+
         match err {
-            SessionTokenServiceError::NotFound(msg) => Self::Token(msg),
+            SessionTokenServiceError::NotFound => Self::Token,
 
-            SessionTokenServiceError::NotCreated(msg) => Self::InternalError(msg),
-            SessionTokenServiceError::NotDeleted(msg) => Self::InternalError(msg),
+            SessionTokenServiceError::NotCreated => Self::InternalError,
+            SessionTokenServiceError::NotDeleted => Self::InternalError,
 
-            SessionTokenServiceError::InternalError(msg) => Self::InternalError(msg),
+            SessionTokenServiceError::InternalError => Self::InternalError,
         }
     }
 }
 
 impl From<BcryptError> for AuthServiceError {
     fn from(err: BcryptError) -> Self {
-        Self::InternalError(format!("{:?}", err))
+        tracing::error!(error = ?err);
+
+        Self::InternalError
     }
 }

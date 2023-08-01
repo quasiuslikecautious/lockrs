@@ -29,6 +29,13 @@ impl ClientRepository for PgClientRepository {
         client_create: &ClientModel,
         redirect_create: &RedirectCreateModel,
     ) -> Result<ClientModel, RepositoryError> {
+        tracing::trace!(
+            method = "create",
+            user_id = ?client_create.user_id,
+            id = client_create.id,
+            redirect_uri = ?redirect_create.uri
+        );
+
         let connection = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -74,6 +81,8 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
     ) -> Result<ClientModel, RepositoryError> {
+        tracing::trace!(method = "get_by_id", id);
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -95,6 +104,8 @@ impl ClientRepository for PgClientRepository {
         id: &str,
         secret: Option<&str>,
     ) -> Result<ClientModel, RepositoryError> {
+        tracing::trace!(method = "get_by_credentials", id);
+
         let mut query = clients::table
             .into_boxed()
             .filter(clients::id.eq(&id))
@@ -123,6 +134,8 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &Uuid,
     ) -> Result<Vec<ClientModel>, RepositoryError> {
+        tracing::trace!(method = "get_all_by_user_id", ?id);
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -147,6 +160,12 @@ impl ClientRepository for PgClientRepository {
         id: &str,
         client_update: &ClientUpdateModel,
     ) -> Result<ClientModel, RepositoryError> {
+        tracing::trace!(
+            method = "update_by_id",
+            id,
+            client = ?client_update
+        );
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -168,6 +187,8 @@ impl ClientRepository for PgClientRepository {
         db_context: &Arc<DbContext>,
         id: &str,
     ) -> Result<(), RepositoryError> {
+        tracing::trace!(method = "delete_by_id", id);
+
         let conn = &mut db_context
             .as_ref()
             .get_pg_connection()
@@ -185,7 +206,9 @@ impl ClientRepository for PgClientRepository {
                 "Expected 1 row to be affected by delete, but found {}",
                 affected_rows
             );
-            return Err(RepositoryError::QueryFailed(msg, QueryFailure::NotDeleted));
+
+            tracing::error!(error = msg);
+            return Err(RepositoryError::QueryFailed(QueryFailure::NotDeleted));
         }
 
         Ok(())
