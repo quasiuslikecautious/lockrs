@@ -18,20 +18,20 @@ use crate::{
 
 use super::SessionTokenService;
 
-pub struct AuthService;
+pub struct UserAuthService;
 
-impl AuthService {
+impl UserAuthService {
     pub async fn login(
         db_context: &Arc<DbContext>,
         user_repository: &dyn UserRepository,
         session_token_repository: &dyn SessionTokenRepository,
         user_auth: &AuthModel,
-    ) -> Result<SessionTokenModel, AuthServiceError> {
+    ) -> Result<SessionTokenModel, UserAuthServiceError> {
         tracing::trace!(method = "login",);
 
         let user = UserService::get_user_by_email(db_context, user_repository, &user_auth.email)
             .await
-            .map_err(AuthServiceError::from)?;
+            .map_err(UserAuthServiceError::from)?;
 
         Self::verify_password(user_auth.password.as_str(), user.password_hash.as_str())?;
 
@@ -41,7 +41,7 @@ impl AuthService {
             &user.id,
         )
         .await
-        .map_err(AuthServiceError::from)?;
+        .map_err(UserAuthServiceError::from)?;
 
         tracing::info!(
             "User successfully authenticated with ID: {}",
@@ -55,7 +55,7 @@ impl AuthService {
         db_context: &Arc<DbContext>,
         user_repository: &dyn UserRepository,
         register_user: &RegisterModel,
-    ) -> Result<UserModel, AuthServiceError> {
+    ) -> Result<UserModel, UserAuthServiceError> {
         tracing::trace!(method = "register_user",);
 
         let password_hash = Self::hash_password(register_user.password.as_str())?;
@@ -67,7 +67,7 @@ impl AuthService {
 
         let user = UserService::create_user(db_context, user_repository, &create_user)
             .await
-            .map_err(AuthServiceError::from)?;
+            .map_err(UserAuthServiceError::from)?;
 
         tracing::info!(
             "New user successfully registered with ID: {}",
@@ -77,17 +77,17 @@ impl AuthService {
         Ok(user)
     }
 
-    fn hash_password(password: &str) -> Result<String, AuthServiceError> {
-        hash(password, DEFAULT_COST).map_err(AuthServiceError::from)
+    fn hash_password(password: &str) -> Result<String, UserAuthServiceError> {
+        hash(password, DEFAULT_COST).map_err(UserAuthServiceError::from)
     }
 
-    fn verify_password(password: &str, hash: &str) -> Result<(), AuthServiceError> {
-        let valid_password = verify(password, hash).map_err(AuthServiceError::from)?;
+    fn verify_password(password: &str, hash: &str) -> Result<(), UserAuthServiceError> {
+        let valid_password = verify(password, hash).map_err(UserAuthServiceError::from)?;
 
         if !valid_password {
             let msg = "Invalid password supplied";
             tracing::error!(error = msg);
-            return Err(AuthServiceError::Credentials);
+            return Err(UserAuthServiceError::Credentials);
         }
 
         Ok(())
@@ -95,7 +95,7 @@ impl AuthService {
 }
 
 #[derive(Debug, Error)]
-pub enum AuthServiceError {
+pub enum UserAuthServiceError {
     #[error("AUTH SERVICE ERROR :: Invalid token")]
     Token,
     #[error("AUTH SERVICE ERROR :: Invalid credentials")]
@@ -109,7 +109,7 @@ pub enum AuthServiceError {
     InternalError,
 }
 
-impl From<UserServiceError> for AuthServiceError {
+impl From<UserServiceError> for UserAuthServiceError {
     fn from(err: UserServiceError) -> Self {
         tracing::error!(error = %err);
 
@@ -125,7 +125,7 @@ impl From<UserServiceError> for AuthServiceError {
     }
 }
 
-impl From<SessionTokenServiceError> for AuthServiceError {
+impl From<SessionTokenServiceError> for UserAuthServiceError {
     fn from(err: SessionTokenServiceError) -> Self {
         tracing::error!(error = %err);
 
@@ -140,7 +140,7 @@ impl From<SessionTokenServiceError> for AuthServiceError {
     }
 }
 
-impl From<BcryptError> for AuthServiceError {
+impl From<BcryptError> for UserAuthServiceError {
     fn from(err: BcryptError) -> Self {
         tracing::error!(error = ?err);
 

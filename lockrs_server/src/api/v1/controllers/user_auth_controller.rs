@@ -6,19 +6,19 @@ use crate::{
     api::v1::{
         models::AuthModel,
         responses::SessionTokenResponse,
-        services::{AuthService, AuthServiceError},
+        services::{UserAuthService, UserAuthServiceError},
     },
     utils::extractors::BasicAuth,
     AppState,
 };
 
-pub struct AuthController;
+pub struct UserAuthController;
 
-impl AuthController {
+impl UserAuthController {
     pub async fn auth(
         State(state): State<Arc<AppState>>,
         BasicAuth(credentials): BasicAuth,
-    ) -> Result<SessionTokenResponse, AuthControllerError> {
+    ) -> Result<SessionTokenResponse, UserAuthControllerError> {
         tracing::trace!(method = "auth", email = credentials.public,);
 
         let auth = AuthModel {
@@ -32,9 +32,9 @@ impl AuthController {
             &*state.repository_container.as_ref().session_token_repository;
 
         let session_token =
-            AuthService::login(db_context, user_repository, session_token_repository, &auth)
+            UserAuthService::login(db_context, user_repository, session_token_repository, &auth)
                 .await
-                .map_err(AuthControllerError::from)?;
+                .map_err(UserAuthControllerError::from)?;
 
         let token_response = SessionTokenResponse {
             session_token: session_token.token,
@@ -45,12 +45,12 @@ impl AuthController {
     }
 }
 
-pub enum AuthControllerError {
+pub enum UserAuthControllerError {
     InvalidCredentials,
     Internal,
 }
 
-impl AuthControllerError {
+impl UserAuthControllerError {
     pub fn error_code(&self) -> StatusCode {
         match self {
             Self::InvalidCredentials => StatusCode::UNAUTHORIZED,
@@ -68,18 +68,18 @@ impl AuthControllerError {
     }
 }
 
-impl From<AuthServiceError> for AuthControllerError {
-    fn from(err: AuthServiceError) -> Self {
+impl From<UserAuthServiceError> for UserAuthControllerError {
+    fn from(err: UserAuthServiceError) -> Self {
         tracing::error!(error = %err);
 
         match err {
-            AuthServiceError::Credentials => Self::InvalidCredentials,
+            UserAuthServiceError::Credentials => Self::InvalidCredentials,
             _ => Self::Internal,
         }
     }
 }
 
-impl IntoResponse for AuthControllerError {
+impl IntoResponse for UserAuthControllerError {
     fn into_response(self) -> axum::response::Response {
         (self.error_code(), self.error_message()).into_response()
     }

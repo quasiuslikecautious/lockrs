@@ -13,7 +13,7 @@ use crate::{
     api::v1::{
         models::RegisterModel,
         responses::UserResponse,
-        services::{AuthService, AuthServiceError},
+        services::{UserAuthService, UserAuthServiceError},
     },
     models::UserUpdateModel,
     services::{UserService, UserServiceError},
@@ -50,7 +50,7 @@ impl UserController {
         let db_context = &state.as_ref().db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
 
-        let user = AuthService::register_user(db_context, user_repository, &registration)
+        let user = UserAuthService::register_user(db_context, user_repository, &registration)
             .await
             .map_err(UserControllerError::from)?;
 
@@ -185,12 +185,12 @@ impl UserControllerError {
     }
 }
 
-impl From<AuthServiceError> for UserControllerError {
-    fn from(err: AuthServiceError) -> Self {
+impl From<UserAuthServiceError> for UserControllerError {
+    fn from(err: UserAuthServiceError) -> Self {
         tracing::error!(error = %err);
 
         match err {
-            AuthServiceError::AlreadyExists => Self::AlreadyExists,
+            UserAuthServiceError::AlreadyExists => Self::AlreadyExists,
             _ => Self::Internal,
         }
     }
