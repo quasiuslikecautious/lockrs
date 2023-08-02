@@ -30,6 +30,7 @@ impl AppState {
             access_token_repository: Box::new(PgAccessTokenRepository),
             authorization_code_repository: Box::new(PgAuthorizationCodeRepository),
             client_repository: Box::new(PgClientRepository),
+            client_auth_repository: Box::new(PgClientAuthRepository),
             device_authorization_repository: Box::new(PgDeviceAuthorizationRepository),
             redirect_repository: Box::new(PgRedirectUriRepository),
             refresh_token_repository: Box::new(PgRefreshTokenRepository),

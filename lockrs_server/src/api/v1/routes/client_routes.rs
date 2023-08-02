@@ -6,11 +6,14 @@ use axum::{
 };
 
 use super::redirect_routes;
-use crate::{api::v1::controllers::ClientController, AppState};
+use crate::{
+    api::v1::controllers::{ClientAuthController, ClientController},
+    AppState,
+};
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/", post(ClientController::create))
+        .route("/", post(ClientAuthController::register))
         .route("/:client_id", get(ClientController::read))
         .route("/:client_id", put(ClientController::update))
         .route("/:client_id", delete(ClientController::delete))

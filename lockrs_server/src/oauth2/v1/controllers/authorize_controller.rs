@@ -9,10 +9,8 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    oauth2::v1::services::{
-        ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError,
-    },
-    services::{RedirectService, RedirectServiceError},
+    oauth2::v1::services::{ScopeService, ScopeServiceError},
+    services::{ClientAuthService, ClientAuthServiceError, RedirectService, RedirectServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
@@ -45,11 +43,11 @@ impl AuthorizeController {
         }
 
         let db_context = &state.as_ref().db_context;
-        let client_repository = &*state.repository_container.as_ref().client_repository;
+        let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
-        let client = ClientAuthService::verify_credentials(
+        let client = ClientAuthService::authenticate(
             db_context,
-            client_repository,
+            client_auth_repository,
             &client_credentials.id,
             client_credentials.secret.as_deref(),
         )

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::models::ClientAuthModel;
+use crate::models::ClientLoginCredentials;
 use axum::{
     async_trait,
     extract::FromRequestParts,
@@ -11,7 +11,7 @@ use axum::{
 use super::BasicAuth;
 
 #[derive(Debug)]
-pub struct ExtractClientCredentials(pub ClientAuthModel);
+pub struct ExtractClientCredentials(pub ClientLoginCredentials);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for ExtractClientCredentials
@@ -27,7 +27,7 @@ where
 
         if let Ok(BasicAuth(client_credentials)) = BasicAuth::from_request_parts(parts, state).await
         {
-            return Ok(Self(ClientAuthModel {
+            return Ok(Self(ClientLoginCredentials {
                 id: client_credentials.public,
                 secret: Some(client_credentials.private),
             }));
@@ -65,7 +65,7 @@ fn query_into_hashmap(query: &str) -> HashMap<String, Option<String>> {
         .collect::<HashMap<String, Option<String>>>()
 }
 
-fn get_client_from_query(query: Option<&str>) -> Option<ClientAuthModel> {
+fn get_client_from_query(query: Option<&str>) -> Option<ClientLoginCredentials> {
     let Some(query) = query
     else {
         return None;
@@ -83,7 +83,7 @@ fn get_client_from_query(query: Option<&str>) -> Option<ClientAuthModel> {
         return None;
     };
 
-    Some(ClientAuthModel {
+    Some(ClientLoginCredentials {
         id: client_id_val.to_owned(),
         secret: None,
     })

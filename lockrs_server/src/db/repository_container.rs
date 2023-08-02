@@ -4,6 +4,7 @@ pub struct RepositoryContainer {
     pub access_token_repository: Box<dyn AccessTokenRepository>,
     pub authorization_code_repository: Box<dyn AuthorizationCodeRepository>,
     pub client_repository: Box<dyn ClientRepository>,
+    pub client_auth_repository: Box<dyn ClientAuthRepository>,
     pub device_authorization_repository: Box<dyn DeviceAuthorizationRepository>,
     pub redirect_repository: Box<dyn RedirectUriRepository>,
     pub refresh_token_repository: Box<dyn RefreshTokenRepository>,

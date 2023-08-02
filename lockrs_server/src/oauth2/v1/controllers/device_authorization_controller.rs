@@ -11,10 +11,11 @@ use crate::{
     oauth2::v1::{
         responses::DeviceAuthorizationResponse,
         services::{
-            ClientAuthService, ClientAuthServiceError, DeviceAuthorizationService,
-            DeviceAuthorizationServiceError, ScopeService, ScopeServiceError,
+            DeviceAuthorizationService, DeviceAuthorizationServiceError, ScopeService,
+            ScopeServiceError,
         },
     },
+    services::{ClientAuthService, ClientAuthServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
@@ -38,11 +39,11 @@ impl DeviceAuthorizationController {
         );
 
         let db_context = &state.as_ref().db_context;
-        let client_repository = &*state.repository_container.as_ref().client_repository;
+        let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
-        ClientAuthService::verify_credentials(
+        ClientAuthService::authenticate(
             db_context,
-            client_repository,
+            client_auth_repository,
             &client_credentials.id,
             client_credentials.secret.as_deref(),
         )

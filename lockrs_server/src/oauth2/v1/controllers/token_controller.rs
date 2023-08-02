@@ -11,11 +11,12 @@ use url::Url;
 use crate::{
     models::ClientModel,
     oauth2::v1::models::ScopeModel,
+    oauth2::v1::responses::TokenResponse,
     oauth2::v1::services::{
-        ClientAuthService, ClientAuthServiceError, RefreshTokenService, RefreshTokenServiceError,
-        ScopeService, ScopeServiceError, TokenService,
+        RefreshTokenService, RefreshTokenServiceError, ScopeService, ScopeServiceError,
+        TokenService, TokenServiceError,
     },
-    oauth2::v1::{responses::TokenResponse, services::TokenServiceError},
+    services::{ClientAuthService, ClientAuthServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
@@ -52,11 +53,11 @@ impl TokenController {
         );
 
         let db_context = &state.as_ref().db_context;
-        let client_repository = &*state.repository_container.as_ref().client_repository;
+        let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
-        let client = ClientAuthService::verify_credentials(
+        let client = ClientAuthService::authenticate(
             db_context,
-            client_repository,
+            client_auth_repository,
             client_credentials.id.as_str(),
             client_credentials.secret.as_deref(),
         )
@@ -120,8 +121,8 @@ impl TokenController {
             scopes = ?scopes
         );
 
-        if client.secret.is_none() {
-            tracing::error!(error = "Missing client secret");
+        if client.is_public {
+            tracing::error!(error = "Public client attempted to get token with credentials");
             return Err(TokenControllerError::InvalidClient);
         }
 

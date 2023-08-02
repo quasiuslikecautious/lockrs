@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-use url::Url;
 use uuid::Uuid;
 
 use crate::db::pg::schema::clients;
@@ -8,26 +7,10 @@ use crate::db::pg::schema::clients;
 pub struct ClientModel {
     pub user_id: Uuid,
     pub id: String,
-    pub secret: Option<String>,
-    pub name: String,
-    pub description: String,
-    pub homepage_url: String,
-}
-
-#[derive(Debug)]
-pub struct ClientAuthModel {
-    pub id: String,
-    pub secret: Option<String>,
-}
-
-#[derive(Debug)]
-pub struct ClientCreateModel {
-    pub user_id: Uuid,
     pub is_public: bool,
     pub name: String,
     pub description: String,
-    pub homepage_url: Url,
-    pub redirect_url: Url,
+    pub homepage_url: String,
 }
 
 #[derive(AsChangeset, Debug)]

@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use crate::{
     api::v1::responses::{ClientListResponse, ClientResponse},
-    models::{ClientCreateModel, ClientUpdateModel},
+    models::ClientUpdateModel,
     services::{ClientService, ClientServiceError},
     AppState,
 };
@@ -60,39 +60,6 @@ impl ClientController {
                     homepage_url: c.homepage_url,
                 })
                 .collect::<Vec<ClientResponse>>(),
-        })
-    }
-
-    pub async fn create(
-        State(state): State<Arc<AppState>>,
-        Json(new_client_request): Json<ClientCreateRequest>,
-    ) -> Result<ClientResponse, ClientControllerError> {
-        tracing::trace!(
-            method = "create",
-            params = ?new_client_request
-        );
-
-        let new_client = ClientCreateModel {
-            user_id: new_client_request.user_id,
-            is_public: new_client_request.is_public,
-            name: new_client_request.name,
-            description: new_client_request.description,
-            homepage_url: new_client_request.homepage_url,
-            redirect_url: new_client_request.redirect_url,
-        };
-
-        let db_context = &state.as_ref().db_context;
-        let client_repository = &*state.repository_container.as_ref().client_repository;
-
-        let client = ClientService::create_client(db_context, client_repository, new_client)
-            .await
-            .map_err(ClientControllerError::from)?;
-
-        Ok(ClientResponse {
-            id: client.id,
-            name: client.name,
-            description: client.description,
-            homepage_url: client.homepage_url,
         })
     }
 

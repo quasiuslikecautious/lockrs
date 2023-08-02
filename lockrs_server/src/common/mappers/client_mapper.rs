@@ -7,7 +7,7 @@ impl ClientMapper {
         ClientModel {
             user_id: pg_client.user_id,
             id: pg_client.id,
-            secret: pg_client.secret,
+            is_public: pg_client.secret.is_none(),
             name: pg_client.name,
             description: pg_client.description,
             homepage_url: pg_client.homepage_url,
@@ -32,7 +32,7 @@ mod tests {
 
         let pg_client = PgClient {
             id: id.clone(),
-            secret: secret.clone(),
+            secret,
             user_id,
             is_public: false,
             name: name.clone(),
@@ -45,7 +45,7 @@ mod tests {
         let expected_client = ClientModel {
             user_id,
             id,
-            secret,
+            is_public: false,
             name,
             description,
             homepage_url,
@@ -65,7 +65,7 @@ mod tests {
 
         let pg_client = PgClient {
             id: id.clone(),
-            secret: secret.clone(),
+            secret,
             user_id,
             is_public: true,
             name: name.clone(),
@@ -78,7 +78,7 @@ mod tests {
         let expected_client = ClientModel {
             user_id,
             id,
-            secret,
+            is_public: true,
             name,
             description,
             homepage_url,
