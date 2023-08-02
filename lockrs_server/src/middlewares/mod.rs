@@ -1,4 +1,7 @@
+mod guard;
 mod request_id;
+
+pub use self::guard::*;
 
 use std::time::Duration;
 
