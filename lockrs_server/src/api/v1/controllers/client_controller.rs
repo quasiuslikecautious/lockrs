@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -38,12 +36,12 @@ pub struct ClientUpdateRequest {
 
 impl ClientController {
     pub async fn read_all(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         Path(user_id): Path<Uuid>,
     ) -> Result<ClientListResponse, ClientControllerError> {
         tracing::trace!(method = "read_all", user_id = user_id.to_string());
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let clients = ClientService::get_clients_by_user(db_context, client_repository, &user_id)
@@ -64,12 +62,12 @@ impl ClientController {
     }
 
     pub async fn read(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         Path(client_id): Path<String>,
     ) -> Result<ClientResponse, ClientControllerError> {
         tracing::trace!(method = "read", user_id = client_id);
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let client = ClientService::get_client_by_id(db_context, client_repository, &client_id)
@@ -85,7 +83,7 @@ impl ClientController {
     }
 
     pub async fn update(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         Path(client_id): Path<String>,
         Json(update_client_request): Json<ClientUpdateRequest>,
     ) -> Result<ClientResponse, ClientControllerError> {
@@ -100,7 +98,7 @@ impl ClientController {
             homepage_url: update_client_request.homepage_url,
         };
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         let client = ClientService::update_client_by_id(
@@ -121,12 +119,12 @@ impl ClientController {
     }
 
     pub async fn delete(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         Path(client_id): Path<String>,
     ) -> Result<StatusCode, ClientControllerError> {
         tracing::trace!(method = "delete", user_id = client_id);
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
         ClientService::delete_client_by_id(db_context, client_repository, &client_id)

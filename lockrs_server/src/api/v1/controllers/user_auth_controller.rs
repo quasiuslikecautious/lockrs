@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Json, State},
     http::StatusCode,
@@ -27,7 +25,7 @@ pub struct UserAuthController;
 
 impl UserAuthController {
     pub async fn register(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         Json(register_request): Json<RegisterRequest>,
     ) -> Result<UserResponse, UserAuthControllerError> {
         tracing::trace!(method = "register_user", email = register_request.email,);
@@ -37,7 +35,7 @@ impl UserAuthController {
             password: register_request.password,
         };
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
 
         let user = UserAuthService::register_user(db_context, user_auth_repository, &registration)
@@ -53,7 +51,7 @@ impl UserAuthController {
     }
 
     pub async fn authenticate(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         BasicAuth(credentials): BasicAuth,
     ) -> Result<SessionTokenResponse, UserAuthControllerError> {
         tracing::trace!(method = "verify_credentials", email = credentials.public,);
@@ -63,7 +61,7 @@ impl UserAuthController {
             password: credentials.private,
         };
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
         let session_token_repository =
             &*state.repository_container.as_ref().session_token_repository;

@@ -25,7 +25,10 @@ use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::Subscriber
 
 use request_id::RequestId;
 
-pub fn with_middleware_stack(service: Router) -> Router {
+pub fn with_middleware_stack<T>(service: Router<T>) -> Router<T>
+where
+    T: Clone + Send + Sync + 'static,
+{
     // security
     let cors_layer = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PUT])

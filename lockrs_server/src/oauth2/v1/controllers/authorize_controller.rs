@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -28,7 +26,7 @@ pub struct AuthorizeController;
 
 impl AuthorizeController {
     pub async fn handle(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<AuthorizeRequest>,
     ) -> impl IntoResponse {
@@ -42,7 +40,7 @@ impl AuthorizeController {
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
         let client = ClientAuthService::authenticate(

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -43,7 +41,7 @@ pub struct TokenController;
 
 impl TokenController {
     pub async fn handle(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
@@ -52,7 +50,7 @@ impl TokenController {
             params = ?params
         );
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
         let client = ClientAuthService::authenticate(
@@ -88,7 +86,7 @@ impl TokenController {
     }
 
     pub async fn authorization_code_token(
-        _state: Arc<AppState>,
+        _state: AppState,
     ) -> Result<TokenResponse, TokenControllerError> {
         tracing::trace!(method = "authorization_code_token");
 
@@ -99,7 +97,7 @@ impl TokenController {
     }
 
     pub async fn device_authorization_token(
-        _state: Arc<AppState>,
+        _state: AppState,
     ) -> Result<TokenResponse, TokenControllerError> {
         tracing::trace!(method = "device_authorization_token");
 
@@ -111,7 +109,7 @@ impl TokenController {
     }
 
     pub async fn client_credentials_token(
-        state: Arc<AppState>,
+        state: AppState,
         client: ClientModel,
         scopes: ScopeModel,
     ) -> Result<TokenResponse, TokenControllerError> {
@@ -126,7 +124,7 @@ impl TokenController {
             return Err(TokenControllerError::InvalidClient);
         }
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let access_token_repository = &*state.repository_container.as_ref().access_token_repository;
         let refresh_token_repository =
             &*state.repository_container.as_ref().refresh_token_repository;
@@ -152,7 +150,7 @@ impl TokenController {
     }
 
     pub async fn refresh_token(
-        state: Arc<AppState>,
+        state: AppState,
         client: ClientModel,
         scopes: ScopeModel,
         params: TokenRequest,
@@ -170,7 +168,7 @@ impl TokenController {
             return Err(TokenControllerError::MissingRefreshToken);
         };
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let refresh_token_repository =
             &*state.repository_container.as_ref().refresh_token_repository;
 

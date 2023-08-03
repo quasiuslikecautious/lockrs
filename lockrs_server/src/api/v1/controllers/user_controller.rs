@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -27,7 +25,7 @@ pub struct UserController;
 
 impl UserController {
     pub async fn read(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<UserResponse, UserControllerError> {
@@ -37,7 +35,7 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
         let user = UserService::get_user_by_id(db_context, user_repository, &user_id)
             .await
@@ -57,7 +55,7 @@ impl UserController {
     }
 
     pub async fn update(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
         Json(update_user_request): Json<UserUpdateRequest>,
@@ -76,7 +74,7 @@ impl UserController {
             email: update_user_request.email,
         };
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
         let user =
             UserService::update_user_by_id(db_context, user_repository, &user_id, &update_user)
@@ -90,7 +88,7 @@ impl UserController {
     }
 
     pub async fn delete(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<StatusCode, UserControllerError> {
@@ -100,7 +98,7 @@ impl UserController {
             return Err(UserControllerError::Jwt);
         }
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
         UserService::delete_user_by_id(db_context, user_repository, &user_id)
             .await

@@ -3,6 +3,7 @@ use std::env;
 use chrono::Duration;
 use dotenvy::dotenv;
 
+#[derive(Clone)]
 pub struct AppConfig {
     pub postgres_url: String,
     pub redis_url: String,

@@ -7,18 +7,19 @@ mod routes;
 
 pub use self::common::*;
 
-use std::{net::SocketAddr, sync::Arc};
+use std::net::SocketAddr;
 
 /// rfc: https://www.rfc-editor.org/rfc/rfc6749#section-4
 #[tokio::main]
 async fn main() {
-    let state = Arc::new(AppState::new().await);
-    let app_routes = routes::routes(state);
-    let app = middlewares::with_middleware_stack(app_routes);
+    let state = AppState::new().await;
 
-    // run it with hyper on localhost:8080
+    let app = routes::routes().with_state(state);
+    let app = middlewares::with_middleware_stack(app);
+
+    // run it with hyper on localhost:9000
     let addr = SocketAddr::from(([127, 0, 0, 1], 9000));
-    println!("listening at {}", addr);
+    tracing::info!("listening at {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await

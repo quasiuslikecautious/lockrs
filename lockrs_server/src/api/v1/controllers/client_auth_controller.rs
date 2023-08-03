@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 use url::Url;
@@ -26,7 +24,7 @@ pub struct ClientCreateRequest {
 
 impl ClientAuthController {
     pub async fn register(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientAuthControllerError> {
         tracing::trace!(
@@ -43,7 +41,7 @@ impl ClientAuthController {
             redirect_url: new_client_request.redirect_url,
         };
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
         let client = ClientAuthService::register(db_context, client_auth_repository, new_client)

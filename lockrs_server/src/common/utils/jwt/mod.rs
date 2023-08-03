@@ -15,6 +15,10 @@ pub struct JwtUtil {
 }
 
 impl JwtUtil {
+    pub fn new(secret: RotatingKey) -> Self {
+        Self { secret }
+    }
+
     pub fn sign_jwt<T>(&self, claims: T) -> Result<String, JwtError>
     where
         T: Serialize,
