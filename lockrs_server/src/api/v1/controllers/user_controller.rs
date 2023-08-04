@@ -11,7 +11,6 @@ use crate::{
     api::v1::responses::UserResponse,
     models::UserUpdateModel,
     services::{UserService, UserServiceError},
-    utils::extractors::SessionJwt,
     AppState,
 };
 
@@ -101,7 +100,6 @@ impl UserController {
 }
 
 pub enum UserControllerError {
-    Jwt,
     NotFound,
     AlreadyExists,
     BadRequest,
@@ -111,7 +109,6 @@ pub enum UserControllerError {
 impl UserControllerError {
     pub fn error_code(&self) -> StatusCode {
         match self {
-            Self::Jwt => StatusCode::UNAUTHORIZED,
             Self::NotFound => StatusCode::NOT_FOUND,
             Self::AlreadyExists => StatusCode::BAD_REQUEST,
 
@@ -122,7 +119,6 @@ impl UserControllerError {
 
     pub fn error_message(&self) -> &'static str {
         match self {
-            Self::Jwt => "You do not have permission to view the requested resource.",
             Self::AlreadyExists => "An account is already associated with that email. Please login or use a different email.",
             Self::NotFound => "The requested user was not found.",
 

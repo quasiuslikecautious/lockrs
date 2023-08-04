@@ -4,8 +4,7 @@ use axum::{
     http::{request::Parts, StatusCode},
     response::IntoResponse,
 };
-use headers::{HeaderMapExt, Cookie};
-
+use headers::{Cookie, HeaderMapExt};
 
 #[derive(Debug)]
 pub struct Cookies(pub Cookie);

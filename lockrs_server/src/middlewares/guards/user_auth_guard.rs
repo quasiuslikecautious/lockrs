@@ -5,7 +5,11 @@ use axum::{
 };
 use uuid::Uuid;
 
-use crate::{api::v1::{models::SessionModel, services::SessionService}, utils::extractors::Cookies, AppState};
+use crate::{
+    api::v1::{models::SessionModel, services::SessionService},
+    utils::extractors::Cookies,
+    AppState,
+};
 
 pub struct UserAuthGuard;
 
@@ -18,18 +22,16 @@ where
     type Rejection = StatusCode;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        tracing::trace!(
-            method = "from_request_parts",
-        );
+        tracing::trace!(method = "from_request_parts",);
 
         let Cookies(cookies) = Cookies::extract(parts, state).map_err(|err| {
-            tracing::warn!("missing cookies: {:?}", err);
+            tracing::debug!("missing cookies: {:?}", err);
             StatusCode::BAD_REQUEST
         })?;
 
         let Some(jwt) = cookies.get("s_jwt")
         else {
-            tracing::warn!("missing session jwt cookie");
+            tracing::debug!("missing session jwt cookie");
             return Err(StatusCode::BAD_REQUEST);
         };
 
@@ -70,8 +72,6 @@ where
             tracing::debug!("user in auth does not match user in path");
             return Err(StatusCode::UNAUTHORIZED);
         }
-
-        tracing::warn!("Valid auth");
 
         Ok(Self)
     }

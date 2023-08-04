@@ -5,9 +5,7 @@ use axum::{
     response::IntoResponse,
 };
 
-use std::sync::Arc;
-
-use crate::{api::v1::models::SessionModel, utils::extractors::Cookies, AppState};
+use crate::{api::v1::models::SessionModel, AppState};
 
 #[derive(Debug)]
 pub struct SessionJwt(pub SessionModel);
@@ -20,7 +18,7 @@ where
 {
     type Rejection = SessionJwtError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(_parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         todo!();
     }
 }
