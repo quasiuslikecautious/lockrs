@@ -1,4 +1,5 @@
 use axum::{
+    middleware::from_extractor_with_state,
     routing::{delete, get, post, put},
     Router,
 };
@@ -8,13 +9,14 @@ use crate::{
         ClientAuthController, ClientController, RedirectController, SessionController,
         UserAuthController, UserController,
     },
+    middlewares::UserAuthGuard,
     oauth2::v1::controllers::{
         AuthorizeController, DeviceAuthorizationController, TokenController,
     },
     AppState,
 };
 
-pub fn routes() -> Router<AppState> {
+pub fn routes(state: &AppState) -> Router<AppState> {
     Router::new()
         // -------------------------------------- OAUTH2 ROUTES ------------------------------------
         .nest(
@@ -49,27 +51,32 @@ pub fn routes() -> Router<AppState> {
                         .route("/:redirect_id", delete(RedirectController::delete)),
                 )
                 .nest(
-                    "/sessions",
-                    Router::new()
-                        .route("/", post(SessionController::create))
-                        .route("/:session_id", get(SessionController::read))
-                        .route("/:session_id", put(SessionController::update))
-                        .route("/:session_id", delete(SessionController::delete)),
-                )
-                .nest(
-                    "/auth",
-                    Router::new()
-                        .route("/register", post(UserAuthController::register))
-                        .route("/login", post(UserAuthController::authenticate)),
-                )
-                .nest(
                     "/users",
                     Router::new()
                         .route("/:user_id", get(UserController::read))
                         .route("/:user_id", put(UserController::update))
                         .route("/:user_id", delete(UserController::delete))
                         .route("/:user_id/clients", get(ClientController::read_all))
-                        .route("/:user_id/sessions", get(SessionController::read_all)),
+                        .route("/:user_id/sessions", get(SessionController::read_all))
+                        .layer(from_extractor_with_state::<UserAuthGuard, AppState>(
+                            state.clone(),
+                        )),
+                )
+                // hybrid auth required routes
+                .nest(
+                    "/sessions",
+                    Router::new()
+                        .route("/:session_id", get(SessionController::read))
+                        .route("/:session_id", put(SessionController::update))
+                        .route("/:session_id", delete(SessionController::delete))
+                        .route("/", post(SessionController::create)),
+                )
+                // no auth required routes
+                .nest(
+                    "/auth",
+                    Router::new()
+                        .route("/register", post(UserAuthController::register))
+                        .route("/login", post(UserAuthController::authenticate)),
                 ),
         )
 }

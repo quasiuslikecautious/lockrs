@@ -14,6 +14,12 @@ pub struct AppState {
     pub db_context: Arc<DbContext>,
 }
 
+impl std::fmt::Debug for AppState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "AppState {{ jwt_util: {:?}, }}", self.jwt_util)
+    }
+}
+
 impl AppState {
     pub async fn new() -> Self {
         let config = AppConfig::default();

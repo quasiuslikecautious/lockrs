@@ -21,26 +21,7 @@ where
     type Rejection = SessionJwtError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let Some(Cookies(cookies)) = Cookies::from_request_parts(parts, state)
-            .await
-            .ok()
-        else {
-            return Err(SessionJwtError::CookieParsing);
-        };
-
-        let Some(jwt) = cookies.get(&String::from("s_jwt"))
-        else {
-            return Err(SessionJwtError::NotPresent);
-        };
-
-        let state = AppState::from_ref(state);
-
-        let Some(claims) = Arc::as_ref(&state.jwt_util).verify_jwt::<SessionModel>(jwt.as_str()).ok()
-        else {
-            return Err(SessionJwtError::InvalidJwt);
-        };
-
-        Ok(SessionJwt(claims.claims))
+        todo!();
     }
 }
 

@@ -52,6 +52,7 @@ impl JwtUtil {
     {
         let key_version =
             extract_key_version_from_token(token).ok_or(JwtError::MissingKeyVersion)?;
+
         let secret_key = &self
             .secret
             .get_verification_key(key_version)

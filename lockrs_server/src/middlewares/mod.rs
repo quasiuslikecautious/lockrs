@@ -1,7 +1,7 @@
-mod guard;
+mod guards;
 mod request_id;
 
-pub use self::guard::*;
+pub use self::guards::*;
 
 use std::time::Duration;
 
@@ -63,8 +63,7 @@ where
 
     // logging
     let filter = Targets::new()
-        .with_target("server", tracing::Level::TRACE)
-        .with_target("lockrs::trace::http", tracing::Level::TRACE)
+        .with_target("lockrs_server", tracing::Level::TRACE)
         .with_default(tracing::Level::INFO);
 
     tracing_subscriber::registry()
@@ -77,14 +76,14 @@ where
             let x_request_id = &request.headers()["x-request-id"];
 
             tracing::debug_span!(
-                target: "lockrs::trace::http",
+                target: "lockrs_server::trace::http",
                 "http-request",
                 "x-request-id" = ?x_request_id
             )
         })
         .on_request(|request: &Request<Body>, _span: &Span| {
             tracing::debug!(
-                target: "lockrs::trace::http",
+                target: "lockrs_server::trace::http",
                 "started processing request {} {} -- {:?}",
                 request.method(),
                 request.uri().path(),
@@ -93,7 +92,7 @@ where
         })
         .on_response(|response: &Response<_>, latency: Duration, _span: &Span| {
             tracing::debug!(
-                target: "lockrs::trace::http",
+                target: "lockrs_server::trace::http",
                 "finished processing request in {} ms -- {}",
                 latency.as_millis(),
                 response.status()

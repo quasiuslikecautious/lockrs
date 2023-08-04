@@ -14,7 +14,7 @@ use std::net::SocketAddr;
 async fn main() {
     let state = AppState::new().await;
 
-    let app = routes::routes().with_state(state);
+    let app = routes::routes(&state).with_state(state);
     let app = middlewares::with_middleware_stack(app);
 
     // run it with hyper on localhost:9000

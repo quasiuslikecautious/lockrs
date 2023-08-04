@@ -26,14 +26,9 @@ pub struct UserController;
 impl UserController {
     pub async fn read(
         State(state): State<AppState>,
-        SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<UserResponse, UserControllerError> {
         tracing::trace!(method = "read", id = user_id.to_string(),);
-
-        if jwt.user_id != user_id {
-            return Err(UserControllerError::Jwt);
-        }
 
         let db_context = &state.db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
@@ -56,7 +51,6 @@ impl UserController {
 
     pub async fn update(
         State(state): State<AppState>,
-        SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
         Json(update_user_request): Json<UserUpdateRequest>,
     ) -> Result<UserResponse, UserControllerError> {
@@ -65,10 +59,6 @@ impl UserController {
             id = user_id.to_string(),
             data = ?update_user_request,
         );
-
-        if jwt.user_id != user_id {
-            return Err(UserControllerError::Jwt);
-        }
 
         let update_user = UserUpdateModel {
             email: update_user_request.email,
@@ -89,14 +79,9 @@ impl UserController {
 
     pub async fn delete(
         State(state): State<AppState>,
-        SessionJwt(jwt): SessionJwt,
         Path(user_id): Path<Uuid>,
     ) -> Result<StatusCode, UserControllerError> {
         tracing::trace!(method = "delete", id = user_id.to_string());
-
-        if jwt.user_id != user_id {
-            return Err(UserControllerError::Jwt);
-        }
 
         let db_context = &state.db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;
