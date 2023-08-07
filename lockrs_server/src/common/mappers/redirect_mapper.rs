@@ -6,12 +6,12 @@ pub struct RedirectMapper;
 
 impl RedirectMapper {
     pub fn from_pg(pg_redirect: PgRedirectUri) -> RedirectModel {
-        RedirectModel {
-            id: pg_redirect.id,
-            client_id: pg_redirect.client_id,
-            uri: Url::parse(&pg_redirect.uri)
+        RedirectModel::new(
+            &pg_redirect.id,
+            pg_redirect.client_id.as_str(),
+            &Url::parse(&pg_redirect.uri)
                 .unwrap_or_else(|_| panic!("invalid url stored in database: {}", pg_redirect.id)),
-        }
+        )
     }
 }
 
@@ -39,7 +39,7 @@ mod tests {
 
         let actual_redirect = RedirectMapper::from_pg(pg_redirect);
 
-        let expected_redirect = RedirectModel { id, client_id, uri };
+        let expected_redirect = RedirectModel::new(&id, client_id.as_str(), &uri);
 
         assert_eq!(actual_redirect, expected_redirect);
     }
