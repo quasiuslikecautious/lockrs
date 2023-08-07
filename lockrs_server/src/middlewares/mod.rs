@@ -1,7 +1,5 @@
-mod guards;
+pub mod guards;
 mod request_id;
-
-pub use self::guards::*;
 
 use std::time::Duration;
 

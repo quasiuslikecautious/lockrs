@@ -2,10 +2,13 @@ use axum::{
     async_trait,
     extract::{FromRef, FromRequestParts},
     http::{request::Parts, StatusCode},
-    response::IntoResponse,
 };
 
-use crate::{api::v1::models::SessionModel, AppState};
+use crate::{
+    api::v1::models::SessionModel,
+    utils::{extractors::Cookies, jwt::JwtUtil},
+    AppState,
+};
 
 #[derive(Debug)]
 pub struct SessionJwt(pub SessionModel);
@@ -16,21 +19,32 @@ where
     AppState: FromRef<S>,
     S: Send + Sync,
 {
-    type Rejection = SessionJwtError;
+    type Rejection = StatusCode;
 
-    async fn from_request_parts(_parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        todo!();
-    }
-}
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let Cookies(cookies) = Cookies::from_request_parts(&mut *parts, state)
+            .await
+            .map_err(|err| {
+                tracing::debug!("missing cookies: {:?}", err);
+                StatusCode::UNAUTHORIZED
+            })?;
 
-pub enum SessionJwtError {
-    CookieParsing,
-    NotPresent,
-    InvalidJwt,
-}
+        let Some(jwt) = cookies.get(JwtUtil::cookie_name())
+        else {
+            tracing::debug!("missing session jwt cookie");
+            return Err(StatusCode::UNAUTHORIZED);
+        };
 
-impl IntoResponse for SessionJwtError {
-    fn into_response(self) -> axum::response::Response {
-        StatusCode::BAD_REQUEST.into_response()
+        // validate jwt
+        let app_state = AppState::from_ref(state);
+        let claims = app_state
+            .jwt_util
+            .verify_jwt::<SessionModel>(jwt)
+            .map_err(|err| {
+                tracing::debug!("bad jwt cookie: {:?}", err);
+                StatusCode::UNAUTHORIZED
+            })?;
+
+        Ok(Self(claims.claims))
     }
 }

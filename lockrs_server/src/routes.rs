@@ -9,7 +9,7 @@ use crate::{
         ClientAuthController, ClientController, RedirectController, SessionController,
         UserAuthController, UserController,
     },
-    middlewares::UserAuthGuard,
+    middlewares::guards::*,
     oauth2::v1::controllers::{
         AuthorizeController, DeviceAuthorizationController, TokenController,
     },
@@ -36,11 +36,14 @@ pub fn routes(state: &AppState) -> Router<AppState> {
                 .nest(
                     "/clients",
                     Router::new()
-                        .route("/", post(ClientAuthController::register))
                         .route("/:client_id", get(ClientController::read))
                         .route("/:client_id", put(ClientController::update))
                         .route("/:client_id", delete(ClientController::delete))
-                        .route("/:client_id/redirects", get(RedirectController::read_all)),
+                        .route("/:client_id/redirects", get(RedirectController::read_all))
+                        .layer(from_extractor_with_state::<ClientAuthGuard, AppState>(
+                            state.clone(),
+                        ))
+                        .route("/", post(ClientAuthController::register)),
                 )
                 .nest(
                     "/redirects",
@@ -62,7 +65,6 @@ pub fn routes(state: &AppState) -> Router<AppState> {
                             state.clone(),
                         )),
                 )
-                // hybrid auth required routes
                 .nest(
                     "/sessions",
                     Router::new()
@@ -71,7 +73,6 @@ pub fn routes(state: &AppState) -> Router<AppState> {
                         .route("/:session_id", delete(SessionController::delete))
                         .route("/", post(SessionController::create)),
                 )
-                // no auth required routes
                 .nest(
                     "/auth",
                     Router::new()

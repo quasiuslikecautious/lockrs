@@ -52,7 +52,7 @@ impl IntoResponse for NewSessionResponse {
             AppendHeaders([
                 (
                     SET_COOKIE,
-                    Self::create_http_cookie("s_jwt", jwt.as_str()).as_str(),
+                    Self::create_http_cookie(JwtUtil::cookie_name(), jwt.as_str()).as_str(),
                 ),
                 (
                     SET_COOKIE,

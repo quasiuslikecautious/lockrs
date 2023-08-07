@@ -1,12 +1,12 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 use url::Url;
-use uuid::Uuid;
 
 use crate::{
     api::v1::responses::ClientResponse,
     models::ClientRegistration,
     services::{ClientAuthService, ClientAuthServiceError},
+    utils::extractors::SessionJwt,
     AppState,
 };
 
@@ -14,7 +14,6 @@ pub struct ClientAuthController;
 
 #[derive(Debug, Deserialize)]
 pub struct ClientCreateRequest {
-    pub user_id: Uuid,
     pub is_public: bool,
     pub name: String,
     pub description: String,
@@ -25,6 +24,7 @@ pub struct ClientCreateRequest {
 impl ClientAuthController {
     pub async fn register(
         State(state): State<AppState>,
+        SessionJwt(auth_info): SessionJwt,
         Json(new_client_request): Json<ClientCreateRequest>,
     ) -> Result<ClientResponse, ClientAuthControllerError> {
         tracing::trace!(
@@ -33,7 +33,7 @@ impl ClientAuthController {
         );
 
         let new_client = ClientRegistration {
-            user_id: new_client_request.user_id,
+            user_id: auth_info.user_id,
             is_public: new_client_request.is_public,
             name: new_client_request.name,
             description: new_client_request.description,

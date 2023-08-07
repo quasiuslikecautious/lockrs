@@ -67,6 +67,10 @@ impl JwtUtil {
 
         Ok(token.claims)
     }
+
+    pub fn cookie_name() -> &'static str {
+        "s_jwt"
+    }
 }
 
 #[derive(Debug)]

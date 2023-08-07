@@ -3,14 +3,16 @@ use axum::{
     extract::{FromRef, FromRequestParts, Path},
     http::{request::Parts, StatusCode},
 };
-use uuid::Uuid;
 
-use crate::{api::v1::services::SessionService, utils::extractors::SessionJwt, AppState};
+use crate::{
+    api::v1::services::SessionService, services::ClientService, utils::extractors::SessionJwt,
+    AppState,
+};
 
-pub struct UserAuthGuard;
+pub struct ClientAuthGuard;
 
 #[async_trait]
-impl<S> FromRequestParts<S> for UserAuthGuard
+impl<S> FromRequestParts<S> for ClientAuthGuard
 where
     AppState: FromRef<S>,
     S: Send + Sync,
@@ -39,15 +41,27 @@ where
         })?;
 
         // validate user/permissions
-        let Path(path_user_id) = Path::<(Uuid,)>::from_request_parts(&mut *parts, state)
+        let Path(path_client_id) = Path::<(String,)>::from_request_parts(&mut *parts, state)
             .await
             .map_err(|err| {
                 tracing::debug!("bad path wildcard: {:?}", err);
                 StatusCode::NOT_FOUND
             })?;
 
-        if session.user_id != path_user_id.0 {
-            tracing::debug!("user in auth does not match user in path");
+        let client_repository = &*app_state.repository_container.as_ref().client_repository;
+        let client = ClientService::get_client_by_id(
+            db_context,
+            client_repository,
+            path_client_id.0.as_str(),
+        )
+        .await
+        .map_err(|err| {
+            tracing::debug!("client not found: {:?}", err);
+            StatusCode::NOT_FOUND
+        })?;
+
+        if session.user_id != client.user_id {
+            tracing::debug!("user in auth does not match user in client");
             return Err(StatusCode::UNAUTHORIZED);
         }
 
