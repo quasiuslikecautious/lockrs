@@ -4,14 +4,14 @@ pub struct ClientMapper;
 
 impl ClientMapper {
     pub fn from_pg(pg_client: PgClient) -> ClientModel {
-        ClientModel {
-            user_id: pg_client.user_id,
-            id: pg_client.id,
-            secret: pg_client.secret,
-            name: pg_client.name,
-            description: pg_client.description,
-            homepage_url: pg_client.homepage_url,
-        }
+        ClientModel::new(
+            &pg_client.user_id,
+            pg_client.id.as_str(),
+            pg_client.secret.is_none(),
+            pg_client.name.as_str(),
+            pg_client.description.as_str(),
+            pg_client.homepage_url.as_str(),
+        )
     }
 }
 
@@ -32,7 +32,7 @@ mod tests {
 
         let pg_client = PgClient {
             id: id.clone(),
-            secret: secret.clone(),
+            secret,
             user_id,
             is_public: false,
             name: name.clone(),
@@ -42,14 +42,14 @@ mod tests {
 
         let actual_client = ClientMapper::from_pg(pg_client);
 
-        let expected_client = ClientModel {
-            user_id,
-            id,
-            secret,
-            name,
-            description,
-            homepage_url,
-        };
+        let expected_client = ClientModel::new(
+            &user_id,
+            id.as_str(),
+            false,
+            name.as_str(),
+            description.as_str(),
+            homepage_url.as_str(),
+        );
 
         assert_eq!(actual_client, expected_client);
     }
@@ -65,7 +65,7 @@ mod tests {
 
         let pg_client = PgClient {
             id: id.clone(),
-            secret: secret.clone(),
+            secret,
             user_id,
             is_public: true,
             name: name.clone(),
@@ -75,14 +75,14 @@ mod tests {
 
         let actual_client = ClientMapper::from_pg(pg_client);
 
-        let expected_client = ClientModel {
-            user_id,
-            id,
-            secret,
-            name,
-            description,
-            homepage_url,
-        };
+        let expected_client = ClientModel::new(
+            &user_id,
+            id.as_str(),
+            true,
+            name.as_str(),
+            description.as_str(),
+            homepage_url.as_str(),
+        );
 
         assert_eq!(actual_client, expected_client);
     }

@@ -12,38 +12,13 @@ use crate::{
         DbContext,
     },
     mappers::UserMapper,
-    models::{UserCreateModel, UserModel, UserUpdateModel},
+    models::{UserModel, UserUpdateModel},
 };
 
 pub struct PgUserRepository;
 
 #[async_trait]
 impl UserRepository for PgUserRepository {
-    async fn create(
-        &self,
-        db_context: &Arc<DbContext>,
-        user_create: &UserCreateModel,
-    ) -> Result<UserModel, RepositoryError> {
-        tracing::trace!(method = "create", email = user_create.email);
-
-        let conn = &mut db_context
-            .as_ref()
-            .get_pg_connection()
-            .await
-            .map_err(RepositoryError::from)?;
-
-        let pg_user = diesel::insert_into(users::table)
-            .values((
-                users::email.eq(&user_create.email),
-                users::password_hash.eq(&user_create.password_hash),
-            ))
-            .get_result::<PgUser>(conn)
-            .await
-            .map_err(RepositoryError::map_diesel_create)?;
-
-        Ok(UserMapper::from_pg(pg_user))
-    }
-
     async fn get_by_id(
         &self,
         db_context: &Arc<DbContext>,

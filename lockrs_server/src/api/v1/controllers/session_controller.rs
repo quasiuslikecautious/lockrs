@@ -28,7 +28,7 @@ pub struct SessionUpdateRequest {
 
 impl SessionController {
     pub async fn read_all(
-        State(_state): State<Arc<AppState>>,
+        State(_state): State<AppState>,
         Path(user_id): Path<Uuid>,
     ) -> impl IntoResponse {
         tracing::trace!(method = "read_all", user_id = user_id.to_string());
@@ -40,17 +40,17 @@ impl SessionController {
     }
 
     pub async fn create(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         BearerAuth(session_token): BearerAuth,
     ) -> Result<NewSessionResponse, SessionControllerError> {
         tracing::trace!(method = "create");
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
         let session_token_repository =
             &*state.repository_container.as_ref().session_token_repository;
 
-        let session_create = SessionCreateModel { session_token };
+        let session_create = SessionCreateModel::new(session_token.as_str());
 
         let session = SessionService::create_session(
             db_context,
@@ -71,7 +71,7 @@ impl SessionController {
     }
 
     pub async fn read(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         SessionJwt(jwt): SessionJwt,
         Path(session_id): Path<String>,
     ) -> Result<SessionResponse, SessionControllerError> {
@@ -81,7 +81,7 @@ impl SessionController {
 
         tracing::trace!(method = "read", session_id = session_id);
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
 
         let session =
@@ -97,7 +97,7 @@ impl SessionController {
     }
 
     pub async fn update(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         SessionJwt(jwt): SessionJwt,
         Path(session_id): Path<String>,
         Json(session_update_request): Json<SessionUpdateRequest>,
@@ -112,12 +112,10 @@ impl SessionController {
             params = ?session_update_request
         );
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
 
-        let session_update = SessionUpdateModel {
-            refresh: session_update_request.refresh,
-        };
+        let session_update = SessionUpdateModel::new(session_update_request.refresh);
 
         let session = SessionService::update_session(
             db_context,
@@ -138,7 +136,7 @@ impl SessionController {
     }
 
     pub async fn delete(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         SessionJwt(jwt): SessionJwt,
         Path(session_id): Path<String>,
     ) -> Result<EndSessionResponse, SessionControllerError> {
@@ -148,7 +146,7 @@ impl SessionController {
             return Err(SessionControllerError::Jwt);
         }
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
 
         SessionService::delete_session(db_context, session_repository, &jwt.user_id)

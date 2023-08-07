@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -11,10 +9,11 @@ use crate::{
     oauth2::v1::{
         responses::DeviceAuthorizationResponse,
         services::{
-            ClientAuthService, ClientAuthServiceError, DeviceAuthorizationService,
-            DeviceAuthorizationServiceError, ScopeService, ScopeServiceError,
+            DeviceAuthorizationService, DeviceAuthorizationServiceError, ScopeService,
+            ScopeServiceError,
         },
     },
+    services::{ClientAuthService, ClientAuthServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
@@ -28,7 +27,7 @@ pub struct DeviceAuthorizationController;
 
 impl DeviceAuthorizationController {
     pub async fn handle(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<DeviceAuthorizationRequest>,
     ) -> Result<DeviceAuthorizationResponse, DeviceAuthorizationControllerError> {
@@ -37,12 +36,12 @@ impl DeviceAuthorizationController {
             params = ?params
         );
 
-        let db_context = &state.as_ref().db_context;
-        let client_repository = &*state.repository_container.as_ref().client_repository;
+        let db_context = &state.db_context;
+        let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
-        ClientAuthService::verify_credentials(
+        ClientAuthService::authenticate(
             db_context,
-            client_repository,
+            client_auth_repository,
             &client_credentials.id,
             client_credentials.secret.as_deref(),
         )

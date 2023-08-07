@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -9,10 +7,8 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-    oauth2::v1::services::{
-        ClientAuthService, ClientAuthServiceError, ScopeService, ScopeServiceError,
-    },
-    services::{RedirectService, RedirectServiceError},
+    oauth2::v1::services::{ScopeService, ScopeServiceError},
+    services::{ClientAuthService, ClientAuthServiceError, RedirectService, RedirectServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
@@ -30,7 +26,7 @@ pub struct AuthorizeController;
 
 impl AuthorizeController {
     pub async fn handle(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<AuthorizeRequest>,
     ) -> impl IntoResponse {
@@ -44,12 +40,12 @@ impl AuthorizeController {
             return Err(AuthorizeControllerError::InvalidResponseType);
         }
 
-        let db_context = &state.as_ref().db_context;
-        let client_repository = &*state.repository_container.as_ref().client_repository;
+        let db_context = &state.db_context;
+        let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
-        let client = ClientAuthService::verify_credentials(
+        let client = ClientAuthService::authenticate(
             db_context,
-            client_repository,
+            client_auth_repository,
             &client_credentials.id,
             client_credentials.secret.as_deref(),
         )

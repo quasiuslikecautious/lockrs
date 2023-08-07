@@ -1,3 +1,4 @@
+pub mod guards;
 mod request_id;
 
 use std::time::Duration;
@@ -22,7 +23,10 @@ use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::Subscriber
 
 use request_id::RequestId;
 
-pub fn with_middleware_stack(service: Router) -> Router {
+pub fn with_middleware_stack<T>(service: Router<T>) -> Router<T>
+where
+    T: Clone + Send + Sync + 'static,
+{
     // security
     let cors_layer = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PUT])
@@ -57,8 +61,7 @@ pub fn with_middleware_stack(service: Router) -> Router {
 
     // logging
     let filter = Targets::new()
-        .with_target("server", tracing::Level::TRACE)
-        .with_target("lockrs::trace::http", tracing::Level::TRACE)
+        .with_target("lockrs_server", tracing::Level::TRACE)
         .with_default(tracing::Level::INFO);
 
     tracing_subscriber::registry()
@@ -71,14 +74,14 @@ pub fn with_middleware_stack(service: Router) -> Router {
             let x_request_id = &request.headers()["x-request-id"];
 
             tracing::debug_span!(
-                target: "lockrs::trace::http",
+                target: "lockrs_server::trace::http",
                 "http-request",
                 "x-request-id" = ?x_request_id
             )
         })
         .on_request(|request: &Request<Body>, _span: &Span| {
             tracing::debug!(
-                target: "lockrs::trace::http",
+                target: "lockrs_server::trace::http",
                 "started processing request {} {} -- {:?}",
                 request.method(),
                 request.uri().path(),
@@ -87,7 +90,7 @@ pub fn with_middleware_stack(service: Router) -> Router {
         })
         .on_response(|response: &Response<_>, latency: Duration, _span: &Span| {
             tracing::debug!(
-                target: "lockrs::trace::http",
+                target: "lockrs_server::trace::http",
                 "finished processing request in {} ms -- {}",
                 latency.as_millis(),
                 response.status()

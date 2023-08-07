@@ -4,10 +4,14 @@ use async_trait::async_trait;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use url::Url;
+use uuid::Uuid;
 
 use crate::{
     db::{
-        pg::{models::PgRedirectUri, schema::redirect_uris},
+        pg::{
+            models::{PgClient, PgRedirectUri},
+            schema::{clients, redirect_uris},
+        },
         repositories::{RedirectUriRepository, RepositoryError},
         DbContext,
     },
@@ -71,12 +75,36 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         Ok(RedirectMapper::from_pg(db_redirect))
     }
 
+    async fn get_user_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &i32,
+    ) -> Result<Uuid, RepositoryError> {
+        tracing::trace!(method = "get_user_id", id);
+
+        let conn = &mut db_context
+            .as_ref()
+            .get_pg_connection()
+            .await
+            .map_err(RepositoryError::from)?;
+
+        let (_db_redirect, db_client) = redirect_uris::table
+            .inner_join(clients::table)
+            .filter(redirect_uris::id.eq(id))
+            .select((PgRedirectUri::as_select(), PgClient::as_select()))
+            .first::<(PgRedirectUri, PgClient)>(conn)
+            .await
+            .map_err(RepositoryError::map_diesel_found)?;
+
+        Ok(db_client.user_id)
+    }
+
     async fn get_all_by_client_id(
         &self,
         db_context: &Arc<DbContext>,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RepositoryError> {
-        tracing::trace!(method = "get_all_by_client_id", client_id,);
+        tracing::trace!(method = "get_all_by_client_id", client_id);
 
         let conn = &mut db_context
             .as_ref()

@@ -44,7 +44,7 @@ impl SessionService {
         let session_id = Self::generate_session_id();
         let expires_at = (Utc::now() + *session_duration).timestamp_millis();
 
-        let session_data = SessionModel::new(&session_id, &user_id, &expires_at);
+        let session_data = SessionModel::new(session_id.as_str(), &user_id, expires_at);
         let session = session_repository
             .create(db_context, &session_data)
             .await

@@ -1,14 +1,13 @@
 use axum::{
     async_trait,
     extract::FromRequestParts,
-    http::{header::COOKIE, request::Parts, StatusCode},
+    http::{request::Parts, StatusCode},
     response::IntoResponse,
 };
-
-use std::collections::HashMap;
+use headers::{Cookie, HeaderMapExt};
 
 #[derive(Debug)]
-pub struct Cookies(pub HashMap<String, String>);
+pub struct Cookies(pub Cookie);
 
 #[async_trait()]
 impl<S> FromRequestParts<S> for Cookies
@@ -18,32 +17,18 @@ where
     type Rejection = CookieError;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let headers = &parts.headers;
-
-        let Some(cookie_header) = headers.get(COOKIE)
-        else {
-            return Err(Self::Rejection::InvalidHeader);
-        };
-
-        let Some(cookie_str) = cookie_header.to_str().ok()
-        else {
-            return Err(Self::Rejection::InvalidHeaderEncoding);
-        };
-
-        let cookies = cookie_str
-            .split(';')
-            .map(|pair| pair.splitn(2, '=').collect::<Vec<&str>>())
-            .filter(|pair| pair.len() == 2)
-            .map(|pair| (pair[0].to_string(), pair[1].to_string()))
-            .collect::<HashMap<String, String>>();
+        let cookies = parts
+            .headers
+            .typed_get::<Cookie>()
+            .ok_or(CookieError::MissingCookie)?;
 
         Ok(Cookies(cookies))
     }
 }
 
+#[derive(Debug)]
 pub enum CookieError {
-    InvalidHeader,
-    InvalidHeaderEncoding,
+    MissingCookie,
 }
 
 impl IntoResponse for CookieError {

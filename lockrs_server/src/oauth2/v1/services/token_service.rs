@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
@@ -35,13 +35,13 @@ impl TokenService {
 
         let access_expiry = (Utc::now() + Duration::minutes(10)).naive_utc();
 
-        let access_token_create = AccessTokenCreateModel {
-            token: Self::generate_opaque_token()?,
-            client_id: client_id.to_string(),
-            user_id: user_id.cloned(),
-            expires_at: access_expiry,
-            scopes: scopes.scopes.clone(),
-        };
+        let access_token_create = AccessTokenCreateModel::new(
+            Self::generate_opaque_token()?.as_str(),
+            client_id,
+            user_id,
+            &access_expiry,
+            scopes.deref(),
+        );
 
         let access_token = AccessTokenService::create_token(
             db_context,
@@ -53,14 +53,14 @@ impl TokenService {
 
         let refresh_expiry = (Utc::now() + Duration::hours(24)).naive_utc();
 
-        let refresh_token_create = RefreshTokenCreateModel {
-            access_token_id: access_token.id,
-            token: Self::generate_opaque_token()?,
-            client_id: client_id.to_string(),
-            user_id: user_id.cloned(),
-            expires_at: refresh_expiry,
-            scopes: scopes.scopes.clone(),
-        };
+        let refresh_token_create = RefreshTokenCreateModel::new(
+            Self::generate_opaque_token()?.as_str(),
+            access_token.id,
+            client_id,
+            user_id,
+            &refresh_expiry,
+            scopes.deref(),
+        );
 
         let refresh_token = RefreshTokenService::create_token(
             db_context,
@@ -70,16 +70,17 @@ impl TokenService {
         .await
         .map_err(TokenServiceError::from)?;
 
-        let token = TokenModel {
-            token_type: String::from("Bearer"),
-            expires_in: 5000,
-            access_token: access_token.token,
-            refresh_token: refresh_token.token,
-            scopes: scopes
-                .scopes
-                .into_iter()
-                .fold(String::new(), |c, s| format!("{} {}", c, s)),
-        };
+        let token = TokenModel::new(
+            "Bearer",
+            5000,
+            access_token.token.as_str(),
+            refresh_token.token.as_str(),
+            scopes
+                .deref()
+                .iter()
+                .fold(String::new(), |c, s| format!("{} {}", c, s))
+                .as_str(),
+        );
 
         tracing::info!(
             "Token created: {{ client_id: {}, scopes: {:?} }}",

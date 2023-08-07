@@ -27,11 +27,8 @@ impl SessionTokenService {
         let ttl = Duration::minutes(5);
         let expires_at = (Utc::now() + ttl).timestamp_millis();
 
-        let token_data = SessionTokenModel {
-            token: Self::generate_session_token(),
-            user_id: *user_id,
-            expires_at,
-        };
+        let token_data =
+            SessionTokenModel::new(Self::generate_session_token().as_str(), user_id, expires_at);
 
         let token = session_token_repository
             .create(db_context, &token_data)

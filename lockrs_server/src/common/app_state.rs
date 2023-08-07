@@ -8,44 +8,53 @@ use crate::{
 
 #[derive(Clone)]
 pub struct AppState {
-    pub config: Arc<AppConfig>,
+    pub config: AppConfig,
     pub jwt_util: Arc<JwtUtil>,
     pub repository_container: Arc<RepositoryContainer>,
     pub db_context: Arc<DbContext>,
 }
 
+impl std::fmt::Debug for AppState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "AppState {{ jwt_util: {:?}, }}", self.jwt_util)
+    }
+}
+
 impl AppState {
     pub async fn new() -> Self {
-        let config = Arc::new(AppConfig::default());
+        let config = AppConfig::default();
 
-        let key_duration = config.as_ref().key_interval;
-        let overlap_duration = config.as_ref().auth_interval;
+        let key_duration = config.key_interval;
+        let overlap_duration = config.auth_interval;
 
-        let postgres_url = config.as_ref().postgres_url.clone();
-        let redis_url = config.as_ref().redis_url.clone();
+        let postgres_url = config.postgres_url.clone();
+        let redis_url = config.redis_url.clone();
         let db_context =
             Arc::new(DbContext::new(postgres_url.as_str(), 5, redis_url.as_str(), 5).await);
 
-        let repository_container = RepositoryContainer {
+        let repository_container = Arc::new(RepositoryContainer {
             access_token_repository: Box::new(PgAccessTokenRepository),
             authorization_code_repository: Box::new(PgAuthorizationCodeRepository),
             client_repository: Box::new(PgClientRepository),
+            client_auth_repository: Box::new(PgClientAuthRepository),
             device_authorization_repository: Box::new(PgDeviceAuthorizationRepository),
             redirect_repository: Box::new(PgRedirectUriRepository),
             refresh_token_repository: Box::new(PgRefreshTokenRepository),
             scope_repository: Box::new(PgScopeRepository),
             session_repository: Box::new(RedisSessionRepository),
             session_token_repository: Box::new(RedisSessionTokenRepository),
+            user_auth_repository: Box::new(PgUserAuthRepository),
             user_repository: Box::new(PgUserRepository),
-        };
+        });
 
         Self {
             config,
-            jwt_util: Arc::new(JwtUtil {
-                secret: RotatingKey::new(&key_duration, &overlap_duration),
-            }),
-            repository_container: Arc::new(repository_container),
-            db_context: Arc::clone(&db_context),
+            jwt_util: Arc::new(JwtUtil::new(RotatingKey::new(
+                &key_duration,
+                &overlap_duration,
+            ))),
+            repository_container,
+            db_context,
         }
     }
 }

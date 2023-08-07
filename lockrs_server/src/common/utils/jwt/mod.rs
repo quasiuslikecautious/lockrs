@@ -15,6 +15,10 @@ pub struct JwtUtil {
 }
 
 impl JwtUtil {
+    pub fn new(secret: RotatingKey) -> Self {
+        Self { secret }
+    }
+
     pub fn sign_jwt<T>(&self, claims: T) -> Result<String, JwtError>
     where
         T: Serialize,
@@ -48,6 +52,7 @@ impl JwtUtil {
     {
         let key_version =
             extract_key_version_from_token(token).ok_or(JwtError::MissingKeyVersion)?;
+
         let secret_key = &self
             .secret
             .get_verification_key(key_version)
@@ -61,6 +66,10 @@ impl JwtUtil {
         .map_err(|_| JwtError::InvalidToken)?;
 
         Ok(token.claims)
+    }
+
+    pub fn cookie_name() -> &'static str {
+        "s_jwt"
     }
 }
 

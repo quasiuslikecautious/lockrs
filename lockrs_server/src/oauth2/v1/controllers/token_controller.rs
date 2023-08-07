@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -11,11 +9,12 @@ use url::Url;
 use crate::{
     models::ClientModel,
     oauth2::v1::models::ScopeModel,
+    oauth2::v1::responses::TokenResponse,
     oauth2::v1::services::{
-        ClientAuthService, ClientAuthServiceError, RefreshTokenService, RefreshTokenServiceError,
-        ScopeService, ScopeServiceError, TokenService,
+        RefreshTokenService, RefreshTokenServiceError, ScopeService, ScopeServiceError,
+        TokenService, TokenServiceError,
     },
-    oauth2::v1::{responses::TokenResponse, services::TokenServiceError},
+    services::{ClientAuthService, ClientAuthServiceError},
     utils::extractors::ExtractClientCredentials,
     AppState,
 };
@@ -42,7 +41,7 @@ pub struct TokenController;
 
 impl TokenController {
     pub async fn handle(
-        State(state): State<Arc<AppState>>,
+        State(state): State<AppState>,
         ExtractClientCredentials(client_credentials): ExtractClientCredentials,
         Query(params): Query<TokenRequest>,
     ) -> Result<TokenResponse, TokenControllerError> {
@@ -51,12 +50,12 @@ impl TokenController {
             params = ?params
         );
 
-        let db_context = &state.as_ref().db_context;
-        let client_repository = &*state.repository_container.as_ref().client_repository;
+        let db_context = &state.db_context;
+        let client_auth_repository = &*state.repository_container.as_ref().client_auth_repository;
 
-        let client = ClientAuthService::verify_credentials(
+        let client = ClientAuthService::authenticate(
             db_context,
-            client_repository,
+            client_auth_repository,
             client_credentials.id.as_str(),
             client_credentials.secret.as_deref(),
         )
@@ -87,7 +86,7 @@ impl TokenController {
     }
 
     pub async fn authorization_code_token(
-        _state: Arc<AppState>,
+        _state: AppState,
     ) -> Result<TokenResponse, TokenControllerError> {
         tracing::trace!(method = "authorization_code_token");
 
@@ -98,7 +97,7 @@ impl TokenController {
     }
 
     pub async fn device_authorization_token(
-        _state: Arc<AppState>,
+        _state: AppState,
     ) -> Result<TokenResponse, TokenControllerError> {
         tracing::trace!(method = "device_authorization_token");
 
@@ -110,7 +109,7 @@ impl TokenController {
     }
 
     pub async fn client_credentials_token(
-        state: Arc<AppState>,
+        state: AppState,
         client: ClientModel,
         scopes: ScopeModel,
     ) -> Result<TokenResponse, TokenControllerError> {
@@ -120,12 +119,12 @@ impl TokenController {
             scopes = ?scopes
         );
 
-        if client.secret.is_none() {
-            tracing::error!(error = "Missing client secret");
+        if client.is_public {
+            tracing::error!(error = "Public client attempted to get token with credentials");
             return Err(TokenControllerError::InvalidClient);
         }
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let access_token_repository = &*state.repository_container.as_ref().access_token_repository;
         let refresh_token_repository =
             &*state.repository_container.as_ref().refresh_token_repository;
@@ -151,7 +150,7 @@ impl TokenController {
     }
 
     pub async fn refresh_token(
-        state: Arc<AppState>,
+        state: AppState,
         client: ClientModel,
         scopes: ScopeModel,
         params: TokenRequest,
@@ -169,7 +168,7 @@ impl TokenController {
             return Err(TokenControllerError::MissingRefreshToken);
         };
 
-        let db_context = &state.as_ref().db_context;
+        let db_context = &state.db_context;
         let refresh_token_repository =
             &*state.repository_container.as_ref().refresh_token_repository;
 

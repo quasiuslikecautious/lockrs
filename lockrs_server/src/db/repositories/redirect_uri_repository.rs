@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use url::Url;
+use uuid::Uuid;
 
 use crate::{
     db::{repositories::RepositoryError, DbContext},
@@ -21,6 +22,11 @@ pub trait RedirectUriRepository: Send + Sync {
         client_id: &str,
         uri: &Url,
     ) -> Result<RedirectModel, RepositoryError>;
+    async fn get_user_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &i32,
+    ) -> Result<Uuid, RepositoryError>;
     async fn get_all_by_client_id(
         &self,
         db_context: &Arc<DbContext>,
