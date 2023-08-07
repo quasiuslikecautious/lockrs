@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::db::pg::schema::clients;
 
-#[derive(Debug, Queryable, Insertable, Identifiable)]
+#[derive(Debug, Queryable, Insertable, Identifiable, Selectable)]
 #[diesel(primary_key(id), table_name = clients)]
 pub struct PgClient {
     pub id: String,

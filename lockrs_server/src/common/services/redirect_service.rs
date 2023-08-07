@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use thiserror::Error;
 use url::Url;
+use uuid::Uuid;
 
 use crate::{
     db::{
@@ -70,12 +71,25 @@ impl RedirectService {
         Ok(redirect)
     }
 
+    pub async fn get_user_id_from_redirect_id(
+        db_context: &Arc<DbContext>,
+        redirect_repository: &dyn RedirectUriRepository,
+        redirect_id: &i32,
+    ) -> Result<Uuid, RedirectServiceError> {
+        tracing::trace!(method = "get_user_id_from_redirect_id", redirect_id);
+
+        redirect_repository
+            .get_user_id(db_context, redirect_id)
+            .await
+            .map_err(RedirectServiceError::from)
+    }
+
     pub async fn get_redirects_from_client(
         db_context: &Arc<DbContext>,
         redirect_repository: &dyn RedirectUriRepository,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RedirectServiceError> {
-        tracing::trace!(method = "get_redirects_from_client", client_id,);
+        tracing::trace!(method = "get_redirects_from_client", client_id);
 
         redirect_repository
             .get_all_by_client_id(db_context, client_id)
