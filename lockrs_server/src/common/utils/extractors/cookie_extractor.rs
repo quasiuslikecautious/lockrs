@@ -9,20 +9,6 @@ use headers::{Cookie, HeaderMapExt};
 #[derive(Debug)]
 pub struct Cookies(pub Cookie);
 
-impl Cookies {
-    pub fn extract<S>(parts: &Parts, _state: &S) -> Result<Self, CookieError>
-    where
-        S: Send + Sync,
-    {
-        let cookies = parts
-            .headers
-            .typed_get::<Cookie>()
-            .ok_or(CookieError::MissingCookie)?;
-
-        Ok(Cookies(cookies))
-    }
-}
-
 #[async_trait()]
 impl<S> FromRequestParts<S> for Cookies
 where
@@ -31,7 +17,12 @@ where
     type Rejection = CookieError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        Self::extract(parts, state)
+        let cookies = parts
+            .headers
+            .typed_get::<Cookie>()
+            .ok_or(CookieError::MissingCookie)?;
+
+        Ok(Cookies(cookies))
     }
 }
 

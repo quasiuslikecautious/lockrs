@@ -24,10 +24,12 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         tracing::trace!(method = "from_request_parts",);
 
-        let Cookies(cookies) = Cookies::extract(parts, state).map_err(|err| {
-            tracing::debug!("missing cookies: {:?}", err);
-            StatusCode::BAD_REQUEST
-        })?;
+        let Cookies(cookies) = Cookies::from_request_parts(&mut *parts, state)
+            .await
+            .map_err(|err| {
+                tracing::debug!("missing cookies: {:?}", err);
+                StatusCode::BAD_REQUEST
+            })?;
 
         let Some(jwt) = cookies.get("s_jwt")
         else {
@@ -61,7 +63,7 @@ where
         })?;
 
         // validate user/permissions
-        let Path(path_user_id) = Path::<(Uuid,)>::from_request_parts(parts, state)
+        let Path(path_user_id) = Path::<(Uuid,)>::from_request_parts(&mut *parts, state)
             .await
             .map_err(|err| {
                 tracing::debug!("bad path wildcard: {:?}", err);
