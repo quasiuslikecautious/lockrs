@@ -50,7 +50,7 @@ impl SessionController {
         let session_token_repository =
             &*state.repository_container.as_ref().session_token_repository;
 
-        let session_create = SessionCreateModel { session_token };
+        let session_create = SessionCreateModel::new(session_token.as_str());
 
         let session = SessionService::create_session(
             db_context,
@@ -115,9 +115,7 @@ impl SessionController {
         let db_context = &state.db_context;
         let session_repository = &*state.repository_container.as_ref().session_repository;
 
-        let session_update = SessionUpdateModel {
-            refresh: session_update_request.refresh,
-        };
+        let session_update = SessionUpdateModel::new(session_update_request.refresh);
 
         let session = SessionService::update_session(
             db_context,

@@ -30,10 +30,10 @@ impl UserAuthController {
     ) -> Result<UserResponse, UserAuthControllerError> {
         tracing::trace!(method = "register_user", email = register_request.email,);
 
-        let registration = UserRegistration {
-            email: register_request.email,
-            password: register_request.password,
-        };
+        let registration = UserRegistration::new(
+            register_request.email.as_str(), 
+            register_request.password.as_str()
+        );
 
         let db_context = &state.db_context;
         let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
@@ -56,10 +56,10 @@ impl UserAuthController {
     ) -> Result<SessionTokenResponse, UserAuthControllerError> {
         tracing::trace!(method = "verify_credentials", email = credentials.public,);
 
-        let auth = UserLoginCredentials {
-            email: credentials.public,
-            password: credentials.private,
-        };
+        let auth = UserLoginCredentials::new(
+            credentials.public.as_str(),
+            credentials.private.as_str()
+        );
 
         let db_context = &state.db_context;
         let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
