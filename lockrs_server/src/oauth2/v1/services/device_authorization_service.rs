@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{Duration, Utc};
@@ -30,13 +30,13 @@ impl DeviceAuthorizationService {
 
         let expires_at = (Utc::now() + Duration::minutes(5)).naive_utc();
 
-        let device_authorization_create = DeviceAuthorizationCreateModel {
-            client_id: client_id.to_string(),
-            user_code: Self::generate_user_code()?,
-            device_code: Self::generate_device_code()?,
-            expires_at,
-            scopes: scopes_model.scopes,
-        };
+        let device_authorization_create = DeviceAuthorizationCreateModel::new(
+            client_id,
+            Self::generate_user_code()?.as_str(),
+            Self::generate_device_code()?.as_str(),
+            &expires_at,
+            scopes_model.deref(),
+        );
 
         let auth = device_authorization_repository
             .create(db_context, &device_authorization_create)

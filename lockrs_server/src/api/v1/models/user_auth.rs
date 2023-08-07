@@ -7,11 +7,7 @@ pub struct UserAuthModel {
 }
 
 impl UserAuthModel {
-    pub fn new(
-        id: &Uuid,
-        email: &str,
-        password_hash: &str,
-    ) -> Self {
+    pub fn new(id: &Uuid, email: &str, password_hash: &str) -> Self {
         Self {
             id: id.to_owned(),
             email: email.to_owned(),
@@ -22,7 +18,11 @@ impl UserAuthModel {
 
 impl std::fmt::Debug for UserAuthModel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UserAuthModel {{ {:?}, {:?}, password_hash: ######## }}", self.id, self.email)
+        write!(
+            f,
+            "UserAuthModel {{ {:?}, {:?}, password_hash: ######## }}",
+            self.id, self.email
+        )
     }
 }
 
@@ -42,7 +42,11 @@ impl UserLoginCredentials {
 
 impl std::fmt::Debug for UserLoginCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UserLoginCredentials: {{ {:?}, password: ******** }}", self.email)
+        write!(
+            f,
+            "UserLoginCredentials: {{ {:?}, password: ******** }}",
+            self.email
+        )
     }
 }
 
@@ -62,7 +66,11 @@ impl UserRegistration {
 
 impl std::fmt::Debug for UserRegistration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UserRegistration: {{ {:?}, password: ******** }}", self.email)
+        write!(
+            f,
+            "UserRegistration: {{ {:?}, password: ******** }}",
+            self.email
+        )
     }
 }
 
@@ -82,6 +90,10 @@ impl UserRegisterModel {
 
 impl std::fmt::Debug for UserRegisterModel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UserRegistration: {{ {:?}, password_hash: ######## }}", self.email)
+        write!(
+            f,
+            "UserRegistration: {{ {:?}, password_hash: ######## }}",
+            self.email
+        )
     }
 }

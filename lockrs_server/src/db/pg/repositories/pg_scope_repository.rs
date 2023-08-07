@@ -50,7 +50,7 @@ impl ScopeRepository for PgScopeRepository {
             .await
             .map_err(RepositoryError::map_diesel_found)?;
 
-        Ok(ScopeModel { scopes: pg_scopes })
+        Ok(ScopeModel::new(pg_scopes.as_slice()))
     }
 
     async fn delete_by_name(

@@ -6,14 +6,14 @@ pub struct AccessTokenMapper;
 
 impl AccessTokenMapper {
     pub fn from_pg(pg_token: PgAccessToken) -> AccessTokenModel {
-        AccessTokenModel {
-            id: pg_token.id,
-            token: pg_token.token,
-            client_id: pg_token.client_id,
-            user_id: pg_token.user_id,
-            scopes: ScopeMapper::pg_list_to_vec(&pg_token.scopes),
-            expires_at: pg_token.expires_at,
-        }
+        AccessTokenModel::new(
+            pg_token.id,
+            pg_token.token.as_str(),
+            pg_token.client_id.as_str(),
+            pg_token.user_id.as_ref(),
+            &pg_token.expires_at,
+            ScopeMapper::pg_list_to_vec(&pg_token.scopes).as_slice(),
+        )
     }
 }
 
@@ -46,14 +46,14 @@ mod tests {
 
         let actual_token = AccessTokenMapper::from_pg(pg_token);
 
-        let expected_token = AccessTokenModel {
+        let expected_token = AccessTokenModel::new(
             id,
-            token,
-            client_id,
-            user_id,
-            expires_at,
-            scopes: vec![String::from("read"), String::from("write")],
-        };
+            token.as_str(),
+            client_id.as_str(),
+            user_id.as_ref(),
+            &expires_at,
+            &[String::from("read"), String::from("write")],
+        );
 
         assert_eq!(actual_token, expected_token);
     }
@@ -80,14 +80,14 @@ mod tests {
 
         let actual_token = AccessTokenMapper::from_pg(pg_token);
 
-        let expected_token = AccessTokenModel {
+        let expected_token = AccessTokenModel::new(
             id,
-            token,
-            client_id,
-            user_id,
-            expires_at,
-            scopes: vec![String::from("read"), String::from("write")],
-        };
+            token.as_str(),
+            client_id.as_str(),
+            user_id.as_ref(),
+            &expires_at,
+            &[String::from("read"), String::from("write")],
+        );
 
         assert_eq!(actual_token, expected_token);
     }

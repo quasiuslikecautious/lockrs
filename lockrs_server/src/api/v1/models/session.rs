@@ -43,8 +43,6 @@ pub struct SessionUpdateModel {
 
 impl SessionUpdateModel {
     pub fn new(refresh: bool) -> Self {
-        Self {
-            refresh,
-        }
+        Self { refresh }
     }
 }

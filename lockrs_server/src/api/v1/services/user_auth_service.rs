@@ -30,10 +30,8 @@ impl UserAuthService {
 
         let password_hash = Self::hash_password(register_user.password.as_str())?;
 
-        let create_user = UserRegisterModel::new(
-            register_user.email.as_str(),
-            password_hash.as_str(),
-        );
+        let create_user =
+            UserRegisterModel::new(register_user.email.as_str(), password_hash.as_str());
 
         let user = user_auth_repository
             .create(db_context, &create_user)

@@ -45,14 +45,14 @@ mod tests {
 
         let actual_auth = DeviceAuthorizationMapper::from_pg(pg_auth);
 
-        let expected_auth = DeviceAuthorizationModel {
+        let expected_auth = DeviceAuthorizationModel::new(
             id,
-            client_id,
-            user_code,
-            device_code,
-            expires_at,
-            scopes: vec![String::from("read"), String::from("write")],
-        };
+            client_id.as_str(),
+            user_code.as_str(),
+            device_code.as_str(),
+            &expires_at,
+            &[String::from("read"), String::from("write")],
+        );
 
         assert_eq!(actual_auth, expected_auth);
     }
