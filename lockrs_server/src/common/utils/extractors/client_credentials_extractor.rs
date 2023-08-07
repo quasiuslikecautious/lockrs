@@ -27,10 +27,10 @@ where
 
         if let Ok(BasicAuth(client_credentials)) = BasicAuth::from_request_parts(parts, state).await
         {
-            return Ok(Self(ClientLoginCredentials {
-                id: client_credentials.public,
-                secret: Some(client_credentials.private),
-            }));
+            return Ok(Self(ClientLoginCredentials::new(
+                client_credentials.public.as_str(),
+                Some(client_credentials.private).as_deref(),
+            )));
         }
 
         Err(Self::Rejection::NotFound)
@@ -83,8 +83,8 @@ fn get_client_from_query(query: Option<&str>) -> Option<ClientLoginCredentials> 
         return None;
     };
 
-    Some(ClientLoginCredentials {
-        id: client_id_val.to_owned(),
-        secret: None,
-    })
+    Some(ClientLoginCredentials::new(
+        client_id_val,
+        None,
+    ))
 }

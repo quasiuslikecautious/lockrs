@@ -7,14 +7,14 @@ pub struct ClientAuthMapper;
 
 impl ClientAuthMapper {
     pub fn from_pg(pg_client: PgClient) -> ClientAuthModel {
-        ClientAuthModel {
-            user_id: pg_client.user_id,
-            id: pg_client.id,
-            secret: pg_client.secret,
-            name: pg_client.name,
-            description: pg_client.description,
-            homepage_url: pg_client.homepage_url,
-        }
+        ClientAuthModel::new(
+            &pg_client.user_id,
+            pg_client.id.as_str(),
+            pg_client.secret.as_deref(),
+            pg_client.name.as_str(),
+            pg_client.description.as_str(),
+            pg_client.homepage_url.as_str(),
+        )
     }
 
     pub fn into_client(client_auth: ClientAuthModel) -> ClientModel {

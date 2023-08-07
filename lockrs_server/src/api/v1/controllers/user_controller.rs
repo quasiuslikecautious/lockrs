@@ -59,9 +59,7 @@ impl UserController {
             data = ?update_user_request,
         );
 
-        let update_user = UserUpdateModel {
-            email: update_user_request.email,
-        };
+        let update_user = UserUpdateModel::new(update_user_request.email.as_deref());
 
         let db_context = &state.db_context;
         let user_repository = &*state.repository_container.as_ref().user_repository;

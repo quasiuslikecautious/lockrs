@@ -24,7 +24,7 @@ pub struct RedirectCreateModel {
 }
 
 impl RedirectCreateModel {
-    pub fn new(client_id: &str, uri: Url) -> Self {
+    pub fn new(client_id: &str, uri: &Url) -> Self {
         Self {
             client_id: client_id.to_owned(),
             uri: uri.to_owned(),

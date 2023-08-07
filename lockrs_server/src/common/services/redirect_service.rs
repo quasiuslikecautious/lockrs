@@ -26,10 +26,7 @@ impl RedirectService {
             %uri
         );
 
-        let redirect_create = RedirectCreateModel {
-            client_id: client_id.to_string(),
-            uri: uri.clone(),
-        };
+        let redirect_create = RedirectCreateModel::new(client_id, uri);
 
         let redirect = redirect_repository
             .create(db_context, &redirect_create)
@@ -39,7 +36,7 @@ impl RedirectService {
         tracing::info!(
             "Redirect Uri created: {{ id: {}, uri: {}, client_id: {} }}",
             redirect.id,
-            uri.to_string(),
+            uri,
             client_id,
         );
 

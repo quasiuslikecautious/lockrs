@@ -23,8 +23,7 @@ impl ClientAuthService {
     ) -> Result<ClientModel, ClientAuthServiceError> {
         tracing::trace!(
             method = "register",
-            user_id = new_client.user_id.to_string(),
-            name = new_client.name,
+            client = ?new_client,
         );
 
         let id = Self::generate_random_string();
@@ -33,19 +32,19 @@ impl ClientAuthService {
             false => Some(Self::generate_random_string()),
         };
 
-        let client_create = ClientAuthModel {
-            user_id: new_client.user_id,
-            id: id.clone(),
-            secret,
-            name: new_client.name,
-            description: new_client.description,
-            homepage_url: new_client.homepage_url.to_string(),
-        };
+        let client_create = ClientAuthModel::new(
+            &new_client.user_id,
+            id.as_str(),
+            secret.as_deref(),
+            new_client.name.as_str(),
+            new_client.description.as_str(),
+            new_client.homepage_url.to_string().as_str(),
+        );
 
-        let redirect_create = RedirectCreateModel {
-            client_id: id,
-            uri: new_client.redirect_url,
-        };
+        let redirect_create = RedirectCreateModel::new(
+            id.as_str(),
+            &new_client.redirect_url,
+        );
 
         let client = client_auth_repository
             .create(db_context, &client_create, &redirect_create)
@@ -53,9 +52,8 @@ impl ClientAuthService {
             .map_err(ClientAuthServiceError::from)?;
 
         tracing::info!(
-            "Client created: {{ id: {}, name: {} }}",
-            client.id,
-            client.name,
+            "Client created: {:?}",
+            client,
         );
 
         Ok(ClientAuthMapper::into_client(client))
@@ -74,7 +72,7 @@ impl ClientAuthService {
             .await
             .map_err(ClientAuthServiceError::from)?;
 
-        tracing::info!("Client authenticated with ID: {}", id);
+        tracing::info!("Client authenticated: {:?}", client);
 
         Ok(ClientAuthMapper::into_client(client))
     }
