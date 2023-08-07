@@ -4,10 +4,7 @@ pub struct UserMapper;
 
 impl UserMapper {
     pub fn from_pg(pg_user: PgUser) -> UserModel {
-        UserModel {
-            id: pg_user.id,
-            email: pg_user.email,
-        }
+        UserModel::new(pg_user.id, pg_user.email.as_str())
     }
 
     pub fn into_pg(user: UserModel, password_hash: String) -> PgUser {
@@ -39,7 +36,7 @@ mod tests {
 
         let actual_user = UserMapper::from_pg(pg_user);
 
-        let expected_user = UserModel { id, email };
+        let expected_user = UserModel::new(id, email.as_str());
 
         assert_eq!(actual_user, expected_user);
     }

@@ -12,9 +12,6 @@ impl UserAuthMapper {
     }
 
     pub fn into_user(user_auth: UserAuthModel) -> UserModel {
-        UserModel {
-            id: user_auth.id,
-            email: user_auth.email,
-        }
+        UserModel::new(user_auth.id, user_auth.email.as_str())
     }
 }
