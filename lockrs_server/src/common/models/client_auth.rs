@@ -35,11 +35,7 @@ impl std::fmt::Debug for ClientAuthModel {
         write!(
             f,
             "ClientAuthModel: {{ {:?}, {:?}, secret: ********, {:?}, {:?}, {:?} }}",
-            self.user_id,
-            self.id,
-            self.name,
-            self.description,
-            self.homepage_url,
+            self.user_id, self.id, self.name, self.description, self.homepage_url,
         )
     }
 }
@@ -90,6 +86,10 @@ impl ClientLoginCredentials {
 
 impl std::fmt::Debug for ClientLoginCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ClientLoginCredentials: {{ {:?}, secret: ******** }}", self.id)
+        write!(
+            f,
+            "ClientLoginCredentials: {{ {:?}, secret: ******** }}",
+            self.id
+        )
     }
 }

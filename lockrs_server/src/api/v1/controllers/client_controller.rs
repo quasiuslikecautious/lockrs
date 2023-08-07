@@ -92,11 +92,11 @@ impl ClientController {
             params = ?update_client_request
         );
 
-        let update_client = ClientUpdateModel {
-            name: update_client_request.name,
-            description: update_client_request.description,
-            homepage_url: update_client_request.homepage_url,
-        };
+        let update_client = ClientUpdateModel::new(
+            update_client_request.name.as_deref(),
+            update_client_request.description.as_deref(),
+            update_client_request.homepage_url.as_deref(),
+        );
 
         let db_context = &state.db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;

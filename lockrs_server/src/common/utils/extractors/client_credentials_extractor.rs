@@ -83,8 +83,5 @@ fn get_client_from_query(query: Option<&str>) -> Option<ClientLoginCredentials> 
         return None;
     };
 
-    Some(ClientLoginCredentials::new(
-        client_id_val,
-        None,
-    ))
+    Some(ClientLoginCredentials::new(client_id_val, None))
 }

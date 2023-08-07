@@ -41,20 +41,14 @@ impl ClientAuthService {
             new_client.homepage_url.to_string().as_str(),
         );
 
-        let redirect_create = RedirectCreateModel::new(
-            id.as_str(),
-            &new_client.redirect_url,
-        );
+        let redirect_create = RedirectCreateModel::new(id.as_str(), &new_client.redirect_url);
 
         let client = client_auth_repository
             .create(db_context, &client_create, &redirect_create)
             .await
             .map_err(ClientAuthServiceError::from)?;
 
-        tracing::info!(
-            "Client created: {:?}",
-            client,
-        );
+        tracing::info!("Client created: {:?}", client,);
 
         Ok(ClientAuthMapper::into_client(client))
     }

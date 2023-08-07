@@ -18,13 +18,13 @@ impl ClientAuthMapper {
     }
 
     pub fn into_client(client_auth: ClientAuthModel) -> ClientModel {
-        ClientModel {
-            user_id: client_auth.user_id,
-            id: client_auth.id,
-            is_public: client_auth.secret.is_none(),
-            name: client_auth.name,
-            description: client_auth.description,
-            homepage_url: client_auth.homepage_url,
-        }
+        ClientModel::new(
+            &client_auth.user_id,
+            client_auth.id.as_str(),
+            client_auth.secret.is_none(),
+            client_auth.name.as_str(),
+            client_auth.description.as_str(),
+            client_auth.homepage_url.as_str(),
+        )
     }
 }
