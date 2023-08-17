@@ -6,6 +6,7 @@ use axum::{
 };
 use serde::Deserialize;
 use url::Url;
+use uuid::Uuid;
 
 use crate::{
     api::v1::responses::RedirectResponse,
@@ -79,15 +80,23 @@ impl RedirectController {
     }
 
     pub async fn read(
-        State(_state): State<AppState>,
-        Path(redirect_id): Path<String>,
-    ) -> impl IntoResponse {
-        tracing::trace!(method = "read", redirect_id = redirect_id);
+        State(state): State<AppState>,
+        Path(redirect_id): Path<Uuid>,
+    ) -> Result<RedirectResponse, RedirectControllerError> {
+        tracing::trace!(method = "read", ?redirect_id);
 
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            format!("/redirects/{}", redirect_id),
-        )
+        let db_context = &state.db_context;
+        let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
+
+        let redirect = RedirectService::get_redirect_by_id(db_context, redirect_repository, &redirect_id)
+            .await
+            .map_err(RedirectControllerError::from)?;
+
+        Ok(RedirectResponse {
+            id: redirect.id,
+            client_id: redirect.client_id,
+            uri: redirect.uri,
+        })
     }
 
     pub async fn update(

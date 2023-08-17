@@ -16,6 +16,11 @@ pub trait RedirectUriRepository: Send + Sync {
         db_context: &Arc<DbContext>,
         redirect_create: &RedirectCreateModel,
     ) -> Result<RedirectModel, RepositoryError>;
+    async fn get_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &Uuid,
+    ) -> Result<RedirectModel, RepositoryError>;
     async fn get_by_uri(
         &self,
         db_context: &Arc<DbContext>,
@@ -25,7 +30,7 @@ pub trait RedirectUriRepository: Send + Sync {
     async fn get_user_id(
         &self,
         db_context: &Arc<DbContext>,
-        id: &i32,
+        id: &Uuid,
     ) -> Result<Uuid, RepositoryError>;
     async fn get_all_by_client_id(
         &self,

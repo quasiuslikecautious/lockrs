@@ -65,7 +65,7 @@ diesel::table! {
 
 diesel::table! {
     redirect_uris (id) {
-        id -> Int4,
+        id -> Uuid,
         #[max_length = 32]
         client_id -> Varchar,
         uri -> Text,

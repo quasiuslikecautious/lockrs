@@ -1,6 +1,6 @@
 -- Your SQL goes here
 CREATE TABLE IF NOT EXISTS redirect_uris (
-	id SERIAL PRIMARY KEY,
+	id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
 	client_id VARCHAR(32) NOT NULL,
 	uri TEXT NOT NULL,
 	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),

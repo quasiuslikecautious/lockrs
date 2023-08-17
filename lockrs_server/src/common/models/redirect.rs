@@ -1,14 +1,15 @@
 use url::Url;
+use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
 pub struct RedirectModel {
-    pub id: i32,
+    pub id: Uuid,
     pub client_id: String,
     pub uri: Url,
 }
 
 impl RedirectModel {
-    pub fn new(id: &i32, client_id: &str, uri: &Url) -> Self {
+    pub fn new(id: &Uuid, client_id: &str, uri: &Url) -> Self {
         Self {
             id: id.to_owned(),
             client_id: client_id.to_owned(),
@@ -32,4 +33,5 @@ impl RedirectCreateModel {
     }
 }
 
+// TODO
 pub struct RedirectUpdateModel {}

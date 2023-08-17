@@ -51,6 +51,28 @@ impl RedirectUriRepository for PgRedirectUriRepository {
         Ok(RedirectMapper::from_pg(pg_redirect))
     }
 
+    async fn get_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &Uuid,
+    ) -> Result<RedirectModel, RepositoryError> {
+        tracing::trace!(method = "get_by_id", ?id);
+
+        let conn = &mut db_context
+            .as_ref()
+            .get_pg_connection()
+            .await
+            .map_err(RepositoryError::from)?;
+
+        let pg_redirect = redirect_uris::table
+            .filter(redirect_uris::id.eq(id))
+            .first::<PgRedirectUri>(conn)
+            .await
+            .map_err(RepositoryError::map_diesel_found)?;
+
+        Ok(RedirectMapper::from_pg(pg_redirect))
+    }
+
     async fn get_by_uri(
         &self,
         db_context: &Arc<DbContext>,
@@ -78,9 +100,9 @@ impl RedirectUriRepository for PgRedirectUriRepository {
     async fn get_user_id(
         &self,
         db_context: &Arc<DbContext>,
-        id: &i32,
+        id: &Uuid,
     ) -> Result<Uuid, RepositoryError> {
-        tracing::trace!(method = "get_user_id", id);
+        tracing::trace!(method = "get_user_id", ?id);
 
         let conn = &mut db_context
             .as_ref()

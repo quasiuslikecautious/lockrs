@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use uuid::Uuid;
 
 use crate::db::pg::{models::PgClient, schema::redirect_uris};
 
@@ -7,7 +8,7 @@ use crate::db::pg::{models::PgClient, schema::redirect_uris};
 #[diesel(belongs_to(PgClient, foreign_key = client_id))]
 #[diesel(primary_key(id), table_name = redirect_uris)]
 pub struct PgRedirectUri {
-    pub id: i32,
+    pub id: Uuid,
     pub client_id: String,
     pub uri: String,
     pub created_at: NaiveDateTime,

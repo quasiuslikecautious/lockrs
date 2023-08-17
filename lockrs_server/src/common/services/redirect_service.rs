@@ -35,6 +35,19 @@ impl RedirectService {
         Ok(redirect)
     }
 
+    pub async fn get_redirect_by_id(
+        db_context: &Arc<DbContext>,
+        redirect_repository: &dyn RedirectUriRepository,
+        id: &Uuid,
+    ) -> Result<RedirectModel, RedirectServiceError> {
+        tracing::trace!(method = "get_redirect_by_id", ?id);
+
+        redirect_repository
+            .get_by_id(db_context, id)
+            .await
+            .map_err(RedirectServiceError::from)
+    }
+
     pub async fn verify_redirect(
         db_context: &Arc<DbContext>,
         redirect_repository: &dyn RedirectUriRepository,
@@ -65,9 +78,9 @@ impl RedirectService {
     pub async fn get_user_id_from_redirect_id(
         db_context: &Arc<DbContext>,
         redirect_repository: &dyn RedirectUriRepository,
-        redirect_id: &i32,
+        redirect_id: &Uuid,
     ) -> Result<Uuid, RedirectServiceError> {
-        tracing::trace!(method = "get_user_id_from_redirect_id", redirect_id);
+        tracing::trace!(method = "get_user_id_from_redirect_id", ?redirect_id);
 
         redirect_repository
             .get_user_id(db_context, redirect_id)

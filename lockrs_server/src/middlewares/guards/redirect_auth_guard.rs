@@ -3,6 +3,7 @@ use axum::{
     extract::{FromRef, FromRequestParts, Path},
     http::{request::Parts, StatusCode},
 };
+use uuid::Uuid;
 
 use crate::{
     api::v1::services::SessionService, services::RedirectService, utils::extractors::SessionJwt,
@@ -41,7 +42,7 @@ where
         })?;
 
         // validate user/permissions
-        let Path(path_redirect_id) = Path::<(i32,)>::from_request_parts(&mut *parts, state)
+        let Path(path_redirect_id) = Path::<(Uuid,)>::from_request_parts(&mut *parts, state)
             .await
             .map_err(|err| {
                 tracing::debug!("bad path wildcard: {:?}", err);

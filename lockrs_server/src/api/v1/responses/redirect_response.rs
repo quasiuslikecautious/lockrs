@@ -1,10 +1,11 @@
 use axum::{response::IntoResponse, Json};
 use serde::Serialize;
 use url::Url;
+use uuid::Uuid;
 
 #[derive(Serialize)]
 pub struct RedirectResponse {
-    pub id: i32,
+    pub id: Uuid,
     pub client_id: String,
     pub uri: Url,
 }
