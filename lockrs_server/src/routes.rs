@@ -50,6 +50,9 @@ pub fn routes(state: &AppState) -> Router<AppState> {
                     Router::new()
                         .route("/:redirect_id", get(RedirectController::read))
                         .route("/:redirect_id", delete(RedirectController::delete))
+                        .layer(from_extractor_with_state::<RedirectAuthGuard, AppState>(
+                            state.clone(),
+                        ))
                         .route("/", post(RedirectController::create)),
                 )
                 .nest(
@@ -59,7 +62,6 @@ pub fn routes(state: &AppState) -> Router<AppState> {
                         .route("/:user_id", put(UserController::update))
                         .route("/:user_id", delete(UserController::delete))
                         .route("/:user_id/clients", get(ClientController::read_all))
-                        .route("/:user_id/sessions", get(SessionController::read_all))
                         .layer(from_extractor_with_state::<UserAuthGuard, AppState>(
                             state.clone(),
                         )),
@@ -73,6 +75,7 @@ pub fn routes(state: &AppState) -> Router<AppState> {
                         .layer(from_extractor_with_state::<SessionAuthGuard, AppState>(
                             state.clone(),
                         ))
+                        .route("/me", get(SessionController::read_active))
                         .route("/", post(SessionController::create)),
                 )
                 .nest(

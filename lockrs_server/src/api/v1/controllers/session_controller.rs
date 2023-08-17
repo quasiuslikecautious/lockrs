@@ -7,7 +7,6 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
-use uuid::Uuid;
 
 use crate::{
     api::v1::{
@@ -27,16 +26,29 @@ pub struct SessionUpdateRequest {
 }
 
 impl SessionController {
-    pub async fn read_all(
-        State(_state): State<AppState>,
-        Path(user_id): Path<Uuid>,
-    ) -> impl IntoResponse {
-        tracing::trace!(method = "read_all", user_id = user_id.to_string());
+    pub async fn read_active(
+        State(state): State<AppState>,
+        SessionJwt(jwt): SessionJwt,
+    ) -> Result<SessionResponse, SessionControllerError> {
+        tracing::trace!(method = "read_current", session_id = jwt.id);
 
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            format!("/users/{}/sessions", user_id),
+        let db_context = &state.db_context;
+        let session_repository = &*state.repository_container.as_ref().session_repository;
+
+        let session = SessionService::get_session(
+            db_context,
+            session_repository,
+            &jwt.user_id,
+            jwt.id.as_str(),
         )
+        .await
+        .map_err(SessionControllerError::from)?;
+
+        Ok(SessionResponse {
+            id: session.id,
+            user_id: session.user_id,
+            expires_at: session.expires_at,
+        })
     }
 
     pub async fn create(
@@ -75,10 +87,6 @@ impl SessionController {
         SessionJwt(jwt): SessionJwt,
         Path(session_id): Path<String>,
     ) -> Result<SessionResponse, SessionControllerError> {
-        if jwt.id != session_id {
-            return Err(SessionControllerError::Jwt);
-        }
-
         tracing::trace!(method = "read", session_id = session_id);
 
         let db_context = &state.db_context;
@@ -102,10 +110,6 @@ impl SessionController {
         Path(session_id): Path<String>,
         Json(session_update_request): Json<SessionUpdateRequest>,
     ) -> Result<SessionResponse, SessionControllerError> {
-        if jwt.id != session_id {
-            return Err(SessionControllerError::Jwt);
-        }
-
         tracing::trace!(
             method = "update",
             session_id = session_id,
