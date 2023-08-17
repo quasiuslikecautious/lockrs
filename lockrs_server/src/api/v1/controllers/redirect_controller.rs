@@ -117,18 +117,6 @@ impl RedirectController {
         })
     }
 
-    pub async fn update(
-        State(_state): State<AppState>,
-        Path(redirect_id): Path<String>,
-    ) -> impl IntoResponse {
-        tracing::trace!(method = "update", redirect_id = redirect_id);
-
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            format!("/redirects/{}", redirect_id),
-        )
-    }
-
     pub async fn delete(
         State(state): State<AppState>,
         Path(redirect_id): Path<Uuid>,
