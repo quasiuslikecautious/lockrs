@@ -100,6 +100,39 @@ impl RedirectService {
             .await
             .map_err(RedirectServiceError::from)
     }
+
+    pub async fn delete_redirect_by_id(
+        db_context: &Arc<DbContext>,
+        redirect_repository: &dyn RedirectUriRepository,
+        id: &Uuid,
+    ) -> Result<(), RedirectServiceError> {
+        tracing::trace!(method = "delete_redirect_by_id", ?id);
+
+        // verify client has at least one redirect uri
+        let redirect = redirect_repository
+            .get_by_id(db_context, id)
+            .await
+            .map_err(RedirectServiceError::from)?;
+
+        let client_redirects = redirect_repository
+            .get_all_by_client_id(db_context, redirect.client_id.as_str())
+            .await
+            .map_err(RedirectServiceError::from)?;
+
+        if !client_redirects.is_empty() {
+            tracing::error!(error = "Client must have at least one redirect uri assigned");
+            return Err(RedirectServiceError::TooFewRedirects);
+        }
+
+        redirect_repository
+            .delete_by_id(db_context, id)
+            .await
+            .map_err(RedirectServiceError::from)?;
+
+        tracing::info!("Redirect deleted: {:?}", id);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Error)]
@@ -110,6 +143,10 @@ pub enum RedirectServiceError {
     NotCreated,
     #[error("REDIRECT SERVICE ERROR :: Redirect not found")]
     NotFound,
+    #[error("REDIRECT SERVICE ERROR :: Minimum client redirect violation")]
+    TooFewRedirects,
+    #[error("REDIRECT SERVICE ERROR :: Failed to delete redirect")]
+    NotDeleted,
 
     #[error("REDIRECT SERVICE ERROR :: Internal error")]
     InternalError,
@@ -124,6 +161,7 @@ impl From<RepositoryError> for RedirectServiceError {
                 QueryFailure::AlreadyExists => Self::AlreadyExists,
                 QueryFailure::NotCreated => Self::NotCreated,
                 QueryFailure::NotFound => Self::NotFound,
+                QueryFailure::NotDeleted => Self::NotDeleted,
                 _ => Self::InternalError,
             },
 

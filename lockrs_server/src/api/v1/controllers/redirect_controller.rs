@@ -130,15 +130,19 @@ impl RedirectController {
     }
 
     pub async fn delete(
-        State(_state): State<AppState>,
-        Path(redirect_id): Path<String>,
-    ) -> impl IntoResponse {
-        tracing::trace!(method = "delete", redirect_id = redirect_id);
+        State(state): State<AppState>,
+        Path(redirect_id): Path<Uuid>,
+    ) -> Result<StatusCode, RedirectControllerError> {
+        tracing::trace!(method = "delete", ?redirect_id);
 
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            format!("/redirects/{}", redirect_id),
-        )
+        let db_context = &state.db_context;
+        let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
+
+        RedirectService::delete_redirect_by_id(db_context, redirect_repository, &redirect_id)
+            .await
+            .map_err(RedirectControllerError::from)?;
+
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 
@@ -148,6 +152,8 @@ pub enum RedirectControllerError {
     InvalidRedirect,
     AlreadyExists,
     NotFound,
+    TooFewRedirects,
+    NotDeleted,
 
     InternalError,
 }
@@ -156,12 +162,10 @@ impl RedirectControllerError {
     pub fn error_code(&self) -> StatusCode {
         match self {
             Self::Unauthorized => StatusCode::UNAUTHORIZED,
-            Self::InvalidClient => StatusCode::BAD_REQUEST,
-            Self::InvalidRedirect => StatusCode::BAD_REQUEST,
-            Self::AlreadyExists => StatusCode::BAD_REQUEST,
             Self::NotFound => StatusCode::NOT_FOUND,
 
             Self::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            _ => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -176,6 +180,8 @@ impl RedirectControllerError {
                 "The uri provided is already registered as a callback for the client specified"
             }
             Self::NotFound => "Unable to find a redirect matching the requested criteria.",
+            Self::TooFewRedirects => "Client must have at least one redirect uri assigned to it",
+            Self::NotDeleted => "Unable to delete the redirect specified",
 
             Self::InternalError => {
                 "An error has occurred while processing your request. Please try again later."
@@ -192,6 +198,8 @@ impl From<RedirectServiceError> for RedirectControllerError {
             RedirectServiceError::AlreadyExists => Self::AlreadyExists,
             RedirectServiceError::NotFound => Self::NotFound,
             RedirectServiceError::NotCreated => Self::InvalidRedirect,
+            RedirectServiceError::TooFewRedirects => Self::TooFewRedirects,
+            RedirectServiceError::NotDeleted => Self::NotDeleted,
 
             RedirectServiceError::InternalError => Self::InternalError,
         }

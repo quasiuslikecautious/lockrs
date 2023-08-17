@@ -128,7 +128,7 @@ impl ClientController {
         let db_context = &state.db_context;
         let client_repository = &*state.repository_container.as_ref().client_repository;
 
-        ClientService::delete_client_by_id(db_context, client_repository, &client_id)
+        ClientService::delete_client_by_id(db_context, client_repository, client_id.as_str())
             .await
             .map_err(ClientControllerError::from)?;
 

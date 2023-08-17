@@ -12,7 +12,7 @@ use crate::{
             models::{PgClient, PgRedirectUri},
             schema::{clients, redirect_uris},
         },
-        repositories::{RedirectUriRepository, RepositoryError},
+        repositories::{QueryFailure, RedirectUriRepository, RepositoryError},
         DbContext,
     },
     mappers::RedirectMapper,
@@ -144,5 +144,37 @@ impl RedirectUriRepository for PgRedirectUriRepository {
             .into_iter()
             .map(RedirectMapper::from_pg)
             .collect::<Vec<RedirectModel>>())
+    }
+
+    async fn delete_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &Uuid,
+    ) -> Result<(), RepositoryError> {
+        tracing::trace!(method = "delete_by_id", ?id);
+
+        let conn = &mut db_context
+            .as_ref()
+            .get_pg_connection()
+            .await
+            .map_err(RepositoryError::from)?;
+
+        let affected_rows = diesel::delete(redirect_uris::table)
+            .filter(redirect_uris::id.eq(id))
+            .execute(conn)
+            .await
+            .map_err(RepositoryError::map_diesel_delete)?;
+
+        if affected_rows != 1 {
+            let msg = format!(
+                "Expected 1 row to be affected by delete, but found {}",
+                affected_rows
+            );
+
+            tracing::error!(error = msg);
+            return Err(RepositoryError::QueryFailed(QueryFailure::NotDeleted));
+        }
+
+        Ok(())
     }
 }

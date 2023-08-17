@@ -71,7 +71,7 @@ impl ClientService {
         client_repository: &dyn ClientRepository,
         id: &str,
     ) -> Result<(), ClientServiceError> {
-        tracing::trace!(method = "create_client", id);
+        tracing::trace!(method = "delete_client_by_id", id);
 
         client_repository
             .delete_by_id(db_context, id)

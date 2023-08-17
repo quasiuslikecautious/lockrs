@@ -37,4 +37,9 @@ pub trait RedirectUriRepository: Send + Sync {
         db_context: &Arc<DbContext>,
         client_id: &str,
     ) -> Result<Vec<RedirectModel>, RepositoryError>;
+    async fn delete_by_id(
+        &self,
+        db_context: &Arc<DbContext>,
+        id: &Uuid,
+    ) -> Result<(), RepositoryError>;
 }
