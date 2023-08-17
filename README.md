@@ -231,9 +231,10 @@ _For more examples, please refer to the [Documentation](https://example.com) TOD
   - [ ] Create pages for /client operations
   - [ ] Create pages for /redirect uri operations
 - [ ] Backend
+  - [x] Finish /api controllers
+  - [ ] Finish /oauth2 controllers
   - [ ] Add scopes to authorization functionality
   - [ ] Add support of OIDC
-  - [ ] Finish operation implementations on redirect_uris
 
 See the [open issues](https://github.com/quasiuslikecautious/lockrs/issues) for a full list of proposed features (and known issues).
 

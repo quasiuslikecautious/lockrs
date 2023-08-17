@@ -49,7 +49,6 @@ pub fn routes(state: &AppState) -> Router<AppState> {
                     "/redirects",
                     Router::new()
                         .route("/:redirect_id", get(RedirectController::read))
-                        .route("/:redirect_id", put(RedirectController::update))
                         .route("/:redirect_id", delete(RedirectController::delete))
                         .route("/", post(RedirectController::create)),
                 )
