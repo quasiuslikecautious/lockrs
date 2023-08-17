@@ -9,7 +9,7 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    api::v1::responses::RedirectResponse,
+    api::v1::responses::{RedirectListResponse, RedirectResponse},
     models::RedirectCreateModel,
     services::{ClientAuthService, ClientAuthServiceError, RedirectService, RedirectServiceError},
     utils::extractors::SessionJwt,
@@ -26,15 +26,32 @@ pub struct RedirectController;
 
 impl RedirectController {
     pub async fn read_all(
-        State(_state): State<AppState>,
+        State(state): State<AppState>,
         Path(client_id): Path<String>,
-    ) -> impl IntoResponse {
+    ) -> Result<RedirectListResponse, RedirectControllerError> {
         tracing::trace!(method = "read_all", client_id = client_id);
 
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            format!("/clients/{}/redirects", client_id),
+        let db_context = &state.db_context;
+        let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
+
+        let redirects = RedirectService::get_redirects_from_client(
+            db_context,
+            redirect_repository,
+            client_id.as_str(),
         )
+        .await
+        .map_err(RedirectControllerError::from)?;
+
+        Ok(RedirectListResponse {
+            redirects: redirects
+                .into_iter()
+                .map(|r| RedirectResponse {
+                    id: r.id,
+                    client_id: r.client_id,
+                    uri: r.uri,
+                })
+                .collect::<Vec<RedirectResponse>>(),
+        })
     }
 
     pub async fn create(
@@ -88,9 +105,10 @@ impl RedirectController {
         let db_context = &state.db_context;
         let redirect_repository = &*state.repository_container.as_ref().redirect_repository;
 
-        let redirect = RedirectService::get_redirect_by_id(db_context, redirect_repository, &redirect_id)
-            .await
-            .map_err(RedirectControllerError::from)?;
+        let redirect =
+            RedirectService::get_redirect_by_id(db_context, redirect_repository, &redirect_id)
+                .await
+                .map_err(RedirectControllerError::from)?;
 
         Ok(RedirectResponse {
             id: redirect.id,

@@ -100,10 +100,7 @@ where
     let x_request_id = HeaderName::from_static("x-request-id");
 
     let request_id_layer = ServiceBuilder::new()
-        .layer(SetRequestIdLayer::new(
-            x_request_id.clone(),
-            RequestId,
-        ))
+        .layer(SetRequestIdLayer::new(x_request_id.clone(), RequestId))
         .layer(PropagateRequestIdLayer::new(x_request_id));
 
     service

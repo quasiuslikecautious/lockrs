@@ -18,12 +18,13 @@ impl RedirectMapper {
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
+    use uuid::uuid;
 
     use super::*;
 
     #[test]
     fn it_should_map_pg() {
-        let id = 1;
+        let id = uuid!("00000000-0000-0000-0000-000000000000");
         let client_id = String::from("CLIENT_ID");
         let uri = Url::parse("https://127.0.0.1/oauth2/callback").unwrap();
         let created_at = Utc::now();

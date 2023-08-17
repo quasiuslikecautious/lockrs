@@ -15,3 +15,14 @@ impl IntoResponse for RedirectResponse {
         Json(self).into_response()
     }
 }
+
+#[derive(Serialize)]
+pub struct RedirectListResponse {
+    pub redirects: Vec<RedirectResponse>,
+}
+
+impl IntoResponse for RedirectListResponse {
+    fn into_response(self) -> axum::response::Response {
+        Json(self).into_response()
+    }
+}
