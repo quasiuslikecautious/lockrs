@@ -119,11 +119,18 @@ impl RepositoryError {
     }
 }
 
+impl From<diesel::result::Error> for RepositoryError {
+    fn from(err: diesel::result::Error) -> Self {
+        tracing::error!(error = %err);
+
+        Self::InternalError
+    }
+}
+
 impl From<DbContextError> for RepositoryError {
     fn from(err: DbContextError) -> Self {
         tracing::error!(eror = %err);
 
-        let _err_msg = format!("{}", &err);
         Self::InternalError
     }
 }

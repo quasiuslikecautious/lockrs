@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
+use diesel_async::{AsyncConnection, RunQueryDsl};
+use scoped_futures::ScopedFutureExt;
 use uuid::Uuid;
 
 use crate::{
@@ -107,22 +108,28 @@ impl ClientRepository for PgClientRepository {
             .await
             .map_err(RepositoryError::from)?;
 
-        let affected_rows = diesel::delete(clients::table)
-            .filter(clients::id.eq(id))
-            .execute(conn)
-            .await
-            .map_err(RepositoryError::map_diesel_delete)?;
+        conn.transaction::<(), RepositoryError, _>(|conn| {
+            async move {
+                let affected_rows = diesel::delete(clients::table)
+                    .filter(clients::id.eq(id))
+                    .execute(conn)
+                    .await
+                    .map_err(RepositoryError::map_diesel_delete)?;
 
-        if affected_rows != 1 {
-            let msg = format!(
-                "Expected 1 row to be affected by delete, but found {}",
-                affected_rows
-            );
+                if affected_rows != 1 {
+                    let msg = format!(
+                        "Expected 1 row to be affected by delete, but found {}",
+                        affected_rows
+                    );
 
-            tracing::error!(error = msg);
-            return Err(RepositoryError::QueryFailed(QueryFailure::NotDeleted));
-        }
+                    tracing::error!(error = msg);
+                    return Err(RepositoryError::QueryFailed(QueryFailure::NotDeleted));
+                }
 
-        Ok(())
+                Ok(())
+            }
+            .scope_boxed()
+        })
+        .await
     }
 }
