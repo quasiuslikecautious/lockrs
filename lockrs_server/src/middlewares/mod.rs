@@ -102,7 +102,7 @@ where
     let request_id_layer = ServiceBuilder::new()
         .layer(SetRequestIdLayer::new(
             x_request_id.clone(),
-            RequestId::default(),
+            RequestId,
         ))
         .layer(PropagateRequestIdLayer::new(x_request_id));
 

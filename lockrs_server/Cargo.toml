@@ -17,8 +17,8 @@ cookie = "0.17.0"
 deadpool = "0.9.5"
 deadpool-redis = "0.12.0"
 deadpool-runtime = { version = "0.1.2", features = ["tokio_1"] }
-diesel = { version = "2.0.3", features = ["chrono", "postgres", "uuid"] }
-diesel-async = { version = "0.2.2", features = ["postgres", "deadpool"] }
+diesel = { version = "2.1", features = ["chrono", "postgres", "uuid"] }
+diesel-async = { version = "0.3.2", features = ["postgres", "deadpool"] }
 dotenvy = "0.15.6"
 headers = "0.3.8"
 hyper = "0.14.26"

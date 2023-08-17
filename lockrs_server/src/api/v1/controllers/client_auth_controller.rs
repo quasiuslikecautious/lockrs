@@ -10,8 +10,6 @@ use crate::{
     AppState,
 };
 
-pub struct ClientAuthController;
-
 #[derive(Debug, Deserialize)]
 pub struct ClientCreateRequest {
     pub is_public: bool,
@@ -20,6 +18,8 @@ pub struct ClientCreateRequest {
     pub homepage_url: Url,
     pub redirect_url: Url,
 }
+
+pub struct ClientAuthController;
 
 impl ClientAuthController {
     pub async fn register(

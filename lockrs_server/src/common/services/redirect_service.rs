@@ -18,28 +18,19 @@ impl RedirectService {
     pub async fn create_redirect(
         db_context: &Arc<DbContext>,
         redirect_repository: &dyn RedirectUriRepository,
-        client_id: &str,
-        uri: &Url,
+        new_redirect: &RedirectCreateModel,
     ) -> Result<RedirectModel, RedirectServiceError> {
-        tracing::trace!(
-            method = "create_redirect",
-            client_id,
-            %uri
-        );
+        tracing::trace!(method = "create_redirect", ?new_redirect,);
 
-        let redirect_create = RedirectCreateModel::new(client_id, uri);
+        let redirect_create =
+            RedirectCreateModel::new(new_redirect.client_id.as_str(), &new_redirect.uri);
 
         let redirect = redirect_repository
             .create(db_context, &redirect_create)
             .await
             .map_err(RedirectServiceError::from)?;
 
-        tracing::info!(
-            "Redirect Uri created: {{ id: {}, uri: {}, client_id: {} }}",
-            redirect.id,
-            uri,
-            client_id,
-        );
+        tracing::info!("Redirect Uri created: {:?}", redirect);
 
         Ok(redirect)
     }
@@ -100,6 +91,8 @@ impl RedirectService {
 
 #[derive(Debug, Error)]
 pub enum RedirectServiceError {
+    #[error("REDIRECT SERVICE ERROR :: Redirect already exists")]
+    AlreadyExists,
     #[error("REDIRECT SERVICE ERROR :: Redirect not created")]
     NotCreated,
     #[error("REDIRECT SERVICE ERROR :: Redirect not found")]
@@ -115,6 +108,7 @@ impl From<RepositoryError> for RedirectServiceError {
 
         match err {
             RepositoryError::QueryFailed(query_err) => match query_err {
+                QueryFailure::AlreadyExists => Self::AlreadyExists,
                 QueryFailure::NotCreated => Self::NotCreated,
                 QueryFailure::NotFound => Self::NotFound,
                 _ => Self::InternalError,

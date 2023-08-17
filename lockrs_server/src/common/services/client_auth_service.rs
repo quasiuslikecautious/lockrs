@@ -3,10 +3,11 @@ use std::sync::Arc;
 use base64::{engine::general_purpose, Engine as _};
 use ring::rand::{SecureRandom, SystemRandom};
 use thiserror::Error;
+use uuid::Uuid;
 
 use crate::{
     db::{
-        repositories::{ClientAuthRepository, QueryFailure, RepositoryError},
+        repositories::{ClientAuthRepository, ClientRepository, QueryFailure, RepositoryError},
         DbContext,
     },
     mappers::ClientAuthMapper,
@@ -71,6 +72,26 @@ impl ClientAuthService {
         Ok(ClientAuthMapper::into_client(client))
     }
 
+    pub async fn verify_user(
+        db_context: &Arc<DbContext>,
+        client_repository: &dyn ClientRepository,
+        id: &str,
+        user_id: &Uuid,
+    ) -> Result<ClientModel, ClientAuthServiceError> {
+        tracing::trace!(method = "verify_user", id, user_id = user_id.to_string());
+
+        let client = client_repository
+            .get_by_id(db_context, id)
+            .await
+            .map_err(ClientAuthServiceError::from)?;
+
+        if client.user_id != *user_id {
+            return Err(ClientAuthServiceError::InvalidUser);
+        }
+
+        Ok(client)
+    }
+
     pub fn generate_random_string() -> String {
         let mut buffer = [0u8; 24];
         let rng = SystemRandom::new();
@@ -83,6 +104,8 @@ impl ClientAuthService {
 pub enum ClientAuthServiceError {
     #[error("CLIENT AUTH SERVICE ERROR :: Not found")]
     NotFound,
+    #[error("CLIENT AUTH SERVICE ERROR :: Invalid User")]
+    InvalidUser,
 
     #[error("CLIENT AUTH SERVICE ERROR :: Internal Error")]
     InternalError,
