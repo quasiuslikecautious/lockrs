@@ -1,62 +1,40 @@
 use leptos::*;
 
-use crate::components::*;
+use crate::components::register::user_register_form::*;
+use crate::components::ui::button::*;
+use crate::components::ui::card::*;
+use crate::components::ui::link::*;
 
 #[component]
 pub fn RegisterPage(cx: Scope) -> impl IntoView {
-    let (email, set_email) = create_signal(cx, "".to_string());
-    let (password, set_password) = create_signal(cx, "".to_string());
-
     view! { cx,
-        <div id="register-page" class="relative text-left h-full">
-            <div id="register-title" class="mb-8 py-1 text-center">
-                <p class="text-xs uppercase">
-                    "Nice to meet you"
-                </p>
-                <h2 class="text-3xl font-bold">
-                    "Create your account"
-                </h2>
-            </div>
-
-            <form id="register-form" class="mb-2">
-                <FormField
-                    input_type="text"
-                    name="email"
-                    label="Email"
-                    placeholder="Enter your email"
-                    value=email
-                    on_change=move |ev| {
-                        set_email(event_target_value(&ev));
-                    }
-                />
-
-                <FormField
-                    input_type="password"
-                    name="password"
-                    label="Password"
-                    placeholder="Enter a secure password"
-                    value=password
-                    on_change=move |ev| {
-                        set_password(event_target_value(&ev));
-                    }
-                />
-
-                <FilledButton
-                    on_click=move |ev| {
-                        ev.prevent_default();
-                        log::info!("Button clicked");
-                    }
-                >
-                    "Register now"
-                </FilledButton>
-
-
-            </form>
-
-            <div class="absolute bottom-4">
-                <p class="text-gray-400">
-                    "Already have an account? " <a href="/login" class="text-white">"Login"</a>
-                </p>
+        <div id="register-page" class="relative h-full flex-col items-center justify-center lg:max-w-none">
+            <Button
+                class="absolute right-4 top-4 md:right-8 md:top-8".to_string()
+                variant=ButtonVariant::Ghost
+            >
+                <Link href="/login">Login</Link>
+            </Button>
+            <div class="flex flex-col justify-center items-center h-full">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Register</CardTitle>
+                        <CardDescription>
+                            Enter an email and password to create an account
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <UserRegisterForm />
+                    </CardContent>
+                    <CardFooter>
+                        <p class="w-full text-center text-muted-foreground">
+                            By clicking continue, you agree to our<br />
+                            <Link href="/legal#terms-of-service">Terms of Service</Link>
+                            {" "}and{" "}
+                            <Link href="/legal#privacy">Privacy Policy</Link>
+                        </p>
+                    </CardFooter>
+                </Card>
             </div>
         </div>
     }

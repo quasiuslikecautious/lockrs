@@ -1,67 +1,40 @@
 use leptos::*;
 
-use crate::components::*;
+use crate::components::login::user_auth_form::*;
+use crate::components::ui::button::*;
+use crate::components::ui::card::*;
+use crate::components::ui::link::*;
 
 #[component]
 pub fn LoginPage(cx: Scope) -> impl IntoView {
-    let (email, set_email) = create_signal(cx, "".to_string());
-    let (password, set_password) = create_signal(cx, "".to_string());
-
     view! { cx,
-        <div id="login-page" class="relative text-left h-full">
-            <div id="login-title" class="mb-8 py-1 text-center">
-                <p class="text-xs uppercase">
-                    "Welcome Back"
-                </p>
-                <h2 class="text-3xl font-bold">
-                    "Log into your account"
-                </h2>
-            </div>
-
-            <form id="login-form" class="mb-2">
-                <FormField
-                    input_type="text"
-                    name="email"
-                    label="Email"
-                    placeholder="Enter your email"
-                    value=email
-                    on_change=move |ev| {
-                        set_email(event_target_value(&ev));
-                    }
-                />
-
-                <FormField
-                    input_type="password"
-                    name="password"
-                    label="Password"
-                    placeholder="Enter your password"
-                    value=password
-                    on_change=move |ev| {
-                        set_password(event_target_value(&ev));
-                    }
-                />
-
-                <FilledButton
-                    on_click=move |ev| {
-                        ev.prevent_default();
-                        log::info!("Button clicked");
-                    }
-                >
-                    "Login now"
-                </FilledButton>
-
-            </form>
-
-            <div class="text-center">
-                <p>
-                    "Forgot password?"
-                </p>
-            </div>
-
-            <div class="absolute bottom-4">
-                <p class="text-gray-400">
-                    "Don't have an account? " <a href="/register" class="text-white">"Register"</a>
-                </p>
+        <div id="login-page" class="relative h-full flex-col items-center justify-center lg:max-w-none">
+            <Button
+                class="absolute right-4 top-4 md:right-8 md:top-8".to_string()
+                variant=ButtonVariant::Ghost
+            >
+                <Link href="/register">Register</Link>
+            </Button>
+            <div class="flex flex-col justify-center items-center h-full">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Login</CardTitle>
+                        <CardDescription>
+                            Enter your email and password to login to your account
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <UserAuthForm />
+                    </CardContent>
+                    <CardFooter>
+                        <Link
+                            class="w-full text-center"
+                            href="/password-reset"
+                        >
+                            Forgot password?
+                        </Link>
+                    </CardFooter>
+                </Card>
             </div>
         </div>
     }
