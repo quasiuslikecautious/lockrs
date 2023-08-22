@@ -24,9 +24,10 @@ pub fn App(cx: Scope) -> impl IntoView {
                         // <Route path="" view=move |cx| view! { cx, <LogoutConfirmationPage /> }/>
                     // </Route>
 
-                    // <Route path="/clients" view= move |cx| view! { cx, <ClientLayout/> }>
-                        // <Route path="/register" view= move |cx| view! { cx, <ClientRegisterPage/> }/>
-                    // </Route>
+                    <Route path="/clients" view= move |cx| view! { cx, <ClientLayout/> }>
+                        <Route path="/register" view= move |cx| view! { cx, <ClientRegisterPage/> }/>
+                        <Route path="/" view= move |cx| view! { cx, <ClientRegisterPage/> }/>
+                    </Route>
                 </Routes>
             </Router>
         </Layout>

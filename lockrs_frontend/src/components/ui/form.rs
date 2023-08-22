@@ -41,7 +41,7 @@ fn extract_field_error_message(
 }
 
 #[derive(Clone)]
-pub struct FormContext {
+struct FormContext {
     errors: Signal<Option<ValidationErrors>>,
 }
 
@@ -56,7 +56,6 @@ where
     });
 
     let context = FormContext { errors };
-
     provide_context(cx, context);
 
     view! { cx,
@@ -121,40 +120,55 @@ fn use_form_field(cx: Scope) -> UseFormFieldReturn {
 }
 
 #[derive(Clone)]
-pub struct FormItemContext {
+struct FormItemContext {
     id: String,
 }
 
 #[component]
-pub fn FormItem(cx: Scope, children: Children) -> impl IntoView {
+pub fn FormItem(
+    cx: Scope,
+    #[prop(default = "")] class: &'static str,
+    children: Children,
+) -> impl IntoView {
     let id = use_id();
+
+    let class = format!("space-y-2 {}", class);
+
     let context = FormItemContext { id: id.clone() };
     provide_context(cx, context);
 
     view! { cx,
-        <div id=id class="space-y-2">
+        <div id=id class=class.to_string()>
             {children(cx)}
         </div>
     }
 }
 
 #[component]
-pub fn FormLabel(cx: Scope, children: Children) -> impl IntoView {
+pub fn FormLabel(
+    cx: Scope,
+    #[prop(default = "")] class: &'static str,
+    children: Children,
+) -> impl IntoView {
     let context = use_form_field(cx);
     let is_error = Signal::derive(cx, move || {
         (context.dirty)() && is_field_error_present(context.name, (context.errors)())
     });
-    let error_class = Signal::derive(cx, move || {
-        if is_error() {
-            "text-destructive".to_string()
-        } else {
-            String::new()
-        }
+    let class = Signal::derive(cx, move || {
+        format!(
+            "{} {}",
+            class,
+            if is_error() {
+                "text-destructive".to_string()
+            } else {
+                String::new()
+            }
+        )
     });
 
     view! { cx,
         <Label
-            class_signal=error_class
+            class_signal=class
             html_for=context.form_item_id
         >
             {children(cx)}
@@ -190,13 +204,19 @@ pub fn FormControl(cx: Scope, children: Children) -> impl IntoView {
 }
 
 #[component]
-pub fn FormDescription(cx: Scope, children: Children) -> impl IntoView {
+pub fn FormDescription(
+    cx: Scope,
+    #[prop(default = "")] class: &'static str,
+    children: Children,
+) -> impl IntoView {
+    let class = format!("text-[0.8rem] text-muted-foreground {}", class,);
+
     let context = use_form_field(cx);
 
     view! { cx,
         <p
             id=context.form_description_id
-            class="text-[0.8rem] text-muted-foreground"
+            class=class.clone()
         >
             {children(cx)}
         </p>

@@ -1,14 +1,14 @@
 use leptos::*;
 
-use crate::components::login::user_auth_form::*;
 use crate::components::ui::button::*;
 use crate::components::ui::card::*;
 use crate::components::ui::link::*;
+use crate::components::user::login_form::*;
 
 #[component]
 pub fn LoginPage(cx: Scope) -> impl IntoView {
     view! { cx,
-        <div id="login-page" class="relative h-full flex-col items-center justify-center lg:max-w-none">
+        <div id="login-page" class="relative h-full flex-col items-center justify-center lg:max-w-none".to_string()>
             <Button
                 class="absolute right-4 top-4 md:right-8 md:top-8".to_string()
                 variant=ButtonVariant::Ghost
@@ -24,11 +24,11 @@ pub fn LoginPage(cx: Scope) -> impl IntoView {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <UserAuthForm />
+                        <UserLoginForm />
                     </CardContent>
                     <CardFooter>
                         <Link
-                            class="w-full text-center"
+                            class="w-full text-center".to_string()
                             href="/password-reset"
                         >
                             Forgot password?

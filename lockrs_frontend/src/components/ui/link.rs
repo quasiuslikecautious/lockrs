@@ -4,7 +4,7 @@ use leptos_router::use_navigate;
 #[component]
 pub fn Link<S>(
     cx: Scope,
-    #[prop(default = "")] class: &'static str,
+    #[prop(default = String::new())] class: String,
     href: S,
     children: Children,
 ) -> impl IntoView

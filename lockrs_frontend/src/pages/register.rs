@@ -1,14 +1,14 @@
 use leptos::*;
 
-use crate::components::register::user_register_form::*;
 use crate::components::ui::button::*;
 use crate::components::ui::card::*;
 use crate::components::ui::link::*;
+use crate::components::user::register_form::*;
 
 #[component]
 pub fn RegisterPage(cx: Scope) -> impl IntoView {
     view! { cx,
-        <div id="register-page" class="relative h-full flex-col items-center justify-center lg:max-w-none">
+        <div id="register-page" class="relative h-full flex-col items-center justify-center">
             <Button
                 class="absolute right-4 top-4 md:right-8 md:top-8".to_string()
                 variant=ButtonVariant::Ghost

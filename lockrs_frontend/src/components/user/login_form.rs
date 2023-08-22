@@ -33,7 +33,7 @@ impl LoginFormSchema {
 }
 
 #[component]
-pub fn UserAuthForm(cx: Scope, #[prop(optional)] class: Option<&'static str>) -> impl IntoView {
+pub fn UserLoginForm(cx: Scope, #[prop(optional)] class: Option<&'static str>) -> impl IntoView {
     let class = format!(
         "grid gap-6 w-full {}",
         if let Some(c) = class { c } else { "" }

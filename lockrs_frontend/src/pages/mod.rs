@@ -1,11 +1,11 @@
-// mod client;
+mod client;
 mod home;
 mod login;
 // mod logout;
 mod register;
 
 pub use self::{
-    // client::*,
+    client::*,
     home::*,
     login::*,
     // logout::*,
