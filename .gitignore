@@ -4,7 +4,7 @@
 /dist/
 
 # Node modules
-frontend/node_modules/
+lockrs_frontend/node_modules
 
 Cargo.lock
 
