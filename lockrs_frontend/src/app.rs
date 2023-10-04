@@ -2,8 +2,16 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::components::*;
-use crate::pages::*;
+use crate::components::layout::*;
+
+use crate::pages::home::*;
+
+use crate::pages::user::login::*;
+use crate::pages::user::register::*;
+
+use crate::pages::client::all::*;
+use crate::pages::client::layout::*;
+use crate::pages::client::register::*;
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
@@ -26,7 +34,7 @@ pub fn App(cx: Scope) -> impl IntoView {
 
                     <Route path="/clients" view= move |cx| view! { cx, <ClientLayout/> }>
                         <Route path="/register" view= move |cx| view! { cx, <ClientRegisterPage/> }/>
-                        <Route path="/" view= move |cx| view! { cx, <ClientRegisterPage/> }/>
+                        <Route path="/" view= move |cx| view! { cx, <ClientAllPage/> }/>
                     </Route>
                 </Routes>
             </Router>

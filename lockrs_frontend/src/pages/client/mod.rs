@@ -1,4 +1,3 @@
-mod layout;
-mod register;
-
-pub use self::{layout::*, register::*};
+pub mod all;
+pub mod layout;
+pub mod register;

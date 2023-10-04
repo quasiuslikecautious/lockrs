@@ -1,5 +1,7 @@
 use leptos::*;
 
+use crate::utils::tailwind_merge::cn;
+
 pub enum ButtonVariant {
     Default,
     Destructive,
@@ -49,22 +51,30 @@ pub fn Button(
     #[prop(optional)] class: Option<String>,
     #[prop(default = ButtonVariant::Default)] variant: ButtonVariant,
     #[prop(default = ButtonSize::Default)] size: ButtonSize,
+    #[prop(optional)] disabled: Option<MaybeSignal<bool>>,
     children: Children,
 ) -> impl IntoView {
-    let class = format!(
-        "{} {} {}",
-        variant.class(),
-        size.class(),
-        if let Some(c) = class {
-            c
+    let variant_class = format!("{} {}", variant.class(), size.class());
+    let additional_class = class.unwrap_or(String::new());
+
+    let disabled = Signal::derive(cx, move || {
+        if let Some(disabled) = disabled {
+            disabled.get()
         } else {
-            String::new()
+            false
         }
-    );
+    });
+
+    let (class, set_class) = create_signal(cx, String::new());
+    let client_class = create_effect(cx, move |_| {
+        let resolved_class = cn(variant_class.clone().as_str(), additional_class.clone().as_str());
+        set_class(resolved_class);
+    });
 
     view! { cx,
         <button
-            class={class.clone()}
+            class=move || class()
+            disabled=disabled
         >
             {children(cx)}
         </button>

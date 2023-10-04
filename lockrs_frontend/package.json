@@ -1,8 +1,13 @@
 {
+  "scripts": {
+    "esbuild": "node esbuild.mjs"
+  },
   "devDependencies": {
     "tailwindcss": "^3.3.2"
   },
   "dependencies": {
-    "sass": "^1.63.6"
+    "esbuild": "0.19.2",
+    "sass": "^1.63.6",
+    "tailwind-merge": "^1.14.0"
   }
 }

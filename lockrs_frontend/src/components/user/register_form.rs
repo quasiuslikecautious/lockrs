@@ -104,7 +104,7 @@ pub fn UserRegisterForm(cx: Scope, #[prop(optional)] class: Option<&'static str>
                             ev.prevent_default();
                         }
                     >
-                        Sign Up
+                        Register
                     </Button>
                 </form>
             </Form>

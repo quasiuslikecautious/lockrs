@@ -43,6 +43,7 @@ pub fn UserLoginForm(cx: Scope, #[prop(optional)] class: Option<&'static str>) -
     let (password, set_password) = create_signal(cx, String::new());
 
     let schema = Signal::derive(cx, move || LoginFormSchema::new(email(), password()));
+    let invalid = Signal::derive(cx, move || schema.get().validify_self().is_err());
 
     view! { cx,
         <div id="user-login-form" class=class.clone()>
@@ -100,11 +101,12 @@ pub fn UserLoginForm(cx: Scope, #[prop(optional)] class: Option<&'static str>) -
                         </FormItem>
                     </FormField>
                     <Button
+                        disabled=invalid.into()
                         on:click=move |ev| {
                             ev.prevent_default();
                         }
                     >
-                        Sign Up
+                        Login
                     </Button>
                 </form>
             </Form>
