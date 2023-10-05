@@ -31,6 +31,7 @@ dotenvy = "0.15.6"
 headers = "0.3.8"
 hyper = "0.14.26"
 jsonwebtoken = "8.3.0"
+lazy_static = "1.4.0"
 rand = "0.8.5"
 redis = { version = "0.23.0", features = ["aio"] }
 reqwest = "0.11.22"

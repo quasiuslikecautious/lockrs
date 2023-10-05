@@ -1,19 +1,24 @@
-mod api;
 mod common;
-mod db;
+
+pub mod api;
+pub mod db;
+pub mod oauth2;
+
 mod middlewares;
-mod oauth2;
 mod routes;
 
 use axum::{routing::IntoMakeService, Router};
 use hyper::{server::conn::AddrIncoming, Server};
-use std::net::TcpListener;
+use std::{net::TcpListener, sync::Arc};
 
 pub use self::common::*;
 pub type AppServer = Server<AddrIncoming, IntoMakeService<Router>>;
 
-pub async fn run(listener: TcpListener) -> Result<AppServer, hyper::Error> {
-    let state = AppState::new().await;
+pub async fn run(
+    listener: TcpListener,
+    state: Option<AppState>,
+) -> Result<AppServer, hyper::Error> {
+    let state = state.unwrap_or(AppState::new().await);
 
     let app = routes::routes(&state).with_state(state);
     let app = middlewares::with_middleware_stack(app);

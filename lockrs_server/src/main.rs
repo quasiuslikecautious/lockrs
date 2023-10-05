@@ -8,5 +8,6 @@ async fn main() {
     let listener = TcpListener::bind("127.0.0.1:9000").expect("Failed to bind to port");
     let addr = listener.local_addr().unwrap();
     tracing::info!("listening at {}", addr);
-    run(listener).await.expect("Failed to bind address.");
+    println!("listening at {}", addr);
+    run(listener, None).await.expect("Failed to bind address.");
 }

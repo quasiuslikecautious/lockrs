@@ -1,7 +1,7 @@
 pub mod guards;
 mod request_id;
 
-use std::time::Duration;
+use std::{sync::Once, time::Duration};
 
 use axum::{
     body::Body,
@@ -12,6 +12,8 @@ use axum::{
     },
     BoxError, Router,
 };
+use lazy_static::lazy_static;
+use request_id::RequestId;
 use tower::{buffer::BufferLayer, limit::RateLimitLayer, timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::{
     cors::CorsLayer,
@@ -21,7 +23,9 @@ use tower_http::{
 use tracing::Span;
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
-use request_id::RequestId;
+lazy_static! {
+    static ref INIT_TRACING: Once = Once::new();
+}
 
 pub fn with_middleware_stack<T>(service: Router<T>) -> Router<T>
 where
@@ -64,10 +68,12 @@ where
         .with_target("lockrs_server", tracing::Level::TRACE)
         .with_default(tracing::Level::INFO);
 
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    INIT_TRACING.call_once(|| {
+        tracing_subscriber::registry()
+            .with(filter)
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+    });
 
     let trace_layer = TraceLayer::new_for_http()
         .make_span_with(|request: &Request<Body>| {

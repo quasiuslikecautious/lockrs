@@ -78,7 +78,7 @@ impl UserAuthService {
         Ok(session_token)
     }
 
-    fn hash_password(password: &str) -> Result<String, UserAuthServiceError> {
+    pub fn hash_password(password: &str) -> Result<String, UserAuthServiceError> {
         hash(password, DEFAULT_COST).map_err(UserAuthServiceError::from)
     }
 

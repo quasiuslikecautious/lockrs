@@ -1,5 +1,11 @@
+use diesel::Insertable;
+use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::db::pg::schema::users;
+
+#[derive(Deserialize, Insertable)]
+#[diesel(table_name = users)]
 pub struct UserAuthModel {
     pub id: Uuid,
     pub email: String,
