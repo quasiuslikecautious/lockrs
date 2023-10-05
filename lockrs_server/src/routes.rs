@@ -3,6 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
+use hyper::StatusCode;
 
 use crate::{
     api::v1::controllers::{
@@ -18,6 +19,7 @@ use crate::{
 
 pub fn routes(state: &AppState) -> Router<AppState> {
     Router::new()
+        .route("/health_check", get(|| async { StatusCode::OK }))
         // -------------------------------------- OAUTH2 ROUTES ------------------------------------
         .nest(
             "/oauth2/v1",
