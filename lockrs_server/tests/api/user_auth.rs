@@ -1,5 +1,5 @@
 use hyper::StatusCode;
-use lockrs_server::api::v1::responses::UserResponse;
+use lockrs_server::{api::v1::responses::{UserResponse, SessionTokenResponse}, services::UserService};
 
 use crate::common::helpers::{spawn_app, TestUser};
 
@@ -58,7 +58,37 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
 }
 
 #[tokio::test]
-async fn user_auth_register_returns_a_400_for_invalid_json() {
+async fn user_auth_register_returns_a_400_when_data_is_missing() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+
+    let test_cases = vec![
+        (r#"{"password": "password"}"#, "missing the email"),
+        (r#"{"email": "name@example.com"}"#, "missing the password"),
+        (r#"{}"#, "missing both the email and password"),
+    ];
+
+    for (invalid_body, error_message) in test_cases {
+        // Act
+        let response = client.post(&format!("{}/api/v1/auth/register", &app.address))
+            .header("Content-Type", "application/json")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        assert_eq!(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            response.status(),
+            "The API did not fail with 422 unprocessable entity when the payload was {}.",
+            error_message,
+        );
+    }
+}
+
+#[tokio::test]
+async fn user_auth_register_returns_a_400_when_fields_are_present_but_invalid() {
     // Arrange
     let app = spawn_app().await;
     let client = reqwest::Client::new();
@@ -102,7 +132,6 @@ async fn user_auth_register_returns_a_500_for_existing_user() {
         "{{\"email\": \"{}\", \"password\": \"{}\"}}",
         test_user.email, test_user.password
     );
-
     let response = client
         .post(&format!("{}/api/v1/auth/register", &app.address))
         .header("Content-Type", "application/json")
@@ -122,4 +151,118 @@ async fn user_auth_register_returns_a_500_for_existing_user() {
     )
     .await
     .expect(&format!("User {} not deleted.", &test_user.id));
+}
+
+#[tokio::test]
+async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_user = TestUser::generate();
+    test_user.store(&app).await; // add to db
+
+    // Act
+    let response = client
+        .post(&format!("{}/api/v1/auth/login", &app.address))
+        .basic_auth(test_user.email, Some(test_user.password))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(
+        StatusCode::OK,
+        response.status(),
+    );
+
+    // Arrange 2: get response body
+    let response_body = response.text().await.expect("Failed to read body.");
+    let session_token_response = serde_json::from_str::<SessionTokenResponse>(&response_body)
+        .expect("Failed to parse body.");
+
+    let now = chrono::Utc::now().timestamp();
+
+    // Assert 2: confirm body contents
+    assert!(session_token_response.expires_at > now);
+
+    // cleanup
+    UserService::delete_user_by_id(
+        &app.state.db_context,
+        &*app.state.repository_container.user_repository,
+        &test_user.id,
+    )
+    .await
+    .expect(&format!("Unable to delete user {}.", test_user.id));
+}
+
+#[tokio::test]
+async fn user_auth_login_returns_a_400_when_data_is_missing() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_user = TestUser::generate();
+    test_user.store(&app).await;
+
+    let test_cases = vec![
+        (String::new(), Some(test_user.password), "missing email"),
+        (test_user.email, None, "missing password"),
+        (String::new(), None, "missing email and password"),
+    ];
+
+    for (email, password, error_message) in test_cases {
+        // Act
+        let response = client.post(&format!("{}/api/v1/auth/login", &app.address))
+            .basic_auth(email, password)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        // Assert
+        assert_eq!(
+            StatusCode::BAD_REQUEST,
+            response.status(),
+            "The API did not return a 400 Bad Request when the payload was {}.",
+            error_message,
+        );
+    }
+
+    // cleanup
+    UserService::delete_user_by_id(
+        &app.state.db_context,
+        &*app.state.repository_container.user_repository,
+        &test_user.id,
+    )
+    .await
+    .expect(&format!("Unable to delete user {}.", test_user.id));
+}
+
+#[tokio::test]
+async fn user_auth_login_returns_a_401_for_invalid_credentials() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_user = TestUser::generate();
+    test_user.store(&app).await;
+
+    // Act
+    let response = client.post(&format!("{}/api/v1/auth/login", app.address))
+        .basic_auth(test_user.email, Some("incorrect_password"))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(
+        StatusCode::UNAUTHORIZED,
+        response.status()
+    );
+
+    // cleanup
+    UserService::delete_user_by_id(
+        &app.state.db_context,
+        &*app.state.repository_container.user_repository,
+        &test_user.id,
+    )
+    .await
+    .expect(&format!("Unable to delete user {}.", test_user.id));
 }

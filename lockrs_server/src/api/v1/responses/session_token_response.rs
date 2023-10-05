@@ -1,7 +1,7 @@
 use axum::{response::IntoResponse, Json};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SessionTokenResponse {
     pub session_token: String,
     pub expires_at: i64,
