@@ -1,7 +1,15 @@
 [package]
 name = "lockrs_server"
 version = "0.1.0"
+authors = [ "Zach Quasius <zach@quasius.dev>" ]
 edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "lockrs_server"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -25,6 +33,7 @@ hyper = "0.14.26"
 jsonwebtoken = "8.3.0"
 rand = "0.8.5"
 redis = { version = "0.23.0", features = ["aio"] }
+reqwest = "0.11.22"
 ring = "0.16.20"
 scoped-futures = "0.1.3"
 serde = { version = "1.0.158", features = ["derive"] }
