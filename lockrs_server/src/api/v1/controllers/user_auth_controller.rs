@@ -4,6 +4,7 @@ use axum::{
     response::IntoResponse,
 };
 use serde::Deserialize;
+use validator::Validate;
 
 use crate::{
     api::v1::{
@@ -35,6 +36,9 @@ impl UserAuthController {
             register_request.password.as_str(),
         );
 
+        registration.validate()
+            .map_err(|_| UserAuthControllerError::BadRequest)?;
+
         let db_context = &state.db_context;
         let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
 
@@ -58,6 +62,9 @@ impl UserAuthController {
 
         let auth =
             UserLoginCredentials::new(credentials.public.as_str(), credentials.private.as_str());
+
+        auth.validate()
+            .map_err(|_| UserAuthControllerError::BadRequest)?;
 
         let db_context = &state.db_context;
         let user_auth_repository = &*state.repository_container.as_ref().user_auth_repository;
@@ -84,6 +91,7 @@ impl UserAuthController {
 
 pub enum UserAuthControllerError {
     InvalidCredentials,
+    BadRequest,
     Internal,
 }
 
@@ -91,6 +99,7 @@ impl UserAuthControllerError {
     pub fn error_code(&self) -> StatusCode {
         match self {
             Self::InvalidCredentials => StatusCode::UNAUTHORIZED,
+            Self::BadRequest => StatusCode::BAD_REQUEST,
             Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -98,6 +107,7 @@ impl UserAuthControllerError {
     pub fn error_message(&self) -> &'static str {
         match self {
             Self::InvalidCredentials => "The provided credentials were invalid or not found.",
+            Self::BadRequest => "The data provided in the request was invalid.",
             Self::Internal => {
                 "An error has occurred while proccessing your request. Please try again later."
             }
