@@ -1,12 +1,16 @@
 use hyper::StatusCode;
-use lockrs_server::api::v1::{services::{SessionTokenService, SessionService}, responses::SessionResponse, models::SessionTokenModel};
+use lockrs_server::api::v1::{
+    models::SessionTokenModel,
+    responses::SessionResponse,
+    services::{SessionService, SessionTokenService},
+};
 
-use crate::common::helpers::{TestUser, spawn_app};
+use crate::common::helpers::{TestApp, TestUser};
 
 #[tokio::test]
 async fn session_create_returns_a_200_for_valid_bearer_auth() {
     // Arrange
-    let app = spawn_app().await;
+    let app = TestApp::spawn().await;
     let client = reqwest::Client::new();
     let test_user = TestUser::generate();
     test_user.store(&app).await;
@@ -20,29 +24,27 @@ async fn session_create_returns_a_200_for_valid_bearer_auth() {
     .expect("Unable to create session token.");
 
     // Act
-    let response = client.post(&format!("{}/api/v1/sessions", &app.address))
+    let response = client
+        .post(&format!("{}/api/v1/sessions", &app.address))
         .bearer_auth(&session_token.token)
         .send()
         .await
         .expect("Failed to execute request.");
 
     // Assert
-    assert_eq!(
-        StatusCode::OK,
-        response.status(),
-    );
+    assert_eq!(StatusCode::OK, response.status(),);
 
     // Arrange 2: extract body
     let response_body = response.text().await.expect("Failed to read request body.");
-    let session_response = serde_json::from_str::<SessionResponse>(&response_body)
-        .expect("Failed to parse body");
-    
+    let session_response =
+        serde_json::from_str::<SessionResponse>(&response_body).expect("Failed to parse body");
+
     // Act 2: verify session exists
     SessionService::get_session(
         &app.state.db_context,
         &*app.state.repository_container.session_repository,
         &test_user.id,
-        &session_response.id
+        &session_response.id,
     )
     .await
     .expect("Session not created.");
@@ -54,7 +56,7 @@ async fn session_create_returns_a_200_for_valid_bearer_auth() {
     SessionTokenService::validate_session_token(
         &app.state.db_context,
         &*app.state.repository_container.session_token_repository,
-        &session_token.token
+        &session_token.token,
     )
     .await
     .expect_err("Session token still exists after used.");
@@ -67,55 +69,52 @@ async fn session_create_returns_a_200_for_valid_bearer_auth() {
     )
     .await
     .expect(&format!("Session {} not deleted.", &session_response.id));
-
-    // cleanup
-    test_user.delete(&app).await;
 }
 
 #[tokio::test]
 async fn session_create_returns_a_400_for_missing_token() {
     // Arrange
-    let app = spawn_app().await;
+    let app = TestApp::spawn().await;
     let client = reqwest::Client::new();
     let test_user = TestUser::generate();
     test_user.store(&app).await;
 
     // Act
-    let response = client.post(&format!("{}/api/v1/sessions", &app.address))
+    let response = client
+        .post(&format!("{}/api/v1/sessions", &app.address))
         .send()
         .await
         .expect("Failed to execute request.");
 
     // Assert
-    assert_eq!(
-        StatusCode::BAD_REQUEST,
-        response.status(),
-    );
-
-    test_user.delete(&app).await;
+    assert_eq!(StatusCode::BAD_REQUEST, response.status(),);
 }
 
 #[tokio::test]
 async fn session_create_returns_a_401_for_invalid_token() {
     // Arrange
-    let app = spawn_app().await;
+    let app = TestApp::spawn().await;
     let client = reqwest::Client::new();
     let test_user = TestUser::generate();
     test_user.store(&app).await;
 
     let random_token = SessionTokenService::generate_session_token();
 
-    let expired_token = app.state.repository_container.session_token_repository.create(
-        &app.state.db_context,
-        &SessionTokenModel {
-            token: SessionTokenService::generate_session_token(),
-            user_id: test_user.id.clone(),
-            expires_at: chrono::Utc::now().timestamp() - 1,
-        }
-    )
-    .await
-    .expect("Failed to create expired token.")
-    .token;
+    let expired_token = app
+        .state
+        .repository_container
+        .session_token_repository
+        .create(
+            &app.state.db_context,
+            &SessionTokenModel {
+                token: SessionTokenService::generate_session_token(),
+                user_id: test_user.id.clone(),
+                expires_at: chrono::Utc::now().timestamp() - 1,
+            },
+        )
+        .await
+        .expect("Failed to create expired token.")
+        .token;
 
     let used_token = SessionTokenService::create_session_token(
         &app.state.db_context,
@@ -142,7 +141,8 @@ async fn session_create_returns_a_401_for_invalid_token() {
 
     for (token, error_message) in test_cases {
         // Act
-        let response = client.post(&format!("{}/api/v1/sessions", &app.address))
+        let response = client
+            .post(&format!("{}/api/v1/sessions", &app.address))
             .bearer_auth(token)
             .send()
             .await
@@ -156,7 +156,4 @@ async fn session_create_returns_a_401_for_invalid_token() {
             error_message,
         );
     }
-
-    // cleanup
-    test_user.delete(&app).await;
 }

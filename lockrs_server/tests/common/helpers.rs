@@ -1,31 +1,97 @@
 use std::net::TcpListener;
 
+use diesel::{pg::Pg, Connection, PgConnection, RunQueryDsl};
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use lockrs_server::{
     api::v1::{models::UserAuthModel, services::UserAuthService},
-    AppState, services::UserService,
+    services::UserService,
+    AppConfig, AppState,
 };
 use uuid::Uuid;
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
 pub struct TestApp {
     pub address: String,
     pub state: AppState,
+    pub pg_base_url: String,
+    pub pg_db_name: String,
 }
 
-pub async fn spawn_app() -> TestApp {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to random port");
-    let port = listener.local_addr().unwrap().port();
+impl TestApp {
+    pub async fn spawn() -> TestApp {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to random port");
+        let port = listener.local_addr().unwrap().port();
 
-    let state = AppState::new().await;
+        // configure pg db for test
+        let pg_base_url = String::from("postgres://postgres@localhost");
+        let pg_db_name = format!("lockrs_test_{}", Uuid::new_v4().as_simple());
 
-    let server = lockrs_server::run(listener, Some(state.clone()))
-        .await
-        .expect("Failed to bind address.");
+        Self::configure_pg(&pg_base_url, &pg_db_name);
+        let postgres_url = format!("{}/{}", pg_base_url, pg_db_name);
 
-    let _ = tokio::spawn(server);
+        let conn = &mut PgConnection::establish(&postgres_url)
+            .expect(&format!("Cannot connect to {} database", &pg_db_name));
 
-    TestApp {
-        address: format!("http://127.0.0.1:{}", port),
-        state,
+        Self::run_migrations(conn);
+
+        let test_config = AppConfig {
+            postgres_url,
+            redis_url: String::from("redis://localhost:6379"),
+            auth_interval: chrono::Duration::minutes(10),
+            key_interval: chrono::Duration::minutes(11),
+        };
+
+        let state = AppState::new(Some(test_config)).await;
+
+        let server = lockrs_server::run(listener, Some(state.clone()))
+            .await
+            .expect("Failed to bind address.");
+
+        let _ = tokio::spawn(server);
+
+        TestApp {
+            address: format!("http://127.0.0.1:{}", port),
+            state,
+            pg_base_url,
+            pg_db_name,
+        }
+    }
+
+    fn configure_pg(base_url: &str, db_name: &str) {
+        let pg_url = format!("{}/postgres", base_url);
+        let conn =
+            &mut PgConnection::establish(&pg_url).expect("Error connecting to postgres database.");
+
+        diesel::sql_query(&format!("CREATE DATABASE {}", db_name))
+            .execute(conn)
+            .expect(&format!("Could not create database {}.", db_name));
+    }
+
+    fn run_migrations(conn: &mut impl MigrationHarness<Pg>) {
+        conn.run_pending_migrations(MIGRATIONS)
+            .expect("Failed to run migrations.");
+    }
+}
+
+impl Drop for TestApp {
+    fn drop(&mut self) {
+        let pg_url = format!("{}/postgres", self.pg_base_url);
+        let conn =
+            &mut PgConnection::establish(&pg_url).expect("Error connecting to postgres database.");
+
+        let disconnect_users = format!(
+            "SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = '{}';",
+            self.pg_db_name
+        );
+
+        diesel::sql_query(&disconnect_users).execute(conn).unwrap();
+
+        diesel::sql_query(&format!("DROP DATABASE {};", self.pg_db_name))
+            .execute(conn)
+            .expect(&format!("Couldn't drop database {}.", self.pg_db_name));
     }
 }
 
@@ -48,8 +114,7 @@ impl TestUser {
         let password_hash = UserAuthService::hash_password(self.password.as_str())
             .expect("Failed to hash password of test user.");
 
-        let user_auth =
-            UserAuthModel::new(&self.id, self.email.as_str(), password_hash.as_str());
+        let user_auth = UserAuthModel::new(&self.id, self.email.as_str(), password_hash.as_str());
 
         app.state
             .repository_container
@@ -57,15 +122,5 @@ impl TestUser {
             .create_raw(&app.state.db_context, &user_auth)
             .await
             .expect("Failed to store test user in user database.");
-    }
-
-    pub async fn delete(&self, app: &TestApp) {
-        UserService::delete_user_by_id(
-            &app.state.db_context,
-            &*app.state.repository_container.user_repository,
-            &self.id,
-        )
-        .await
-        .expect(&format!("User {} not deleted.", &self.id));
     }
 }

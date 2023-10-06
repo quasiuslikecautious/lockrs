@@ -36,7 +36,8 @@ impl UserAuthController {
             register_request.password.as_str(),
         );
 
-        registration.validate()
+        registration
+            .validate()
             .map_err(|_| UserAuthControllerError::BadRequest)?;
 
         let db_context = &state.db_context;
