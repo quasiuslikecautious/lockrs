@@ -2,7 +2,7 @@ use std::net::TcpListener;
 
 use lockrs_server::{
     api::v1::{models::UserAuthModel, services::UserAuthService},
-    AppState,
+    AppState, services::UserService,
 };
 use uuid::Uuid;
 
@@ -57,5 +57,15 @@ impl TestUser {
             .create_raw(&app.state.db_context, &user_auth)
             .await
             .expect("Failed to store test user in user database.");
+    }
+
+    pub async fn delete(&self, app: &TestApp) {
+        UserService::delete_user_by_id(
+            &app.state.db_context,
+            &*app.state.repository_container.user_repository,
+            &self.id,
+        )
+        .await
+        .expect(&format!("User {} not deleted.", &self.id));
     }
 }
