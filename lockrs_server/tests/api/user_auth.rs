@@ -42,7 +42,7 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
         &new_user.id,
     )
     .await
-    .expect("User not created");
+    .expect("User not created.");
 
     // Assert 2
     assert_eq!(test_user.email, new_user.email);
@@ -54,7 +54,7 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
         &new_user.id,
     )
     .await
-    .expect(&format!("User {} not deleted", &new_user.id));
+    .expect(&format!("User {} not deleted.", &new_user.id));
 }
 
 #[tokio::test]
@@ -164,7 +164,7 @@ async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
     // Act
     let response = client
         .post(&format!("{}/api/v1/auth/login", &app.address))
-        .basic_auth(test_user.email, Some(test_user.password))
+        .basic_auth(&test_user.email, Some(test_user.password.clone()))
         .send()
         .await
         .expect("Failed to execute request.");
@@ -186,13 +186,7 @@ async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
     assert!(session_token_response.expires_at > now);
 
     // cleanup
-    UserService::delete_user_by_id(
-        &app.state.db_context,
-        &*app.state.repository_container.user_repository,
-        &test_user.id,
-    )
-    .await
-    .expect(&format!("Unable to delete user {}.", test_user.id));
+    test_user.delete(&app).await;
 }
 
 #[tokio::test]
@@ -204,8 +198,8 @@ async fn user_auth_login_returns_a_400_when_data_is_missing() {
     test_user.store(&app).await;
 
     let test_cases = vec![
-        (String::new(), Some(test_user.password), "missing email"),
-        (test_user.email, None, "missing password"),
+        (String::new(), Some(test_user.password.clone()), "missing email"),
+        (test_user.email.clone(), None, "missing password"),
         (String::new(), None, "missing email and password"),
     ];
 
@@ -227,13 +221,7 @@ async fn user_auth_login_returns_a_400_when_data_is_missing() {
     }
 
     // cleanup
-    UserService::delete_user_by_id(
-        &app.state.db_context,
-        &*app.state.repository_container.user_repository,
-        &test_user.id,
-    )
-    .await
-    .expect(&format!("Unable to delete user {}.", test_user.id));
+    test_user.delete(&app).await;
 }
 
 #[tokio::test]
@@ -246,7 +234,7 @@ async fn user_auth_login_returns_a_401_for_invalid_credentials() {
 
     // Act
     let response = client.post(&format!("{}/api/v1/auth/login", app.address))
-        .basic_auth(test_user.email, Some("incorrect_password"))
+        .basic_auth(&test_user.email, Some("incorrect_password"))
         .send()
         .await
         .expect("Failed to execute request.");
@@ -258,11 +246,5 @@ async fn user_auth_login_returns_a_401_for_invalid_credentials() {
     );
 
     // cleanup
-    UserService::delete_user_by_id(
-        &app.state.db_context,
-        &*app.state.repository_container.user_repository,
-        &test_user.id,
-    )
-    .await
-    .expect(&format!("Unable to delete user {}.", test_user.id));
+    test_user.delete(&app).await;
 }
