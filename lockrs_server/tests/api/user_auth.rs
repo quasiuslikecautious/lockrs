@@ -27,13 +27,10 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
     assert_eq!(StatusCode::OK, response.status());
 
     // Arrange 2: get newly created user id
-    let response_body = response
-        .text()
+    let new_user = response
+        .json::<UserResponse>()
         .await
         .expect("Failed extract response body.");
-
-    let new_user = serde_json::from_str::<UserResponse>(&response_body)
-        .expect("Failed to parse response body");
 
     // Act 2: verify user exists
     lockrs_server::services::UserService::get_user_by_id(
@@ -52,7 +49,6 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
 async fn user_auth_register_returns_a_400_when_data_is_missing() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
 
     let test_cases = vec![
         (r#"{"password": "password"}"#, "missing the email"),
@@ -62,7 +58,8 @@ async fn user_auth_register_returns_a_400_when_data_is_missing() {
 
     for (invalid_body, error_message) in test_cases {
         // Act
-        let response = client
+        let response = app
+            .client
             .post(&format!("{}/api/v1/auth/register", &app.address))
             .header("Content-Type", "application/json")
             .body(invalid_body)
@@ -83,7 +80,6 @@ async fn user_auth_register_returns_a_400_when_data_is_missing() {
 async fn user_auth_register_returns_a_400_when_fields_are_present_but_invalid() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
 
     let test_cases = vec![
         (r#"{"email": "", "password": "password"}"#, "empty email"),
@@ -103,7 +99,8 @@ async fn user_auth_register_returns_a_400_when_fields_are_present_but_invalid() 
 
     for (body, description) in test_cases {
         // Act
-        let response = client
+        let response = app
+            .client
             .post(&format!("{}/api/v1/auth/register", &app.address))
             .header("Content-Type", "application/json")
             .body(body)
@@ -125,7 +122,6 @@ async fn user_auth_register_returns_a_400_when_fields_are_present_but_invalid() 
 async fn user_auth_register_returns_a_500_for_existing_user() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
     let test_user = TestUser::generate();
     test_user.store(&app).await; // add to db
 
@@ -134,7 +130,8 @@ async fn user_auth_register_returns_a_500_for_existing_user() {
         "{{\"email\": \"{}\", \"password\": \"{}\"}}",
         test_user.email, test_user.password
     );
-    let response = client
+    let response = app
+        .client
         .post(&format!("{}/api/v1/auth/register", &app.address))
         .header("Content-Type", "application/json")
         .body(body)
@@ -150,12 +147,12 @@ async fn user_auth_register_returns_a_500_for_existing_user() {
 async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
     let test_user = TestUser::generate();
     test_user.store(&app).await; // add to db
 
     // Act
-    let response = client
+    let response = app
+        .client
         .post(&format!("{}/api/v1/auth/login", &app.address))
         .basic_auth(&test_user.email, Some(test_user.password.clone()))
         .send()
@@ -166,9 +163,10 @@ async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
     assert_eq!(StatusCode::OK, response.status(),);
 
     // Arrange 2: get response body
-    let response_body = response.text().await.expect("Failed to read body.");
-    let session_token_response = serde_json::from_str::<SessionTokenResponse>(&response_body)
-        .expect("Failed to parse body.");
+    let session_token_response = response
+        .json::<SessionTokenResponse>()
+        .await
+        .expect("Failed to read body.");
 
     let now = chrono::Utc::now().timestamp();
 
@@ -180,7 +178,6 @@ async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
 async fn user_auth_login_returns_a_400_when_data_is_missing() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
     let test_user = TestUser::generate();
     test_user.store(&app).await;
 
@@ -196,7 +193,8 @@ async fn user_auth_login_returns_a_400_when_data_is_missing() {
 
     for (email, password, error_message) in test_cases {
         // Act
-        let response = client
+        let response = app
+            .client
             .post(&format!("{}/api/v1/auth/login", &app.address))
             .basic_auth(email, password)
             .send()
@@ -217,12 +215,12 @@ async fn user_auth_login_returns_a_400_when_data_is_missing() {
 async fn user_auth_login_returns_a_401_for_invalid_credentials() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
     let test_user = TestUser::generate();
     test_user.store(&app).await;
 
     // Act
-    let response = client
+    let response = app
+        .client
         .post(&format!("{}/api/v1/auth/login", app.address))
         .basic_auth(&test_user.email, Some("incorrect_password"))
         .send()

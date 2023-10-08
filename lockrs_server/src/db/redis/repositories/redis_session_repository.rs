@@ -48,15 +48,30 @@ impl SessionRepository for RedisSessionRepository {
             .await
             .map_err(RepositoryError::from)?;
 
+        redis::cmd("MULTI")
+            .query_async(conn)
+            .await
+            .map_err(RepositoryError::map_redis)?;
+
         redis::cmd("HSET")
             .arg(user_key.as_str())
             .arg(session_key.as_str())
             .arg(value.as_str())
-            .arg("PXAT")
+            .query_async(conn)
+            .await
+            .map_err(RepositoryError::map_redis)?;
+
+        redis::cmd("PEXPIREAT")
+            .arg(user_key.as_str())
             .arg(expires_at)
             .query_async(conn)
             .await
-            .map_err(RepositoryError::map_redis_create)?;
+            .map_err(RepositoryError::map_redis)?;
+
+        redis::cmd("EXEC")
+            .query_async(conn)
+            .await
+            .map_err(RepositoryError::map_redis)?;
 
         Ok(session.clone())
     }
@@ -116,12 +131,27 @@ impl SessionRepository for RedisSessionRepository {
             .await
             .map_err(RepositoryError::from)?;
 
+        redis::cmd("MULTI")
+            .query_async(conn)
+            .await
+            .map_err(RepositoryError::map_redis)?;
+
         redis::cmd("HSET")
             .arg(user_key.as_str())
             .arg(session_key.as_str())
             .arg(value.as_str())
-            .arg("PXAT")
+            .query_async(conn)
+            .await
+            .map_err(RepositoryError::map_redis)?;
+
+        redis::cmd("PEXPIREAT")
+            .arg(user_key.as_str())
             .arg(expires_at)
+            .query_async(conn)
+            .await
+            .map_err(RepositoryError::map_redis)?;
+
+        redis::cmd("EXEC")
             .query_async(conn)
             .await
             .map_err(RepositoryError::map_redis)?;

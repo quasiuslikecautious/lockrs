@@ -47,7 +47,7 @@ where
 
         if session.id != path_session_id.0 {
             tracing::debug!("session in auth does not match session in path");
-            return Err(StatusCode::UNAUTHORIZED);
+            return Err(StatusCode::NOT_FOUND);
         }
 
         Ok(Self)

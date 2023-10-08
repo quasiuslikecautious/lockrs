@@ -35,7 +35,7 @@ jsonwebtoken = "8.3.0"
 lazy_static = "1.4.0"
 rand = "0.8.5"
 redis = { version = "0.23.0", features = ["aio"] }
-reqwest = "0.11.22"
+reqwest = { version = "0.11.22", features = ["json", "cookies", "cookie_store"] }
 ring = "0.16.20"
 scoped-futures = "0.1.3"
 serde = { version = "1.0.158", features = ["derive"] }

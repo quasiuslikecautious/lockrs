@@ -3,8 +3,11 @@ use std::net::TcpListener;
 use diesel::{pg::Pg, Connection, PgConnection, RunQueryDsl};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use lockrs_server::{
-    api::v1::{models::UserAuthModel, services::UserAuthService},
-    services::UserService,
+    api::v1::{
+        models::{UserAuthModel, UserLoginCredentials, SessionModel},
+        responses::{SessionResponse, SessionTokenResponse},
+        services::UserAuthService,
+    },
     AppConfig, AppState,
 };
 use uuid::Uuid;
@@ -14,8 +17,10 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 pub struct TestApp {
     pub address: String,
     pub state: AppState,
-    pub pg_base_url: String,
-    pub pg_db_name: String,
+    pub client: reqwest::Client,
+
+    pg_base_url: String,
+    pg_db_name: String,
 }
 
 impl TestApp {
@@ -44,6 +49,11 @@ impl TestApp {
 
         let state = AppState::new(Some(test_config)).await;
 
+        let client = reqwest::ClientBuilder::new()
+            .cookie_store(true)
+            .build()
+            .expect("Failed to build http client.");
+
         let server = lockrs_server::run(listener, Some(state.clone()))
             .await
             .expect("Failed to bind address.");
@@ -53,6 +63,7 @@ impl TestApp {
         TestApp {
             address: format!("http://127.0.0.1:{}", port),
             state,
+            client,
             pg_base_url,
             pg_db_name,
         }
@@ -122,5 +133,44 @@ impl TestUser {
             .create_raw(&app.state.db_context, &user_auth)
             .await
             .expect("Failed to store test user in user database.");
+    }
+
+    pub async fn login(&self, app: &TestApp) -> SessionModel {
+        let session_token = app
+            .client
+            .post(&format!("{}/api/v1/auth/login", &app.address))
+            .basic_auth(&self.email, Some(self.password.as_str()))
+            .send()
+            .await
+            .expect(&format!("Failed to login user {}.", &self.email))
+            .json::<SessionTokenResponse>()
+            .await
+            .expect(&format!(
+                "Failed to parse session token while logging in user {}.",
+                &self.email
+            ))
+            .session_token;
+
+        let session_response = app.client
+            .post(&format!("{}/api/v1/sessions", &app.address))
+            .bearer_auth(session_token)
+            .send()
+            .await
+            .expect(&format!(
+                "Failed to exchange token for session while logging in user {}.",
+                &self.email
+            ))
+            .json::<SessionResponse>()
+            .await
+            .expect(&format!(
+                "Failed to parse session while logging in user {}.",
+                &self.email
+            ));
+
+        SessionModel::new(
+            &session_response.id,
+            &session_response.user_id,
+            session_response.expires_at
+        )
     }
 }

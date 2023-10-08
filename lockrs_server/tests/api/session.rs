@@ -1,9 +1,10 @@
 use hyper::StatusCode;
 use lockrs_server::api::v1::{
-    models::SessionTokenModel,
+    models::{SessionTokenModel, SessionModel},
     responses::SessionResponse,
     services::{SessionService, SessionTokenService},
 };
+use uuid::Uuid;
 
 use crate::common::helpers::{TestApp, TestUser};
 
@@ -11,7 +12,7 @@ use crate::common::helpers::{TestApp, TestUser};
 async fn session_create_returns_a_200_for_valid_bearer_auth() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
+
     let test_user = TestUser::generate();
     test_user.store(&app).await;
 
@@ -24,7 +25,8 @@ async fn session_create_returns_a_200_for_valid_bearer_auth() {
     .expect("Unable to create session token.");
 
     // Act
-    let response = client
+    let response = app
+        .client
         .post(&format!("{}/api/v1/sessions", &app.address))
         .bearer_auth(&session_token.token)
         .send()
@@ -35,9 +37,10 @@ async fn session_create_returns_a_200_for_valid_bearer_auth() {
     assert_eq!(StatusCode::OK, response.status(),);
 
     // Arrange 2: extract body
-    let response_body = response.text().await.expect("Failed to read request body.");
-    let session_response =
-        serde_json::from_str::<SessionResponse>(&response_body).expect("Failed to parse body");
+    let session_response = response
+        .json::<SessionResponse>()
+        .await
+        .expect("Failed to read request body.");
 
     // Act 2: verify session exists
     SessionService::get_session(
@@ -75,12 +78,13 @@ async fn session_create_returns_a_200_for_valid_bearer_auth() {
 async fn session_create_returns_a_400_for_missing_token() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
+
     let test_user = TestUser::generate();
     test_user.store(&app).await;
 
     // Act
-    let response = client
+    let response = app
+        .client
         .post(&format!("{}/api/v1/sessions", &app.address))
         .send()
         .await
@@ -94,7 +98,7 @@ async fn session_create_returns_a_400_for_missing_token() {
 async fn session_create_returns_a_401_for_invalid_token() {
     // Arrange
     let app = TestApp::spawn().await;
-    let client = reqwest::Client::new();
+
     let test_user = TestUser::generate();
     test_user.store(&app).await;
 
@@ -141,7 +145,8 @@ async fn session_create_returns_a_401_for_invalid_token() {
 
     for (token, error_message) in test_cases {
         // Act
-        let response = client
+        let response = app
+            .client
             .post(&format!("{}/api/v1/sessions", &app.address))
             .bearer_auth(token)
             .send()
@@ -156,4 +161,151 @@ async fn session_create_returns_a_401_for_invalid_token() {
             error_message,
         );
     }
+}
+
+#[tokio::test]
+async fn session_delete_returns_a_200_for_valid_id() {
+    // Arrange
+    let app = TestApp::spawn().await;
+
+    let test_user = TestUser::generate();
+    test_user.store(&app).await;
+    let auth_info = test_user.login(&app).await;
+
+    // Act
+    let response = app
+        .client
+        .delete(&format!("{}/api/v1/sessions/{}", &app.address, &auth_info.id))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(
+        StatusCode::NO_CONTENT,
+        response.status()
+    );
+}
+
+#[tokio::test]
+async fn session_delete_returns_a_404_for_invalid_authorization() {
+    // Arrange
+    let app = TestApp::spawn().await;
+
+    let test_user_1 = TestUser::generate();
+    test_user_1.store(&app).await;
+    let auth_info_1 = test_user_1.login(&app).await; // create session for user 1
+    
+    let test_user_2 = TestUser::generate();
+    test_user_2.store(&app).await;
+    test_user_2.login(&app).await; // overwrite client auth info with new user 
+
+    // Act
+    let response = app
+        .client
+        .delete(&format!("{}/api/v1/sessions/{}", &app.address, &auth_info_1.id))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(
+        StatusCode::NOT_FOUND,
+        response.status()
+    );
+}
+
+#[tokio::test]
+async fn session_delete_returns_a_404_for_invalid_session() {
+    // Arrange
+    let app = TestApp::spawn().await;
+
+    let test_user = TestUser::generate();
+    test_user.store(&app).await;
+    test_user.login(&app).await;
+
+    let test_cases = vec![
+        (String::new(), "no session provided"),
+        (SessionService::generate_session_id(), "random invalid session"),
+    ];
+
+    for (session_id, error_message) in test_cases {
+        // Act
+        let response = app
+            .client
+            .get(&format!("{}/api/v1/sessions/{}", &app.address, session_id))
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        // Assert
+        assert_eq!(
+            StatusCode::NOT_FOUND,
+            response.status(),
+            "The API did not fail with 404 Not Found when the payload was {}.",
+            error_message
+        );
+    }
+}
+
+#[tokio::test]
+async fn expired_session_is_unauthorized() {
+    // Arrange
+    let app = TestApp::spawn().await;
+
+    let test_user = TestUser::generate();
+    test_user.store(&app).await;
+    let auth_info = test_user.login(&app).await;
+
+    let expired_session_model = SessionModel::new(
+        &auth_info.id,
+        &auth_info.user_id,
+        chrono::Utc::now().timestamp_millis(),
+    );
+
+    app.state.repository_container.session_repository.update(
+        &app.state.db_context,
+        &expired_session_model
+    )
+    .await
+    .expect("Failed to expire session");
+
+    // Act
+    let response = app
+        .client
+        .get(format!("{}/api/v1/sessions/{}", &app.address, &auth_info.id))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(
+        StatusCode::UNAUTHORIZED,
+        response.status()
+    );
+}
+
+#[tokio::test]
+async fn max_one_session_exists_per_user() {
+    // Arrange
+    let app = TestApp::spawn().await;
+
+    let test_user = TestUser::generate();
+    test_user.store(&app).await;
+    let auth_info_1 = test_user.login(&app).await; // create session for user 1
+    test_user.login(&app).await; // overwrite client auth info with new session 
+
+    // Act
+    let response = app
+        .client
+        .get(&format!("{}/api/v1/{}", &app.address, &auth_info_1.id))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(
+        StatusCode::NOT_FOUND,
+        response.status()
+    );
 }
