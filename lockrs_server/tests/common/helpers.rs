@@ -1,13 +1,14 @@
-use std::net::TcpListener;
+use std::{net::TcpListener, time::Duration};
 
 use diesel::{pg::Pg, Connection, PgConnection, RunQueryDsl};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use lockrs_server::{
     api::v1::{
-        models::{UserAuthModel, UserLoginCredentials, SessionModel},
+        models::{SessionModel, UserAuthModel},
         responses::{SessionResponse, SessionTokenResponse},
         services::UserAuthService,
     },
+    utils::jwt::JwtUtil,
     AppConfig, AppState,
 };
 use uuid::Uuid;
@@ -15,9 +16,9 @@ use uuid::Uuid;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
 pub struct TestApp {
-    pub address: String,
-    pub state: AppState,
-    pub client: reqwest::Client,
+    address: String,
+    state: AppState,
+    client: reqwest::Client,
 
     pg_base_url: String,
     pg_db_name: String,
@@ -36,7 +37,7 @@ impl TestApp {
         let postgres_url = format!("{}/{}", pg_base_url, pg_db_name);
 
         let conn = &mut PgConnection::establish(&postgres_url)
-            .expect(&format!("Cannot connect to {} database", &pg_db_name));
+            .unwrap_or_else(|_| panic!("Cannot connect to {} database", &pg_db_name));
 
         Self::run_migrations(conn);
 
@@ -69,14 +70,26 @@ impl TestApp {
         }
     }
 
+    pub fn get_address(&self) -> &str {
+        &self.address
+    }
+
+    pub fn get_state(&self) -> &AppState {
+        &self.state
+    }
+
+    pub fn get_client(&self) -> &reqwest::Client {
+        &self.client
+    }
+
     fn configure_pg(base_url: &str, db_name: &str) {
         let pg_url = format!("{}/postgres", base_url);
         let conn =
             &mut PgConnection::establish(&pg_url).expect("Error connecting to postgres database.");
 
-        diesel::sql_query(&format!("CREATE DATABASE {}", db_name))
+        diesel::sql_query(format!("CREATE DATABASE {}", db_name))
             .execute(conn)
-            .expect(&format!("Could not create database {}.", db_name));
+            .unwrap_or_else(|_| panic!("Could not create database {}.", db_name));
     }
 
     fn run_migrations(conn: &mut impl MigrationHarness<Pg>) {
@@ -98,18 +111,90 @@ WHERE datname = '{}';",
             self.pg_db_name
         );
 
-        diesel::sql_query(&disconnect_users).execute(conn).unwrap();
+        diesel::sql_query(disconnect_users).execute(conn).unwrap();
 
-        diesel::sql_query(&format!("DROP DATABASE {};", self.pg_db_name))
+        diesel::sql_query(format!("DROP DATABASE {};", self.pg_db_name))
             .execute(conn)
-            .expect(&format!("Couldn't drop database {}.", self.pg_db_name));
+            .unwrap_or_else(|_| panic!("Couldn't drop database {}.", self.pg_db_name));
+    }
+}
+
+/// Because neither reqwest::Response nor reqwest::cookie::Cookie impl Clone, and to access the
+/// body of a reqwest response requires a move, we have to manually recreate the cookie
+/// ourselves...
+pub struct TestCookie {
+    pub name: String,
+    pub value: String,
+    pub path: Option<String>,
+    pub domain: Option<String>,
+    pub max_age: Option<Duration>,
+    pub http_only: bool,
+    pub same_site_lax: bool,
+    pub same_site_strict: bool,
+}
+
+impl From<reqwest::cookie::Cookie<'_>> for TestCookie {
+    fn from(value: reqwest::cookie::Cookie) -> Self {
+        Self {
+            name: value.name().to_string(),
+            value: value.value().to_string(),
+            path: value.path().map(|v| v.to_string()),
+            domain: value.domain().map(|d| d.to_string()),
+            max_age: value.max_age(),
+            http_only: value.http_only(),
+            same_site_lax: value.same_site_lax(),
+            same_site_strict: value.same_site_strict(),
+        }
+    }
+}
+
+impl ToString for TestCookie {
+    fn to_string(&self) -> String {
+        format!("{}={}", self.name, self.value)
+    }
+}
+
+pub struct TestUserAuthInfo {
+    session: SessionModel,
+    cookies: Vec<TestCookie>,
+}
+
+impl TestUserAuthInfo {
+    pub fn new(session: SessionModel, cookies: Vec<TestCookie>) -> Self {
+        Self { session, cookies }
+    }
+
+    pub fn get_session(&self) -> &SessionModel {
+        &self.session
+    }
+
+    pub fn get_session_id(&self) -> &str {
+        &self.get_session().id
+    }
+
+    pub fn get_user_id(&self) -> &Uuid {
+        &self.get_session().user_id
+    }
+
+    pub fn get_expires_at(&self) -> &i64 {
+        &self.get_session().expires_at
+    }
+
+    pub fn get_cookies(&self) -> &Vec<TestCookie> {
+        &self.cookies
+    }
+
+    pub fn get_auth_cookie(&self) -> Option<&TestCookie> {
+        self.get_cookies()
+            .iter()
+            .find(|cookie| cookie.name == JwtUtil::cookie_name())
     }
 }
 
 pub struct TestUser {
-    pub id: Uuid,
-    pub email: String,
-    pub password: String,
+    id: Uuid,
+    email: String,
+    password: String,
 }
 
 impl TestUser {
@@ -119,6 +204,18 @@ impl TestUser {
             email: format!("{}@example.com", Uuid::new_v4()),
             password: Uuid::new_v4().to_string(),
         }
+    }
+
+    pub fn get_id(&self) -> &Uuid {
+        &self.id
+    }
+
+    pub fn get_email(&self) -> &str {
+        &self.email
+    }
+
+    pub fn get_password(&self) -> &str {
+        &self.password
     }
 
     pub async fn store(&self, app: &TestApp) {
@@ -135,42 +232,58 @@ impl TestUser {
             .expect("Failed to store test user in user database.");
     }
 
-    pub async fn login(&self, app: &TestApp) -> SessionModel {
+    pub async fn generate_stored(app: &TestApp) -> Self {
+        let user = Self::generate();
+        user.store(app).await;
+        user
+    }
+
+    pub async fn login(&self, app: &TestApp) -> TestUserAuthInfo {
         let session_token = app
             .client
             .post(&format!("{}/api/v1/auth/login", &app.address))
             .basic_auth(&self.email, Some(self.password.as_str()))
             .send()
             .await
-            .expect(&format!("Failed to login user {}.", &self.email))
+            .unwrap_or_else(|_| panic!("Failed to login user {}.", &self.email))
             .json::<SessionTokenResponse>()
             .await
-            .expect(&format!(
-                "Failed to parse session token while logging in user {}.",
-                &self.email
-            ))
+            .unwrap_or_else(|_| panic!("Failed to parse session token while logging in user {}.",
+                &self.email))
             .session_token;
 
-        let session_response = app.client
+        let session_response = app
+            .client
             .post(&format!("{}/api/v1/sessions", &app.address))
             .bearer_auth(session_token)
             .send()
             .await
-            .expect(&format!(
-                "Failed to exchange token for session while logging in user {}.",
-                &self.email
-            ))
+            .unwrap_or_else(|_| panic!("Failed to exchange token for session while logging in user {}.",
+                &self.email));
+
+        let cookies = session_response
+            .cookies()
+            .map(TestCookie::from)
+            .collect();
+
+        let session_data = session_response
             .json::<SessionResponse>()
             .await
-            .expect(&format!(
-                "Failed to parse session while logging in user {}.",
-                &self.email
-            ));
+            .unwrap_or_else(|_| panic!("Failed to parse session while logging in user {}.",
+                &self.email));
 
-        SessionModel::new(
-            &session_response.id,
-            &session_response.user_id,
-            session_response.expires_at
-        )
+        let session = SessionModel::new(
+            &session_data.id,
+            &session_data.user_id,
+            session_data.expires_at,
+        );
+
+        TestUserAuthInfo::new(session, cookies)
+    }
+
+    pub async fn generate_logged_in(app: &TestApp) -> (Self, TestUserAuthInfo) {
+        let user = Self::generate_stored(app).await;
+        let auth_info = user.login(app).await;
+        (user, auth_info)
     }
 }

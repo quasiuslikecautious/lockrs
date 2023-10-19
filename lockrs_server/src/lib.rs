@@ -9,7 +9,7 @@ mod routes;
 
 use axum::{routing::IntoMakeService, Router};
 use hyper::{server::conn::AddrIncoming, Server};
-use std::{net::TcpListener, sync::Arc};
+use std::{net::TcpListener};
 
 pub use self::common::*;
 pub type AppServer = Server<AddrIncoming, IntoMakeService<Router>>;

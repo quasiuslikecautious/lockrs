@@ -1,5 +1,8 @@
 use hyper::StatusCode;
-use lockrs_server::api::v1::responses::{SessionTokenResponse, UserResponse};
+use lockrs_server::{
+    api::v1::responses::{SessionTokenResponse, UserResponse},
+    utils::jwt::JwtUtil,
+};
 
 use crate::common::helpers::{TestApp, TestUser};
 
@@ -13,10 +16,11 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
     // Act
     let body = format!(
         "{{\"email\": \"{}\", \"password\": \"{}\"}}",
-        test_user.email, test_user.password
+        test_user.get_email(),
+        test_user.get_password()
     );
     let response = client
-        .post(&format!("{}/api/v1/auth/register", &app.address))
+        .post(&format!("{}/api/v1/auth/register", &app.get_address()))
         .header("Content-Type", "application/json")
         .body(body)
         .send()
@@ -25,6 +29,11 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
 
     // Assert
     assert_eq!(StatusCode::OK, response.status());
+    assert!(
+        !response
+            .cookies().any(|cookie| { cookie.name() == JwtUtil::cookie_name() }),
+        "Auth cookie should not be sent in response of /register."
+    );
 
     // Arrange 2: get newly created user id
     let new_user = response
@@ -34,15 +43,15 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
 
     // Act 2: verify user exists
     lockrs_server::services::UserService::get_user_by_id(
-        &app.state.db_context,
-        &*app.state.repository_container.user_repository,
+        &app.get_state().db_context,
+        &*app.get_state().repository_container.user_repository,
         &new_user.id,
     )
     .await
     .expect("User not created.");
 
     // Assert 2
-    assert_eq!(test_user.email, new_user.email);
+    assert_eq!(test_user.get_email(), new_user.email);
 }
 
 #[tokio::test]
@@ -59,8 +68,8 @@ async fn user_auth_register_returns_a_400_when_data_is_missing() {
     for (invalid_body, error_message) in test_cases {
         // Act
         let response = app
-            .client
-            .post(&format!("{}/api/v1/auth/register", &app.address))
+            .get_client()
+            .post(&format!("{}/api/v1/auth/register", app.get_address()))
             .header("Content-Type", "application/json")
             .body(invalid_body)
             .send()
@@ -100,8 +109,8 @@ async fn user_auth_register_returns_a_400_when_fields_are_present_but_invalid() 
     for (body, description) in test_cases {
         // Act
         let response = app
-            .client
-            .post(&format!("{}/api/v1/auth/register", &app.address))
+            .get_client()
+            .post(&format!("{}/api/v1/auth/register", &app.get_address()))
             .header("Content-Type", "application/json")
             .body(body)
             .send()
@@ -122,17 +131,17 @@ async fn user_auth_register_returns_a_400_when_fields_are_present_but_invalid() 
 async fn user_auth_register_returns_a_500_for_existing_user() {
     // Arrange
     let app = TestApp::spawn().await;
-    let test_user = TestUser::generate();
-    test_user.store(&app).await; // add to db
+    let test_user = TestUser::generate_stored(&app).await;
 
     // Act
     let body = format!(
         "{{\"email\": \"{}\", \"password\": \"{}\"}}",
-        test_user.email, test_user.password
+        test_user.get_email(),
+        test_user.get_password()
     );
     let response = app
-        .client
-        .post(&format!("{}/api/v1/auth/register", &app.address))
+        .get_client()
+        .post(&format!("{}/api/v1/auth/register", app.get_address()))
         .header("Content-Type", "application/json")
         .body(body)
         .send()
@@ -147,20 +156,27 @@ async fn user_auth_register_returns_a_500_for_existing_user() {
 async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
     // Arrange
     let app = TestApp::spawn().await;
-    let test_user = TestUser::generate();
-    test_user.store(&app).await; // add to db
+    let test_user = TestUser::generate_stored(&app).await;
 
     // Act
     let response = app
-        .client
-        .post(&format!("{}/api/v1/auth/login", &app.address))
-        .basic_auth(&test_user.email, Some(test_user.password.clone()))
+        .get_client()
+        .post(&format!("{}/api/v1/auth/login", &app.get_address()))
+        .basic_auth(
+            test_user.get_email(),
+            Some(test_user.get_password().to_string()),
+        )
         .send()
         .await
         .expect("Failed to execute request.");
 
     // Assert
-    assert_eq!(StatusCode::OK, response.status(),);
+    assert_eq!(StatusCode::OK, response.status());
+    assert!(
+        !response
+            .cookies().any(|cookie| { cookie.name() == JwtUtil::cookie_name() }),
+        "Auth cookie should not be sent in response of /login."
+    );
 
     // Arrange 2: get response body
     let session_token_response = response
@@ -178,24 +194,23 @@ async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
 async fn user_auth_login_returns_a_400_when_data_is_missing() {
     // Arrange
     let app = TestApp::spawn().await;
-    let test_user = TestUser::generate();
-    test_user.store(&app).await;
+    let test_user = TestUser::generate_stored(&app).await;
 
     let test_cases = vec![
         (
             String::new(),
-            Some(test_user.password.clone()),
+            Some(test_user.get_password().to_string()),
             "missing email",
         ),
-        (test_user.email.clone(), None, "missing password"),
+        (test_user.get_email().to_string(), None, "missing password"),
         (String::new(), None, "missing email and password"),
     ];
 
     for (email, password, error_message) in test_cases {
         // Act
         let response = app
-            .client
-            .post(&format!("{}/api/v1/auth/login", &app.address))
+            .get_client()
+            .post(&format!("{}/api/v1/auth/login", app.get_address()))
             .basic_auth(email, password)
             .send()
             .await
@@ -215,14 +230,13 @@ async fn user_auth_login_returns_a_400_when_data_is_missing() {
 async fn user_auth_login_returns_a_401_for_invalid_credentials() {
     // Arrange
     let app = TestApp::spawn().await;
-    let test_user = TestUser::generate();
-    test_user.store(&app).await;
+    let test_user = TestUser::generate_stored(&app).await;
 
     // Act
     let response = app
-        .client
-        .post(&format!("{}/api/v1/auth/login", app.address))
-        .basic_auth(&test_user.email, Some("incorrect_password"))
+        .get_client()
+        .post(&format!("{}/api/v1/auth/login", app.get_address()))
+        .basic_auth(test_user.get_email(), Some("incorrect_password"))
         .send()
         .await
         .expect("Failed to execute request.");
