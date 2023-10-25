@@ -1,8 +1,8 @@
 use axum::{response::IntoResponse, Json};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SessionResponse {
     pub id: String,
     pub user_id: Uuid,

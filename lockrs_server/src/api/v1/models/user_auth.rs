@@ -1,5 +1,12 @@
+use diesel::Insertable;
+use serde::Deserialize;
 use uuid::Uuid;
+use validator::Validate;
 
+use crate::db::pg::schema::users;
+
+#[derive(Deserialize, Insertable)]
+#[diesel(table_name = users)]
 pub struct UserAuthModel {
     pub id: Uuid,
     pub email: String,
@@ -26,8 +33,12 @@ impl std::fmt::Debug for UserAuthModel {
     }
 }
 
+#[derive(Deserialize, Validate)]
 pub struct UserLoginCredentials {
+    #[validate(email)]
     pub email: String,
+
+    #[validate(length(min = 8))]
     pub password: String,
 }
 
@@ -50,8 +61,12 @@ impl std::fmt::Debug for UserLoginCredentials {
     }
 }
 
+#[derive(Deserialize, Validate)]
 pub struct UserRegistration {
+    #[validate(email)]
     pub email: String,
+
+    #[validate(length(min = 8))]
     pub password: String,
 }
 

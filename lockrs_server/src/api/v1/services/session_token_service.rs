@@ -43,7 +43,7 @@ impl SessionTokenService {
         Ok(token)
     }
 
-    fn generate_session_token() -> String {
+    pub fn generate_session_token() -> String {
         let mut rng = rand::thread_rng();
         let bytes = (0..32).map(|_| rng.gen::<u8>()).collect::<Vec<u8>>();
 

@@ -45,6 +45,28 @@ impl UserAuthRepository for PgUserAuthRepository {
         Ok(UserAuthMapper::from_pg(pg_user))
     }
 
+    async fn create_raw(
+        &self,
+        db_context: &Arc<DbContext>,
+        user: &UserAuthModel,
+    ) -> Result<UserAuthModel, RepositoryError> {
+        tracing::warn!(method = "create_raw", ?user);
+
+        let conn = &mut db_context
+            .as_ref()
+            .get_pg_connection()
+            .await
+            .map_err(RepositoryError::from)?;
+
+        let pg_user = diesel::insert_into(users::table)
+            .values(user)
+            .get_result(conn)
+            .await
+            .map_err(RepositoryError::map_diesel_create)?;
+
+        Ok(UserAuthMapper::from_pg(pg_user))
+    }
+
     async fn get_by_email(
         &self,
         db_context: &Arc<DbContext>,

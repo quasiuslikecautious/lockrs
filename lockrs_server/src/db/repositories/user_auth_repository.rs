@@ -15,6 +15,12 @@ pub trait UserAuthRepository: Send + Sync {
         user_create: &UserRegisterModel,
     ) -> Result<UserAuthModel, RepositoryError>;
 
+    async fn create_raw(
+        &self,
+        db_context: &Arc<DbContext>,
+        user_model: &UserAuthModel,
+    ) -> Result<UserAuthModel, RepositoryError>;
+
     async fn get_by_email(
         &self,
         db_context: &Arc<DbContext>,
