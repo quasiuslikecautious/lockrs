@@ -48,9 +48,7 @@ impl NewSessionResponse {
     }
 
     pub fn create_auth_cookie(&self) -> Result<String, ()> {
-        let signed_jwt = Arc::as_ref(&self.jwt_util)
-            .sign_jwt(self)
-            .map_err(|_| ())?;
+        let signed_jwt = Arc::as_ref(&self.jwt_util).sign_jwt(self).map_err(|_| ())?;
 
         let auth_cookie = Self::create_http_cookie(JwtUtil::cookie_name(), signed_jwt.as_str());
 

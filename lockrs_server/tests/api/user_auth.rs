@@ -31,7 +31,8 @@ async fn user_auth_register_returns_a_200_for_valid_json() {
     assert_eq!(StatusCode::OK, response.status());
     assert!(
         !response
-            .cookies().any(|cookie| { cookie.name() == JwtUtil::cookie_name() }),
+            .cookies()
+            .any(|cookie| { cookie.name() == JwtUtil::cookie_name() }),
         "Auth cookie should not be sent in response of /register."
     );
 
@@ -174,7 +175,8 @@ async fn user_auth_login_returns_a_200_for_valid_authorization_header() {
     assert_eq!(StatusCode::OK, response.status());
     assert!(
         !response
-            .cookies().any(|cookie| { cookie.name() == JwtUtil::cookie_name() }),
+            .cookies()
+            .any(|cookie| { cookie.name() == JwtUtil::cookie_name() }),
         "Auth cookie should not be sent in response of /login."
     );
 

@@ -248,8 +248,12 @@ impl TestUser {
             .unwrap_or_else(|_| panic!("Failed to login user {}.", &self.email))
             .json::<SessionTokenResponse>()
             .await
-            .unwrap_or_else(|_| panic!("Failed to parse session token while logging in user {}.",
-                &self.email))
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Failed to parse session token while logging in user {}.",
+                    &self.email
+                )
+            })
             .session_token;
 
         let session_response = app
@@ -258,19 +262,24 @@ impl TestUser {
             .bearer_auth(session_token)
             .send()
             .await
-            .unwrap_or_else(|_| panic!("Failed to exchange token for session while logging in user {}.",
-                &self.email));
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Failed to exchange token for session while logging in user {}.",
+                    &self.email
+                )
+            });
 
-        let cookies = session_response
-            .cookies()
-            .map(TestCookie::from)
-            .collect();
+        let cookies = session_response.cookies().map(TestCookie::from).collect();
 
         let session_data = session_response
             .json::<SessionResponse>()
             .await
-            .unwrap_or_else(|_| panic!("Failed to parse session while logging in user {}.",
-                &self.email));
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Failed to parse session while logging in user {}.",
+                    &self.email
+                )
+            });
 
         let session = SessionModel::new(
             &session_data.id,

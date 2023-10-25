@@ -9,5 +9,6 @@ async fn main() {
     let addr = listener.local_addr().unwrap();
     tracing::info!("listening at {}", addr);
     println!("listening at {}", addr);
-    run(listener, None).await.expect("Failed to bind address.");
+    let app = run(listener, None).await.expect("Failed to bind address.");
+    app.await;
 }

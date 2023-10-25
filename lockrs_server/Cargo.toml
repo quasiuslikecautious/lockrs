@@ -19,7 +19,7 @@ async-trait = "0.1.68"
 axum = "0.6.12"
 axum-macros = "0.3.7"
 base64 = "0.21.0"
-bcrypt = "0.14.0"
+bcrypt = "0.15.0"
 chrono = { version = "0.4.24", features = ["serde"] }
 cookie = "0.17.0"
 deadpool = "0.9.5"
